@@ -75,10 +75,10 @@ public class PoemFIB {
         }
         
         List<String> lines = FileUtils.readLines( file ) ;
-        createFileGroups( lines ) ;
+        createLineGroups( lines ) ;
     }
     
-    private void createFileGroups( List<String> lines ) {
+    private void createLineGroups( List<String> lines ) {
         
         while( groups.size() < 50 ) {
             
