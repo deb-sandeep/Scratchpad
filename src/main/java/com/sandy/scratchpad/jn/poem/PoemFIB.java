@@ -14,6 +14,8 @@ public class PoemFIB {
     class LineGroup {
         int startLine = 0 ;
         int numLines  = 0 ;
+        int blankLineIndex = -1 ;
+        
         List<String> lines = new ArrayList<String>() ;
         
         private ArrayList<String> qLines  = new ArrayList<String>() ;
@@ -24,27 +26,53 @@ public class PoemFIB {
             this.numLines  = numLines ;
         }
         
+        LineGroup( int start, int numLines, int blankLineIndex ) {
+            this( start, numLines ) ;
+            this.blankLineIndex = blankLineIndex ;
+        }
+        
         void extractBlanks() {
             
-            for( String line : lines ) {
-                StringBuffer qLine = new StringBuffer() ;
-                String[] words = line.split( "\\s+" ) ;
-                
-                for( String word : words ) {
-                    if( word.length() <= 3 ) {
-                        qLine.append( word + " " ) ;
+            if( this.blankLineIndex == -1 ) {
+                for( String line : lines ) {
+                    StringBuffer qLine = new StringBuffer() ;
+                    String[] words = line.split( "\\s+" ) ;
+                    
+                    for( String word : words ) {
+                        if( word.length() <= 3 ) {
+                            qLine.append( word + " " ) ;
+                        }
+                        else {
+                            if( Math.random() > 0.7 ) {
+                                answers.add( word ) ;
+                                qLine.append( "{" + (answers.size()-1) + "} " ) ;
+                            }
+                            else {
+                                qLine.append( word + " ") ;
+                            }
+                        }
                     }
-                    else {
-                        if( Math.random() > 0.7 ) {
+                    qLines.add( qLine.toString() ) ;
+                }
+            }
+            else {
+                for( int i=0; i<lines.size(); i++ ) {
+                    String line = lines.get( i ) ;
+                    
+                    StringBuffer qLine = new StringBuffer() ;
+                    String[] words = line.split( "\\s+" ) ;
+                    
+                    for( String word : words ) {
+                        if( i != blankLineIndex ) {
+                            qLine.append( word ).append( " " ) ;
+                        }
+                        else {
                             answers.add( word ) ;
                             qLine.append( "{" + (answers.size()-1) + "} " ) ;
                         }
-                        else {
-                            qLine.append( word + " ") ;
-                        }
                     }
+                    qLines.add( qLine.toString() ) ;
                 }
-                qLines.add( qLine.toString() ) ;
             }
         }
         
@@ -76,11 +104,15 @@ public class PoemFIB {
         
         List<String> lines = FileUtils.readLines( file ) ;
         createLineGroups( lines ) ;
+        createBlankLineGroups( lines ) ;
     }
     
     private void createLineGroups( List<String> lines ) {
         
+        int numCycles = 0 ;
         while( groups.size() < 50 ) {
+            
+            numCycles++ ;
             
             int randomStartLine = (int)(Math.random()*lines.size()) ;
             int randomGroupLen  = 2 + (int)(Math.random()*3) ;
@@ -110,6 +142,29 @@ public class PoemFIB {
                     groups.add( group ) ;
                 }
             }
+            
+            if( (numCycles - groups.size()) > 100 ) break ;
+        }
+    }
+    
+    private void createBlankLineGroups( List<String> lines ) {
+        for( int i=0; i<lines.size(); i++ ) {
+            
+            int randPrevLines = (int)( 1 + Math.random() * 2 ) ;
+            int randNextLines = (int)( 1 + Math.random() * 2 ) ;
+            
+            int fromLine = i - randPrevLines ;
+            int toLine   = i + randNextLines ;
+            
+            fromLine = ( fromLine < 0 ) ? 0 : fromLine ;
+            toLine   = ( toLine >= lines.size() ) ? lines.size()-1 : toLine ;
+            
+            LineGroup group = new LineGroup( fromLine, toLine-fromLine, (i-fromLine) ) ;
+            for( int lineIndex=fromLine; lineIndex<=toLine; lineIndex++ ) {
+                group.lines.add( lines.get( lineIndex ) ) ;
+            }
+            group.extractBlanks() ;
+            groups.add( group ) ;
         }
     }
     
