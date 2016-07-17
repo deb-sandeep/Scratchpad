@@ -8,7 +8,7 @@ import java.util.Comparator ;
 
 public class ChWBPageCreator {
     
-    private String[] subjects = { "Geography" } ;
+    private String[] subjects = { "Literature - MoV" } ;
     private File jnRoot = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes/Class-9" ) ;
     
     public void execute() throws Exception {
@@ -22,7 +22,7 @@ public class ChWBPageCreator {
         File[] chapters = subDir.listFiles() ;
         
         for( File chapter : chapters ) {
-            File hiResImgDir = new File( chapter, "img/selfstudy/hi-res" ) ;
+            File hiResImgDir = new File( chapter, "img/wb/pages/hi-res" ) ;
             if( hiResImgDir.exists() ) {
                 File[] files = hiResImgDir.listFiles() ;
                 if( files != null && files.length > 0 ) {
@@ -36,7 +36,7 @@ public class ChWBPageCreator {
 
         System.out.println( chapter.getAbsolutePath() ) ;
         
-        File pagesDir = new File( chapter, "img/selfstudy" ) ;
+        File pagesDir = new File( chapter, "img/wb/pages" ) ;
         File[] pageImgs = pagesDir.listFiles( new FileFilter() {
             public boolean accept( File pathname ) {
                 if( pathname.getName().endsWith( ".png" ) ) {
@@ -64,7 +64,7 @@ public class ChWBPageCreator {
         
         int chapterNum    = Integer.parseInt( chapterNumStr ) ;
         
-        File textChp = new File( chapter, chapterNum + ".1 - " + chapterName + " (selfstudy).jn" ) ;
+        File textChp = new File( chapter, chapterNum + ".1 - " + chapterName + " (wb).jn" ) ;
 
         FileWriter fw = new FileWriter( textChp ) ;
 
@@ -72,12 +72,12 @@ public class ChWBPageCreator {
         fw.write( "\n" ) ;
         fw.write( "subject \"" + subject + "\"\n" ) ;
         fw.write( "chapterNumber " + chapterNum + ".1\n" ) ;
-        fw.write( "chapterName \"" + chapterName + " (selfstudy)\"\n" ) ;
+        fw.write( "chapterName \"" + chapterName + " (wb)\"\n" ) ;
         fw.write( "\n" ) ;
-        fw.write( "@tn \"Selfstudy QA\"\n" ) ;
+        fw.write( "@tn \"Workbook QA\"\n" ) ;
         fw.write( "\"{{@carousel\n" ) ;
         for( File imgFile : pageImgFiles ) {
-            fw.write( "    @slide selfstudy/" + imgFile.getName() + "\n" ) ;
+            fw.write( "    @slide wb/pages/" + imgFile.getName() + "\n" ) ;
         }
         fw.write( "}}\"\n" ) ;        
         fw.flush(); 
