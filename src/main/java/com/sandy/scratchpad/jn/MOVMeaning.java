@@ -1,12 +1,10 @@
 package com.sandy.scratchpad.jn;
 
 import java.io.File ;
-import java.io.FileInputStream ;
 import java.util.ArrayList ;
 import java.util.HashMap ;
 import java.util.List ;
 import java.util.Map ;
-import java.util.Properties ;
 
 import org.apache.commons.io.FileUtils ;
 import org.apache.commons.lang.StringUtils ;
@@ -51,13 +49,10 @@ public class MOVMeaning {
     }
     
     private void findLines() {
-        int index=0 ;
         for( String key : meanings.keySet() ) {
             List<String> lines = new ArrayList<String>() ;
             findLineContainingWords( key, lines ) ;
             
-            //System.out.println( StringUtils.repeat( "-", 80 ) ) ;
-            //System.out.println( "=> " + key ) ;
             if( !lines.isEmpty() ) {
                 System.out.println( "@qa \"What is the meaning of `" + key + "` in the following sentences:" ) ;
                 System.out.println( "" ) ;
