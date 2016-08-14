@@ -8,7 +8,6 @@ public class Centrifugal {
     private static final double OMEGA    = 1 ;
     private static final double RADIUS   = 10 ;
     private static final double INTERVAL = 0.1 ;
-    private static final Point  ORIGIN   = new Point( 0, 0 ) ;
     
     private static final int NUM_ITER = 100 ;
     
