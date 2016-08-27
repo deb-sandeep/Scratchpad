@@ -110,12 +110,20 @@ public class PoemFIB {
     private void createLineGroups( List<String> lines ) {
         
         int numCycles = 0 ;
-        while( groups.size() < 50 ) {
+
+        while( groups.size() < lines.size()*2 ) {
             
             numCycles++ ;
             
-            int randomStartLine = (int)(Math.random()*lines.size()) ;
+            int randomStartLine = 0 ;
             int randomGroupLen  = 2 + (int)(Math.random()*3) ;
+            
+            if( numCycles >= lines.size() ) {
+                randomStartLine = (int)(Math.random()*lines.size()) ;
+            }
+            else {
+                randomStartLine = numCycles-1 ;
+            }
             
             if( randomStartLine + randomGroupLen >= lines.size() ) {
                 randomGroupLen = lines.size() - randomStartLine ;
@@ -176,6 +184,7 @@ public class PoemFIB {
     }
 
     public static void main( String[] args ) throws Exception {
+        System.out.println( "----------------------------------" ) ;
         PoemFIB driver = new PoemFIB( "/home/sandeep/temp/poem.txt" ) ;
         driver.initialize() ;
         driver.createFIBs() ;
