@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.jn;
+package com.sandy.scratchpad.jn.mov;
 
 import java.io.File ;
 import java.io.FileFilter ;
