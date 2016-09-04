@@ -72,8 +72,11 @@ public class ExerciseContentProcessor {
             else if( state == STATE_Q ) {
                 qLines.add( line ) ;
             }
-            else {
+            else if( state == STATE_A ){
                 aLines.add( line ) ;
+            }
+            else {
+                throw new RuntimeException( "FOund an illeagel state" ) ;
             }
         }
     }
@@ -95,7 +98,6 @@ public class ExerciseContentProcessor {
         if( curQ != null ) {
             associateAnswer( curQ ) ;
         }
-        
         outputProcessingResult() ;
     }
     

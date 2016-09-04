@@ -29,9 +29,9 @@ public class GrammarGen {
     
     private List<String> getExerciseTopics() {
         List<String> topics = new ArrayList<String>() ;
-        topics.add( "preposition" ) ;
-//        topics.add( "direct speech" ) ;
-//        topics.add( "indirect speech" ) ;
+        topics.add( "sequence" ) ;
+//        topics.add( "active" ) ;
+//        topics.add( "passive" ) ;
 //        topics.add( "indirect" ) ;
 //        topics.add( "direct " ) ;
         return topics ;
@@ -43,8 +43,11 @@ public class GrammarGen {
         StringBuilder buffer = new StringBuilder() ;
         for( ExerciseParser parser : exParsers ) {
             try {
-                buffer.append( parser.extractQuestions() ) ;
-                buffer.append( "\n\n" ) ;
+                String questions = parser.extractQuestions() ;
+                if( questions != null ) {
+                    buffer.append( parser.extractQuestions() ) ;
+                    buffer.append( "\n\n" ) ;
+                }
             }
             catch( Exception e ) {
                 log.error( "Could not process " + parser.getMeta().getUrl(), e ) ;

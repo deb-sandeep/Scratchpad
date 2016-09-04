@@ -15,7 +15,7 @@ public class ExerciseParser {
     private static Logger log = Logger.getLogger( ExerciseParser.class ) ;
     
     private ExerciseMetaData meta = null ;
-    private List<String> contentStringList = new ArrayList<String>() ;
+    private List<String> contentStringList = null ;
     
     public ExerciseParser( ExerciseMetaData meta ) {
         this.meta = meta ;
@@ -26,11 +26,14 @@ public class ExerciseParser {
     }
     
     public String extractQuestions() throws Exception {
+        
+        contentStringList = new ArrayList<>() ;
+        
         log.debug( "Loading questions from " + meta ) ;
         Document doc = Jsoup.parse( meta.getUrl(), 10000 ) ;
         
         log.debug( "Page loaded.. trying to parse" ) ;
-        Elements pList = doc.body().select( "div.entry-content p" ) ;
+        Elements pList = doc.body().select( "div.entry-content p, div.entry-content h3" ) ;
         
         log.debug( "Processing questions" ) ;
         boolean hasQuestions = false ; 
