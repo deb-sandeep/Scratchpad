@@ -48,12 +48,10 @@ public class ExerciseGen {
         for( File file : relevantFiles ) {
             
             String fileName = file.getName() ;
-            qMgr.buildQuestion( fileName.substring( 0, fileName.length()-4 ) ) ;
+            qMgr.buildImageMeta( fileName.substring( 0, fileName.length()-4 ) ) ;
         }
         
-        for( Question q : qMgr.getQuestions() ) {
-            log.debug( q.toString() ) ;
-        }
+        qMgr.createQuestions() ;
     }
     
     private File[] getRelevantImageFiles() {
