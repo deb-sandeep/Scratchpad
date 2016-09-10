@@ -9,9 +9,7 @@ public class QuestionGroup extends Question {
     private List<Question> questions = new ArrayList<Question>() ;
     
     public void addHeaderPart( ImgMeta part ) {
-        if( !super.isMetaSet ) {
-            super.extractMeta( part ) ;
-        }
+        imgMeta = ( imgMeta == null ) ? part : imgMeta ;
         this.headers.add( part ) ;
     }
     

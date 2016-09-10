@@ -33,9 +33,18 @@ public class QuestionManager {
     
     public void createQuestions() {
         for( ImgMeta meta : metaList ) {
-            log.debug( meta ) ;
+            String qId = meta.getQuestionId() ;
+            String gId = meta.getGroupId() ;
+            log.debug( qId + " :: " + gId );
+            
+            // TODO:
+            if( gId != null ) {
+                
+            }
+            else {
+                
+            }
         }
-        // TODO:
     }
     
     public List<ImgMeta> getImgMetaList() {

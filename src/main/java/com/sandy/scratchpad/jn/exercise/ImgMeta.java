@@ -14,6 +14,19 @@ public class ImgMeta implements Comparable<ImgMeta> {
         this.isExample = isExample ;
     }
     
+    public boolean isGroupedQuestion() {
+        return sequenceParts.length > 1 ;
+    }
+    
+    public String getGroupId() {
+        if( isGroupedQuestion() ) {
+            String id = getQuestionId() ;
+            id = id.substring( 0, id.lastIndexOf( '.' ) ) ;
+            return id ;
+        }
+        return null ;
+    }
+    
     public boolean isExample() {
         return isExample ;
     }
@@ -62,14 +75,13 @@ public class ImgMeta implements Comparable<ImgMeta> {
         this.isHeader = isHeader ;
     }
     
-    public String toString() {
+    public String getQuestionId() {
         StringBuilder buffer = new StringBuilder() ;
-        
-        if( isExample() ) {
+        if( isExample ) {
             buffer.append( "ex_" ) ;
         }
         else {
-            buffer.append( "Ex" ).append( getExerciseName() ).append( "_" ) ;
+            buffer.append( "Ex" ).append( exerciseName ).append( '_' ) ; 
         }
         
         for( int i=0; i<sequenceParts.length; i++ ) {
@@ -78,6 +90,12 @@ public class ImgMeta implements Comparable<ImgMeta> {
                 buffer.append( "." ) ;
             }
         }
+        
+        return buffer.toString() ;
+    }
+    
+    public String toString() {
+        StringBuilder buffer = new StringBuilder( getQuestionId() ) ;
         
         if( isPart() ) {
             buffer.append( "(" ).append( this.partNumber ).append( ")" ) ;

@@ -5,19 +5,14 @@ import java.util.List ;
 
 public class Question {
 
-    protected boolean isMetaSet = false ;
+    protected ImgMeta imgMeta = null ;
     
-    private boolean       isExample     = false ;
-    private String        exerciseName  = null ;
-    private int[]         seqParts      = null ;
     private QuestionGroup group         = null ;
     private List<ImgMeta> questionParts = new ArrayList<ImgMeta>() ;
     private List<ImgMeta> answerParts   = new ArrayList<ImgMeta>() ;
     
     public void addQuestionPart( ImgMeta part ) {
-        if( !isMetaSet ) {
-            extractMeta( part ) ;
-        }
+        imgMeta = ( imgMeta == null ) ? part : imgMeta ;
         this.questionParts.add( part ) ;
     }
     
@@ -34,22 +29,12 @@ public class Question {
     }
     
     public void addAnswerPart( ImgMeta part ) {
-        if( !isMetaSet ) {
-            extractMeta( part ) ;
-        }
+        imgMeta = ( imgMeta == null ) ? part : imgMeta ;
         this.answerParts.add( part ) ;
     }
     
-    protected void extractMeta( ImgMeta part ) {
-        isMetaSet = true ;
-        
-        isExample    = part.isExample() ;
-        exerciseName = part.getExerciseName() ;
-        seqParts     = part.getSequenceParts() ;
-    }
-    
     public boolean isExample() {
-        return isExample ;
+        return imgMeta.isExample() ;
     }
     
     public boolean isExercise() {
@@ -57,10 +42,14 @@ public class Question {
     }
     
     public String getExerciseName() {
-        return this.exerciseName ;
+        return imgMeta.getExerciseName() ;
     }
     
     public int[] getSequenceParts() {
-        return this.seqParts ;
+        return imgMeta.getSequenceParts() ;
+    }
+    
+    public String getId() {
+        return imgMeta.getQuestionId() ;
     }
 }
