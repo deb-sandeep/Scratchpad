@@ -6,15 +6,11 @@ import java.util.List ;
 public class Question {
 
     protected ImgMeta imgMeta = null ;
+    protected boolean processed = false ;
     
     private QuestionGroup group         = null ;
     private List<ImgMeta> questionParts = new ArrayList<ImgMeta>() ;
     private List<ImgMeta> answerParts   = new ArrayList<ImgMeta>() ;
-    
-    public void addQuestionPart( ImgMeta part ) {
-        imgMeta = ( imgMeta == null ) ? part : imgMeta ;
-        this.questionParts.add( part ) ;
-    }
     
     public boolean isPartOfGroup() {
         return this.group != null ;
@@ -26,11 +22,6 @@ public class Question {
     
     public void setGroup( QuestionGroup group ) {
         this.group = group ;
-    }
-    
-    public void addAnswerPart( ImgMeta part ) {
-        imgMeta = ( imgMeta == null ) ? part : imgMeta ;
-        this.answerParts.add( part ) ;
     }
     
     public boolean isExample() {
@@ -51,5 +42,31 @@ public class Question {
     
     public String getId() {
         return imgMeta.getQuestionId() ;
+    }
+    
+    public void buildQuestion( ImgMeta meta ) {
+        if( this.imgMeta == null ) this.imgMeta = meta ;
+        if( meta.isAnswer() ) {
+            answerParts.add( meta ) ;
+        }
+        else {
+            questionParts.add( meta ) ;
+        }
+    }
+    
+    public List<ImgMeta> getQuestionParts() {
+        return this.questionParts ;
+    }
+    
+    public List<ImgMeta> getAnswerParts() {
+        return this.answerParts ;
+    }
+    
+    public void setProcessed( boolean processed ) {
+        this.processed = true ;
+    }
+    
+    public boolean isProcessed() {
+        return this.processed ;
     }
 }

@@ -2,7 +2,9 @@ package com.sandy.scratchpad.jn.exercise;
 
 import java.util.ArrayList ;
 import java.util.Collections ;
+import java.util.LinkedHashMap ;
 import java.util.List ;
+import java.util.Map ;
 import java.util.regex.Matcher ;
 import java.util.regex.Pattern ;
 
@@ -15,6 +17,8 @@ public class QuestionManager {
     private static Pattern pattern = Pattern.compile( "([0-9]+(\\.[0-9]+)*)(\\(([0-9]+)\\))?(Ans|Hdr)?" ) ;
     
     private List<ImgMeta> metaList = new ArrayList<ImgMeta>() ;
+    
+    private Map<String, Exercise> exerciseMap = new LinkedHashMap<String, Exercise>() ;
     
     public void buildImageMeta( String imageName ) {
         
@@ -31,20 +35,27 @@ public class QuestionManager {
         Collections.sort( metaList );
     }
     
-    public void createQuestions() {
+    public Map<String, Exercise> createQuestions() {
+        
         for( ImgMeta meta : metaList ) {
-            String qId = meta.getQuestionId() ;
-            String gId = meta.getGroupId() ;
-            log.debug( qId + " :: " + gId );
+            String exerciseName = null ;
+            exerciseName = (meta.isExample()) ? "ex_" : meta.getExerciseName() ; 
             
-            // TODO:
-            if( gId != null ) {
-                
-            }
-            else {
-                
-            }
+            Exercise exercise = getExercise( exerciseName ) ;
+            exercise.buildQuestion( meta ) ; 
         }
+        
+        return this.exerciseMap ;
+    }
+    
+    private Exercise getExercise( String eId ) {
+        
+        Exercise ex = exerciseMap.get( eId ) ;
+        if( ex == null ) {
+            ex = new Exercise( eId ) ;
+            exerciseMap.put( eId, ex ) ;
+        }
+        return ex ;
     }
     
     public List<ImgMeta> getImgMetaList() {

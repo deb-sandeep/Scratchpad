@@ -19,10 +19,14 @@ public class ImgMeta implements Comparable<ImgMeta> {
     }
     
     public String getGroupId() {
+        
         if( isGroupedQuestion() ) {
             String id = getQuestionId() ;
             id = id.substring( 0, id.lastIndexOf( '.' ) ) ;
             return id ;
+        }
+        else if( isHeader ) {
+            return getQuestionId() ;
         }
         return null ;
     }
