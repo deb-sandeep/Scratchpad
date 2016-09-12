@@ -184,9 +184,8 @@ public class ExerciseGen {
         buffer.append( "\"\n" ) ;
         buffer.append( "answer\n\"" ) ;
         
-        log.debug( "........................." ) ;
         if( q.getAnswerParts().size() == 0 ) {
-            buffer.append( "TODO: Answer for " + q.getId() ) ;
+            buffer.append( "TODO" ) ;
         }
         else {
             for( int i=0; i<q.getAnswerParts().size(); i++ ) {
@@ -241,9 +240,9 @@ public class ExerciseGen {
         String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes/" ;
         String JN_CLS_DIR       = "Class-9" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "10 - Midpoint Theorem" ;
-        String JN_BASE_CHP_NAME = "Midpoint Theorem" ;
-        int    JN_CHAPTER_NUM   = 10 ;
+        String JN_CHAPTER       = "14 - Circles" ;
+        String JN_BASE_CHP_NAME = "Circles" ;
+        int    JN_CHAPTER_NUM   = 14 ;
         int    JN_SUB_CHP_START = 1 ;
 
         File rootJNDir = new File( JN_ROOT_DIR ) ;
