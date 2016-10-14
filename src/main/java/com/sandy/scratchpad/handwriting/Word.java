@@ -19,8 +19,8 @@ public class Word {
     private static Map<ScoreType, String> CHAR_TYPE_MAP = new HashMap<Word.ScoreType, String>() ;
     static {
         CHAR_TYPE_MAP.put( ScoreType.ONE_PLUS            , "aceiosxmnruvw" ) ;
-        CHAR_TYPE_MAP.put( ScoreType.ONE_PLUS_O          , "aceiosx" ) ;
-        CHAR_TYPE_MAP.put( ScoreType.ONE_PLUS_I          , "mnruvw" ) ;
+        CHAR_TYPE_MAP.put( ScoreType.ONE_PLUS_O          , "aceosx" ) ;
+        CHAR_TYPE_MAP.put( ScoreType.ONE_PLUS_I          , "mnriuvw" ) ;
         CHAR_TYPE_MAP.put( ScoreType.TWO_PLUS            , "dt" ) ;
         CHAR_TYPE_MAP.put( ScoreType.THREE_PLUS          , "fhklb" ) ;
         CHAR_TYPE_MAP.put( ScoreType.TWO_MINUS           , "fgjyz" ) ;
