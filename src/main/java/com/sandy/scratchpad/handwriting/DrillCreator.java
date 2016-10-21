@@ -12,6 +12,7 @@ import java.util.Set ;
 import java.util.TreeSet ;
 
 import org.apache.commons.io.IOUtils ;
+import org.apache.commons.lang.StringUtils ;
 import org.apache.log4j.Logger ;
 
 import com.sandy.scratchpad.handwriting.Word.ScoreType ;
@@ -61,9 +62,9 @@ public class DrillCreator {
             entry.getValue().sort( new Comparator<Word>() {
                 @Override
                 public int compare( Word w1, Word w2 ) {
-                    int scoreW1 = w1.getScore( entry.getKey() ) ;
-                    int scoreW2 = w2.getScore( entry.getKey() ) ;
-                    return scoreW2 - scoreW1 ;
+                    float scoreW1 = w1.getScore( entry.getKey() ) ;
+                    float scoreW2 = w2.getScore( entry.getKey() ) ;
+                    return (int)((scoreW2 - scoreW1)*100) ;
                 }
             } );
         }
@@ -93,10 +94,10 @@ public class DrillCreator {
                     if( validTypes.contains( entry.getKey()  ) ) {
                         if( !entry.getValue().isEmpty() ) {
                             keepRunning = true ;
-                            Word word = entry.getValue().remove( 0 ) ;
-                            int score = word.getScore( entry.getKey() ) ;
+                            Word  word  = entry.getValue().remove( 0 ) ;
+                            float score = word.getScore( entry.getKey() ) ;
                             
-                            if( score > 2 ) {
+                            if( score > 30 ) {
                                 selectedWords.add( word.getWord() ) ;
                                 numWords++ ;
                                 if( numWords == 44 ) break ;
@@ -107,23 +108,24 @@ public class DrillCreator {
             }
             
             if( !selectedWords.isEmpty() ) {
-                log.debug( "--------------------------------------------------" ) ;
+                log.debug( StringUtils.center( validTypes.toString(), 50, '-' ) ) ;
                 String[] selWords = selectedWords.toArray( new String[]{} ) ;
                 for( int i=0; i<selWords.length; i+=2 ) {
                     String word1 = selWords[i] ;
                     String word2 = ( i <selWords.length-1 ) ? selWords[i+1] : "" ;
-                    log.debug( word1 + "  " + word2 ) ;
+                    log.debug( StringUtils.rightPad( word1, 17 ) + "  " + word2 ) ;
                 }
                 
                 if( batchNum == maxNumBatches ) {
                     break ;
                 }
+                batchNum++ ;
             }
         }
     }
     
     public static void main( String[] args ) throws Exception {
-        DrillCreator drillCreator = new DrillCreator( "/15charwords.txt" ) ;
-        drillCreator.createDrill( 1, ScoreType.ONE_PLUS_O ) ;
+        DrillCreator drillCreator = new DrillCreator( "/wordlist.txt" ) ;
+        drillCreator.createDrill( 5, ScoreType.TWO_PLUS ) ;
     }
 }

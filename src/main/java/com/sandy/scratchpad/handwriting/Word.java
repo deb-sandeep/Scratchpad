@@ -3,7 +3,11 @@ package com.sandy.scratchpad.handwriting;
 import java.util.HashMap ;
 import java.util.Map ;
 
+import org.apache.log4j.Logger ;
+
 public class Word {
+    
+    static Logger log = Logger.getLogger( Word.class ) ;
     
     public static enum ScoreType {
         ONE_PLUS,
@@ -29,25 +33,25 @@ public class Word {
     }
     
     private String word = null ;
-    private Map<ScoreType, Integer> scoreMap = new HashMap<>() ;
+    private Map<ScoreType, Float> scoreMap = new HashMap<>() ;
     
     public Word( String word ) {
         
         this.word = word ;
         
-        scoreMap.put( ScoreType.ONE_PLUS            , 0 ) ;
-        scoreMap.put( ScoreType.ONE_PLUS_O          , 0 ) ;
-        scoreMap.put( ScoreType.ONE_PLUS_I          , 0 ) ;
-        scoreMap.put( ScoreType.TWO_PLUS            , 0 ) ;
-        scoreMap.put( ScoreType.THREE_PLUS          , 0 ) ;
-        scoreMap.put( ScoreType.TWO_MINUS           , 0 ) ;
-        scoreMap.put( ScoreType.THREE_PLUS_TWO_MINUS, 0 ) ;
-        scoreMap.put( ScoreType.ONE_MINUS           , 0 ) ;
+        scoreMap.put( ScoreType.ONE_PLUS            , 0.0f ) ;
+        scoreMap.put( ScoreType.ONE_PLUS_O          , 0.0f ) ;
+        scoreMap.put( ScoreType.ONE_PLUS_I          , 0.0f ) ;
+        scoreMap.put( ScoreType.TWO_PLUS            , 0.0f ) ;
+        scoreMap.put( ScoreType.THREE_PLUS          , 0.0f ) ;
+        scoreMap.put( ScoreType.TWO_MINUS           , 0.0f ) ;
+        scoreMap.put( ScoreType.THREE_PLUS_TWO_MINUS, 0.0f ) ;
+        scoreMap.put( ScoreType.ONE_MINUS           , 0.0f ) ;
 
         computeScore() ;
     }
     
-    public int getScore( ScoreType scoreType ) {
+    public float getScore( ScoreType scoreType ) {
         return scoreMap.get( scoreType ) ;
     }
     
@@ -60,11 +64,14 @@ public class Word {
         String lcWord = this.word.toLowerCase() ;
         for( ScoreType scoreType : ScoreType.values() ) {
             String testString = CHAR_TYPE_MAP.get( scoreType ) ;
+            int absScore = 0 ;
             for( char c : lcWord.toCharArray() ) {
                 if( testString.indexOf( c ) != -1 ) {
-                    scoreMap.put( scoreType, scoreMap.get( scoreType ) + 1 ) ;
+                    absScore++ ;
                 }
             }
+            float score = ((float)absScore/lcWord.length())*100 ;
+            scoreMap.put( scoreType, score ) ;
         }
     }
     
