@@ -124,6 +124,6 @@ public class DrillCreator {
     
     public static void main( String[] args ) throws Exception {
         DrillCreator drillCreator = new DrillCreator( "/15charwords.txt" ) ;
-        drillCreator.createDrill( 1, ScoreType.ONE_PLUS_O ) ;
+        drillCreator.createDrill( 1, ScoreType.ONE_PLUS_I, ScoreType.ONE_PLUS_O ) ;
     }
 }
