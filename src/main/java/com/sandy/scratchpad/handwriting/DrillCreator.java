@@ -126,6 +126,6 @@ public class DrillCreator {
     
     public static void main( String[] args ) throws Exception {
         DrillCreator drillCreator = new DrillCreator( "/wordlist.txt" ) ;
-        drillCreator.createDrill( 5, ScoreType.TWO_PLUS ) ;
+        drillCreator.createDrill( 5, ScoreType.TWO_MINUS, ScoreType.THREE_PLUS ) ;
     }
 }
