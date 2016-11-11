@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.grammarparser;
+package com.sandy.scratchpad.jn.grammarparser;
 
 import java.io.File ;
 import java.util.ArrayList ;
