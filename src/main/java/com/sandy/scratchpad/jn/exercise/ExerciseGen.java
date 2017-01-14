@@ -240,9 +240,9 @@ public class ExerciseGen {
         String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes/" ;
         String JN_CLS_DIR       = "Class-10" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "07 - Ratio and Proportion" ;
-        String JN_BASE_CHP_NAME = "Ratio and Proportion" ;
-        int    JN_CHAPTER_NUM   = 7 ;
+        String JN_CHAPTER       = "08 - Remainder and Factor Theorems" ;
+        String JN_BASE_CHP_NAME = "Remainder and Factor Theorems" ;
+        int    JN_CHAPTER_NUM   = 8 ;
         int    JN_SUB_CHP_START = 1 ;
 
         File rootJNDir = new File( JN_ROOT_DIR ) ;
