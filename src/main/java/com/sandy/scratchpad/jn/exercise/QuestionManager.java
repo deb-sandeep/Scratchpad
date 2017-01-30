@@ -38,6 +38,7 @@ public class QuestionManager {
     public Map<String, Exercise> createQuestions() {
         
         for( ImgMeta meta : metaList ) {
+            
             String exerciseName = null ;
             exerciseName = (meta.isExample()) ? "ex_" : meta.getExerciseName() ; 
             
