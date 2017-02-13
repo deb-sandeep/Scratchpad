@@ -238,11 +238,11 @@ public class ExerciseGen {
     public static void main( String[] args ) throws Exception {
         
         String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes/" ;
-        String JN_CLS_DIR       = "Class-9" ;
+        String JN_CLS_DIR       = "Class-10" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "17 - Mensuration" ;
-        String JN_BASE_CHP_NAME = "Mensuration" ;
-        int    JN_CHAPTER_NUM   = 17 ;
+        String JN_CHAPTER       = "200 - Cylinders" ;
+        String JN_BASE_CHP_NAME = "Cylinders" ;
+        int    JN_CHAPTER_NUM   = 200 ;
         int    JN_SUB_CHP_START = 1 ;
 
         File rootJNDir = new File( JN_ROOT_DIR ) ;
