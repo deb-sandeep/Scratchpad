@@ -83,11 +83,11 @@ public class PoemFIB {
         void generateFIB() {
             System.out.println( "@fib \"" ) ;
             for( String qLine : qLines ) {
-                System.out.println( "### " + qLine ) ;
+                System.out.println( "### " + qLine.replaceAll( "\"", "\\\\\\\"" ) ) ;
             }
             System.out.println( "\"" ) ;
             for( String answer : answers ) {
-                System.out.println( "\"" + answer + "\"" ) ;
+                System.out.println( "\"" + answer.replaceAll( "\"", "\\\\\\\"" ) + "\"" ) ;
             }
         }
     }
