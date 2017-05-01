@@ -82,8 +82,7 @@ public class ExerciseGen {
                 if( !file.isDirectory() ) {
                     
                     if( name.startsWith( "Ex" ) || 
-                        name.startsWith( "ex_" ) ||
-                        name.endsWith( ".png" ) ) {
+                        name.startsWith( "ex_" ) ) {
                         return true ;
                     }
                     else if( name.endsWith( ".png" ) ) {
@@ -237,13 +236,13 @@ public class ExerciseGen {
 
     public static void main( String[] args ) throws Exception {
         
-        String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes/" ;
+        String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-X" ;
         String JN_CLS_DIR       = "Class-10" ;
-        String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "02 - Sales Tax and Value Added Tax" ;
-        String JN_BASE_CHP_NAME = "ST and VAT" ;
-        int    JN_CHAPTER_NUM   = 2 ;
-        int    JN_SUB_CHP_START = 1 ;
+        String JN_SUBJECT       = "Physics" ;
+        String JN_CHAPTER       = "08 - Current Electricity" ;
+        String JN_BASE_CHP_NAME = "Current Electricity" ;
+        int    JN_CHAPTER_NUM   = 8 ;
+        int    JN_SUB_CHP_START = 2 ;
 
         File rootJNDir = new File( JN_ROOT_DIR ) ;
         File clsJNDir  = new File( rootJNDir, JN_CLS_DIR ) ;
