@@ -15,7 +15,7 @@ public class MOVMeaning {
 
     private static final Logger log = Logger.getLogger( MOVMeaning.class ) ;
     
-    private static File JN_MOV_DIR = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes/Class-9/Literature - MoV" ) ;
+    private static File JN_MOV_DIR = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-X/Class-10/Literature - MoV" ) ;
     
     private File folder = null ;
     private File textFile = null ;
@@ -243,8 +243,8 @@ public class MOVMeaning {
     }
     
     public static void main( String[] args ) throws Exception {
-        
-        MOVMeaning driver = new MOVMeaning( 16, 4, 2, 9 ) ;
+        // int chpNum, int subChpNum, int actNum, int sceneNum
+        MOVMeaning driver = new MOVMeaning( 17, 3, 3, 1 ) ;
         driver.findLines() ;
     }
 }

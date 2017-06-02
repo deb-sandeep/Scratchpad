@@ -325,11 +325,11 @@ public class ExerciseGen {
         
         String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-X" ;
         String JN_CLS_DIR       = "Class-10" ;
-        String JN_SUBJECT       = "Physics" ;
-        String JN_CHAPTER       = "08 - Current Electricity" ;
-        String JN_BASE_CHP_NAME = "Current Electricity" ;
-        int    JN_CHAPTER_NUM   = 8 ;
-        int    JN_SUB_CHP_START = 2 ;
+        String JN_SUBJECT       = "XXXXXXMathematics" ;
+        String JN_CHAPTER       = "03 - Banking" ;
+        String JN_BASE_CHP_NAME = "Recurring Deposit" ;
+        int    JN_CHAPTER_NUM   = 3 ;
+        int    JN_SUB_CHP_START = 1 ;
 
         File rootJNDir = new File( JN_ROOT_DIR ) ;
         File clsJNDir  = new File( rootJNDir, JN_CLS_DIR ) ;

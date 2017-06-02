@@ -53,9 +53,12 @@ public class MoVInterpret {
 
         String question = buildQuestion( original ) ;
         String answer   = buildAnswer( interpretation ) ;
-        System.out.println( question ) ;
-        System.out.println( answer ) ;
-        System.out.println() ;
+        
+        if( !answer.equals( "\"Modern Text\"" ) ) {
+            System.out.println( question ) ;
+            System.out.println( answer ) ;
+            System.out.println() ;
+        }
     }
     
     private String buildQuestion( Element original ) {
@@ -107,6 +110,6 @@ public class MoVInterpret {
     
     public static void main( String[] args ) throws Exception {
         MoVInterpret driver = new MoVInterpret() ;
-        driver.driveFromURL( 98, 104 ) ; 
+        driver.driveFromURL( 118, 140 ) ; 
     }
 }
