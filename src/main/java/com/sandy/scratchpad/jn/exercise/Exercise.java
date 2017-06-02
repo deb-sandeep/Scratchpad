@@ -14,13 +14,25 @@ public class Exercise {
     
     private Map<String, Question> questionMap = new LinkedHashMap<String, Question>() ;
     private String name = null ;
+    private String bookName = null ;
+    private String chapterName = null ;
     
-    public Exercise( String eId ) {
+    public Exercise( String bookName, String chapterName, String eId ) {
+        this.bookName = bookName ;
+        this.chapterName = chapterName ;
         this.name = eId ;
     }
     
-    public String getName() {
+    public String getExId() {
         return this.name ;
+    }
+    
+    public String getBookName() {
+        return this.bookName ;
+    }
+    
+    public String getChapterName() {
+        return this.chapterName ;
     }
     
     public void buildQuestion( ImgMeta meta ) {
