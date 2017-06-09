@@ -14,13 +14,12 @@ public class ExerciseGen {
     private static final Logger log = Logger.getLogger( ExerciseGen.class ) ;
     
     // jnFolder is the path till the chapter - not the root JN folder!
-    private File chpFolder = null ;
-    private String baseChpName = null ;
-    private int  chapterNumber = 0 ;
-    private int  subChapterStartNumber = 0 ;
-    private String subjectName = null ;
-    
-    private QuestionManager qMgr = new QuestionManager() ;
+    private File   chpFolder             = null ;
+    private String baseChpName           = null ;
+    private int    chapterNumber         = 0 ;
+    private int    subChapterStartNumber = 0 ;
+    private String subjectName           = null ;
+    private int    nextSubChapterNumber  = 0 ;
     
     public ExerciseGen( File chpFolder, 
                         String subjectName,
@@ -35,6 +34,7 @@ public class ExerciseGen {
         this.baseChpName = baseChpName ;
         this.chapterNumber = chapterNumber ;
         this.subChapterStartNumber = subChapterStartNumber ;
+        this.nextSubChapterNumber = this.subChapterStartNumber ;
     }
     
     private void validateInputFolder( File dir ) {
@@ -52,9 +52,67 @@ public class ExerciseGen {
         }
     }
     
-    public void generateExercises() throws Exception {
+    public void generateExercisesForBooks() throws Exception {
         
-        File[] relevantFiles = getRelevantImageFiles() ;
+        File booksFolder = new File( this.chpFolder, "img/books" ) ;
+        if( !booksFolder.exists() ) {
+            return ;
+        }
+        
+        File[] potentialBookFolders = booksFolder.listFiles() ;
+        if( potentialBookFolders == null ||
+            potentialBookFolders.length == 0 ) {
+            return ;
+        }
+        
+        for( File potentialBookFolder : potentialBookFolders ) {
+            if( potentialBookFolder.isDirectory() ) {
+                processPotentialBookFolder( potentialBookFolder ) ;
+            }
+        }
+    }
+    
+    private void processPotentialBookFolder( File bookFolder ) 
+        throws Exception {
+        
+        String bookName = bookFolder.getName() ;
+        File[] potentialChapters = bookFolder.listFiles() ;
+        
+        if( potentialChapters == null || 
+            potentialChapters.length == 0 ) {
+            return ;
+        }
+        
+        for( File potentialChapter : potentialChapters ) {
+            if( potentialChapter.isDirectory() ) {
+                processPotentialBookChapter( bookName, potentialChapter ) ;
+            }
+        }
+    }
+    
+    private void processPotentialBookChapter( String bookName, File chapterFolder )
+        throws Exception {
+        
+        String chapterName = chapterFolder.getName() ;
+        generateExercises( bookName, chapterName ) ;
+    }
+    
+    public void generateExercises( String bookName, String chapterName ) 
+        throws Exception {
+        
+        
+        File imgFolder = null ;
+        if( bookName == null ) {
+            imgFolder = new File( this.chpFolder, "img" ) ;
+        }
+        else {
+            imgFolder = new File( this.chpFolder, 
+                                  "img/books/" + bookName + "/" + chapterName ) ;
+        }
+        
+        File[] relevantFiles = getRelevantImageFiles( imgFolder ) ;
+        QuestionManager qMgr = new QuestionManager( bookName, chapterName ) ;
+        
         for( File file : relevantFiles ) {
             
             String fileName = file.getName() ;
@@ -62,18 +120,21 @@ public class ExerciseGen {
         }
         
         Map<String, Exercise> exMap = qMgr.createQuestions() ;
-        int subChpNum = this.subChapterStartNumber ;
         for( Exercise ex : exMap.values() ) {
             
-            log.debug( "Generating JN for exercise " + ex.getName() );
-            generateJNForExercise( ex, subChpNum ) ;
-            subChpNum++ ;
+            String id = ex.getExId() ;
+            if( ex.getBookName() != null ) {
+                id += " (" + ex.getBookName() + ":" + ex.getChapterName() + ")" ;
+            }
+            
+            log.debug( "Generating JN for exercise " + id );
+            generateJNForExercise( ex ) ;
+            nextSubChapterNumber++ ;
         }
     }
     
-    private File[] getRelevantImageFiles() {
+    private File[] getRelevantImageFiles( File imgDir ) {
         
-        File imgDir = new File( this.chpFolder, "img" ) ;
         File[] relevantFiles = imgDir.listFiles( new FilenameFilter() {
             
             public boolean accept( File dir, String name ) {
@@ -101,7 +162,7 @@ public class ExerciseGen {
         for( Entry<String, Exercise> entry : exMap.entrySet() ) {
             log.debug( "===================================================" ) ;
             Exercise ex = entry.getValue() ;
-            log.debug( ex.getName() ) ;
+            log.debug( ex.getExId() ) ;
             
             for( Question baseQ : ex.getQuestions() ) {
                 if( baseQ instanceof QuestionGroup ) {
@@ -138,21 +199,21 @@ public class ExerciseGen {
         }
     }
     
-    private void generateJNForExercise( Exercise ex, int subChpNum ) 
+    private void generateJNForExercise( Exercise ex ) 
         throws Exception {
         
-        File   chpFile = getJNExFile( ex, subChpNum ) ;
-        String fileHdr = getJNFileHeader( ex, subChpNum ) ;
+        File   chpFile = getJNExFile( ex ) ;
+        String fileHdr = getJNFileHeader( ex ) ;
         
         FileUtils.writeStringToFile( chpFile, fileHdr, false ) ;
         
         List<Question> questions = ex.getQuestionsForPrinting() ;
         for( Question q : questions ) {
-            writeQuestionToFile( chpFile, q ) ; 
+            writeQuestionToFile( ex, chpFile, q ) ; 
         }
     }
     
-    private void writeQuestionToFile( File file, Question q ) 
+    private void writeQuestionToFile( Exercise ex, File file, Question q ) 
         throws Exception {
         
         int marks = q.isPartOfGroup() ? 75 : 100 ;
@@ -167,7 +228,7 @@ public class ExerciseGen {
             
             for( int i=0; i<hdrs.size(); i++ ) {
                 ImgMeta hdr = hdrs.get( i ) ;
-                buffer.append( "{{@img " + hdr + ".png}}" ) ;
+                buffer.append( getTaggedImage( ex, hdr ) ) ;
                 buffer.append( "  \n" ) ;
             }
             buffer.append( "\n" ) ;
@@ -175,7 +236,7 @@ public class ExerciseGen {
         
         for( int i=0; i<q.getQuestionParts().size(); i++ ) {
             ImgMeta qPart = q.getQuestionParts().get( i ) ;
-            buffer.append( "{{@img " + qPart + ".png}}" ) ;
+            buffer.append( getTaggedImage( ex, qPart ) ) ;
             if( i < q.getQuestionParts().size()-1 ) {
                 buffer.append( "  \n" ) ;
             }
@@ -189,7 +250,7 @@ public class ExerciseGen {
         else {
             for( int i=0; i<q.getAnswerParts().size(); i++ ) {
                 ImgMeta aPart = q.getAnswerParts().get( i ) ;
-                buffer.append( "{{@img " + aPart + ".png}}" ) ;
+                buffer.append( getTaggedImage( ex, aPart ) ) ;
                 if( i < q.getAnswerParts().size()-1 ) {
                     buffer.append( "  \n" ) ;
                 }
@@ -200,36 +261,62 @@ public class ExerciseGen {
         FileUtils.writeStringToFile( file, buffer.toString(), true ) ;
     }
     
-    private File getJNExFile( Exercise ex, int subChpNum ) {
+    private String getTaggedImage( Exercise ex, ImgMeta imgMeta ) {
         
-        String exName = ex.getName() ;
+        if( ex.getBookName() == null ) {
+            return "{{@img " + imgMeta + ".png}}" ;
+        }
+        else {
+            return "{{@img books/" + ex.getBookName() + "/" + 
+                                     ex.getChapterName() + "/" + 
+                                     imgMeta + ".png}}" ;
+        }
+    }
+    
+    private File getJNExFile( Exercise ex ) {
+        
+        String exName = ex.getExId() ;
         if( exName.equals( "ex_" ) ) {
             exName = "Examples" ;
         }
         
         StringBuilder buffer = new StringBuilder() ;
-        buffer.append( this.chapterNumber + "." + subChpNum ).append( " - " )
-              .append( this.baseChpName )
-              .append( " (ex-" )
+        buffer.append( this.chapterNumber + "." + nextSubChapterNumber )
+              .append( " - " )
+              .append( this.baseChpName ) ;
+        
+        if( ex.getBookName() != null ) {
+            buffer.append( " [" + ex.getBookName() + "_" + ex.getChapterName() + "]" ) ;
+        }
+              
+        buffer.append( " (ex-" )
               .append( exName )
               .append( ").jn" ) ;
         
         return new File( this.chpFolder, buffer.toString() ) ;
     }
     
-    private String getJNFileHeader( Exercise ex, int subChpNum ) {
+    private String getJNFileHeader( Exercise ex ) {
         
-        String exName = ex.getName() ;
+        String exName = ex.getExId() ;
         if( exName.equals( "ex_" ) ) {
             exName = "Examples" ;
+        }
+        
+        String chapterName = baseChpName ;
+        
+        if( ex.getBookName() != null ) {
+            chapterName += " [" + 
+                           ex.getBookName() + "_" + ex.getChapterName() + 
+                           "]" ;
         }
         
         StringBuilder buffer = new StringBuilder() ;
         buffer.append( "@exercise_bank\n\n" )
               .append( "subject \"").append( subjectName ).append( "\"\n" )
-              .append( "chapterNumber " + chapterNumber + "." + subChpNum + "\n" )
-              .append( "chapterName \"" + baseChpName +  " (ex-" + exName + ")\"\n" )
-              .append( "\n\n" ) ;
+              .append( "chapterNumber " + chapterNumber + "." + nextSubChapterNumber + "\n" )
+              .append( "chapterName \"" + chapterName +  " (ex-" + exName + ")\"\n" )
+              .append( "\n" ) ;
               
         return buffer.toString() ;
     }
@@ -254,6 +341,7 @@ public class ExerciseGen {
                                            JN_BASE_CHP_NAME, 
                                            JN_CHAPTER_NUM, 
                                            JN_SUB_CHP_START ) ;
-        gen.generateExercises() ;
+        gen.generateExercises( null, null ) ;
+        gen.generateExercisesForBooks() ;
     }
 }
