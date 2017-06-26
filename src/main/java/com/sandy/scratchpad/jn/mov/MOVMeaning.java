@@ -244,7 +244,7 @@ public class MOVMeaning {
     
     public static void main( String[] args ) throws Exception {
         // int chpNum, int subChpNum, int actNum, int sceneNum
-        MOVMeaning driver = new MOVMeaning( 17, 3, 3, 1 ) ;
+        MOVMeaning driver = new MOVMeaning( 18, 4, 3, 2 ) ;
         driver.findLines() ;
     }
 }
