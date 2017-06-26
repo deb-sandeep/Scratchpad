@@ -20,4 +20,10 @@ public class OperLookup extends HashMap<String, String> {
         super.put( "Y",   "Indirect address registers (Y=R29:R28)" ) ;
         super.put( "Z",   "Indirect address registers (Z=R31:R30)" ) ;        
     }
+    
+    public String get( String input ) {
+        input = input.replace( "+", "" ) ;
+        input = input.replace( "-", "" ) ;
+        return super.get( input ) ;
+    }
 }

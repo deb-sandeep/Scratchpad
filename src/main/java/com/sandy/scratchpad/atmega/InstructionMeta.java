@@ -3,6 +3,7 @@ package com.sandy.scratchpad.atmega;
 import java.net.URL ;
 
 import org.apache.commons.io.IOUtils ;
+import org.apache.commons.lang.StringUtils ;
 import org.apache.log4j.Logger ;
 import org.jsoup.Jsoup ;
 import org.jsoup.nodes.Document ;
@@ -20,7 +21,6 @@ public class InstructionMeta {
     public String   example         = "" ;
     public String   operation       = null ;
     public String[] flags           = null ;
-    public int      cycles          = 1 ;
 
     public InstructionMeta( Elements cells ) throws Exception {
         
@@ -29,16 +29,18 @@ public class InstructionMeta {
         description = cells.get( 2 ).text() ;
         operation   = cells.get( 3 ).text() ;
         flags       = cells.get( 4 ).text().split( "," ) ;
-        cycles      = Integer.parseInt( cells.get( 5 ).text() ) ;
+        
+        mnemonic = mnemonic.replace( '\u00a0', ' ' ).trim() ;
+        for( int i=0; i<operands.length; i++ ) {
+            operands[i] = operands[i].replace( '\u00a0', ' ' ).trim() ;
+        }
         
         populateDetails() ;
     }
     
     private void populateDetails() throws Exception {
         
-        String pageName = mnemonic.replace( '\u00a0', ' ' ).trim() + ".html" ;
-        
-        URL url = new URL( "http://avr.8b.cz/asmhelp/Html/" + pageName ) ;
+        URL url = new URL( "http://avr.8b.cz/asmhelp/Html/" + mnemonic + ".html" ) ;
         String content = IOUtils.toString( url.openStream() ) ;
         content = sanitizeContent( content ) ;
         
@@ -64,14 +66,30 @@ public class InstructionMeta {
             longDescription += section.text() ;
             longDescription += "\n\n" ;
         }
-        longDescription = longDescription.trim() ;
+        longDescription = longDescription.trim().replace( "\r\n", " " ) ;
     }
     
     private void populateExample( Element body ) {
         
         Elements codeLines = body.select( "p.Code[style*=monospace]" ) ;
+        if( codeLines.isEmpty() ) {
+            codeLines = body.select( "p.code[style*=40px]" ) ;
+        }
         for( Element codeLine : codeLines ) {
-            example += codeLine.text() ;
+            
+            String   text  = codeLine.text() ;
+            String[] parts = text.split( ";" ) ;
+            
+            String fmtLine = null ;
+            if( parts.length > 1 ) {
+                fmtLine = StringUtils.rightPad( parts[0].trim(), 30 ) ;
+                fmtLine += "; " + parts[1].trim() ;
+            }
+            else {
+                fmtLine = parts[0].trim() ;
+            }
+            
+            example += fmtLine ;
             example += "\n" ;
         }
         example = example.trim() ;
