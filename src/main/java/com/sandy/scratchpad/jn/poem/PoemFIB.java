@@ -5,6 +5,7 @@ import java.util.ArrayList ;
 import java.util.List ;
 
 import org.apache.commons.io.FileUtils ;
+import org.apache.commons.io.IOUtils;
 
 public class PoemFIB {
     
@@ -20,15 +21,23 @@ public class PoemFIB {
         
         private ArrayList<String> qLines  = new ArrayList<String>() ;
         private ArrayList<String> answers = new ArrayList<String>() ;
+        private List<String> ineligibleWords = null;
         
-        LineGroup( int start, int numLines ) {
+        LineGroup( int start, int numLines ) throws Exception {
             this.startLine = start ;
             this.numLines  = numLines ;
+            initIneligibleWordList();
         }
         
-        LineGroup( int start, int numLines, int blankLineIndex ) {
+        LineGroup( int start, int numLines, int blankLineIndex ) throws Exception {
             this( start, numLines ) ;
             this.blankLineIndex = blankLineIndex ;
+        }
+        
+        void initIneligibleWordList() throws Exception {
+        	ineligibleWords = IOUtils.readLines(
+		    		PoemFIB.class.getResourceAsStream( "/ineligibleWords.txt" )  
+    		);
         }
         
         void extractBlanks() {
@@ -43,7 +52,7 @@ public class PoemFIB {
                             qLine.append( word + " " ) ;
                         }
                         else {
-                            if( Math.random() > 0.7 ) {
+                            if( Math.random() > 0.6 && isEligibleForBlank( word ) ) {
                                 answers.add( word ) ;
                                 qLine.append( "{" + (answers.size()-1) + "} " ) ;
                             }
@@ -74,6 +83,13 @@ public class PoemFIB {
                     qLines.add( qLine.toString() ) ;
                 }
             }
+        }
+        
+        boolean isEligibleForBlank( String word ) {
+        	if( ineligibleWords.contains( word.toLowerCase() ) ) {
+        		return false;
+        	}
+        	return true;
         }
         
         boolean isValid() {
@@ -107,7 +123,7 @@ public class PoemFIB {
         createBlankLineGroups( lines ) ;
     }
     
-    private void createLineGroups( List<String> lines ) {
+    private void createLineGroups( List<String> lines ) throws Exception {
         
         int numCycles = 0 ;
 
@@ -155,7 +171,7 @@ public class PoemFIB {
         }
     }
     
-    private void createBlankLineGroups( List<String> lines ) {
+    private void createBlankLineGroups( List<String> lines ) throws Exception {
         for( int i=0; i<lines.size(); i++ ) {
             
             int randPrevLines = (int)( 1 + Math.random() * 2 ) ;
@@ -185,7 +201,7 @@ public class PoemFIB {
 
     public static void main( String[] args ) throws Exception {
         System.out.println( "----------------------------------" ) ;
-        PoemFIB driver = new PoemFIB( "/home/sandeep/temp/poem.txt" ) ;
+        PoemFIB driver = new PoemFIB( "/Users/Sensei/temp/poem.txt" ) ;
         driver.initialize() ;
         driver.createFIBs() ;
     }
