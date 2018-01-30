@@ -325,10 +325,10 @@ public class ExerciseGen {
         
         String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-X" ;
         String JN_CLS_DIR       = "Class-10" ;
-        String JN_SUBJECT       = "XXXXMathematics" ;
-        String JN_CHAPTER       = "20 - Heights and Distances" ;
-        String JN_BASE_CHP_NAME = "Heights and Distances" ;
-        int    JN_CHAPTER_NUM   = 20 ;
+        String JN_SUBJECT       = "XXXXXXMathematics" ;
+        String JN_CHAPTER       = "16 - Circles" ;
+        String JN_BASE_CHP_NAME = "Circles" ;
+        int    JN_CHAPTER_NUM   = 16 ;
         int    JN_SUB_CHP_START = 1 ;
 
         File rootJNDir = new File( JN_ROOT_DIR ) ;
