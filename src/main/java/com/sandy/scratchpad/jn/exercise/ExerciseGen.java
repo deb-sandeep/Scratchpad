@@ -245,7 +245,7 @@ public class ExerciseGen {
         buffer.append( "answer\n\"" ) ;
         
         if( q.getAnswerParts().size() == 0 ) {
-            buffer.append( "TODO" ) ;
+            buffer.append( "Get it checked by teacher" ) ;
         }
         else {
             for( int i=0; i<q.getAnswerParts().size(); i++ ) {
@@ -323,12 +323,12 @@ public class ExerciseGen {
 
     public static void main( String[] args ) throws Exception {
         
-        String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-X" ;
-        String JN_CLS_DIR       = "Class-10" ;
-        String JN_SUBJECT       = "XXXXXXMathematics" ;
-        String JN_CHAPTER       = "16 - Circles" ;
-        String JN_BASE_CHP_NAME = "Circles" ;
-        int    JN_CHAPTER_NUM   = 16 ;
+        String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-IV" ;
+        String JN_CLS_DIR       = "Class-4" ;
+        String JN_SUBJECT       = "Mathematics" ;
+        String JN_CHAPTER       = "01 - Large Numbers" ;
+        String JN_BASE_CHP_NAME = "Large Numbers" ;
+        int    JN_CHAPTER_NUM   = 1 ;
         int    JN_SUB_CHP_START = 1 ;
 
         File rootJNDir = new File( JN_ROOT_DIR ) ;
