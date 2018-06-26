@@ -8,7 +8,7 @@ import java.util.Comparator ;
 
 public class ChPageCreator {
     
-    private String[] subjects = { "Mathematics" } ;
+    private String[] subjects = { "TomSawyer" } ;
     private File jnRoot = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-IV/Class-4" ) ;
     
     public void execute() throws Exception {
