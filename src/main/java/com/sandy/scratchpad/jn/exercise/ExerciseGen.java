@@ -326,9 +326,9 @@ public class ExerciseGen {
         String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-IV" ;
         String JN_CLS_DIR       = "Class-4" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "01 - Large Numbers" ;
-        String JN_BASE_CHP_NAME = "Large Numbers" ;
-        int    JN_CHAPTER_NUM   = 1 ;
+        String JN_CHAPTER       = "02 - Addition and Subtraction" ;
+        String JN_BASE_CHP_NAME = "Addition and Subtraction" ;
+        int    JN_CHAPTER_NUM   = 2 ;
         int    JN_SUB_CHP_START = 1 ;
 
         File rootJNDir = new File( JN_ROOT_DIR ) ;
