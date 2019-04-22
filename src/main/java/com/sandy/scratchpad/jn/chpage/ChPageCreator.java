@@ -29,7 +29,7 @@ public class ChPageCreator {
         }
     }
     
-    private void createPageForChapter( String subject, File chapter ) throws Exception {
+    public void createPageForChapter( String subject, File chapter ) throws Exception {
 
         System.out.println( chapter.getAbsolutePath() ) ;
         
