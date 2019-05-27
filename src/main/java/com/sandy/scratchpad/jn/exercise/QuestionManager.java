@@ -30,6 +30,7 @@ public class QuestionManager {
     
     public void buildImageMeta( String imageName ) {
         
+        log.debug( "Building image meta for " + imageName );
         ImgMeta m = new ImgMeta() ;
         if( imageName.startsWith( "ex_" ) ) {
             m.setExample( true ) ;

@@ -2,6 +2,7 @@ package com.sandy.scratchpad.jn.exercise;
 
 import java.io.File ;
 import java.io.FilenameFilter ;
+import java.util.ArrayList ;
 import java.util.List ;
 import java.util.Map ;
 import java.util.Map.Entry ;
@@ -94,10 +95,10 @@ public class ExerciseGen {
         throws Exception {
         
         String chapterName = chapterFolder.getName() ;
-        generateExercises( bookName, chapterName ) ;
+        generateExercises( bookName, chapterName, null ) ;
     }
     
-    public void generateExercises( String bookName, String chapterName ) 
+    public void generateExercises( String bookName, String chapterName, List<String> exerciseNames ) 
         throws Exception {
         
         
@@ -123,6 +124,16 @@ public class ExerciseGen {
         for( Exercise ex : exMap.values() ) {
             
             String id = ex.getExId() ;
+            
+            log.debug( "Generating questions for exercise id = " + id );
+            
+            if( exerciseNames != null && !exerciseNames.isEmpty() ) {
+                if( !exerciseNames.contains( id ) ) {
+                    log.debug( "\tSkipping exercise as it's not in the CLP list" ) ;
+                    continue ;
+                }
+            }
+            
             if( ex.getBookName() != null ) {
                 id += " (" + ex.getBookName() + ":" + ex.getChapterName() + ")" ;
             }
@@ -216,7 +227,7 @@ public class ExerciseGen {
     private void writeQuestionToFile( Exercise ex, File file, Question q ) 
         throws Exception {
         
-        int marks = q.isPartOfGroup() ? 75 : 100 ;
+        int marks = q.isPartOfGroup() ? 50 : 70 ;
         
         StringBuilder buffer = new StringBuilder() ;
         buffer.append( "// " + q.getId() + "\n" )
@@ -323,25 +334,34 @@ public class ExerciseGen {
 
     public static void main( String[] args ) throws Exception {
         
-        String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-IV" ;
-        String JN_CLS_DIR       = "Class-4" ;
+        String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-V" ;
+        String JN_CLS_DIR       = "Class-5" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "02 - Addition and Subtraction" ;
-        String JN_BASE_CHP_NAME = "Addition and Subtraction" ;
-        int    JN_CHAPTER_NUM   = 2 ;
-        int    JN_SUB_CHP_START = 1 ;
+        String JN_CHAPTER       = "12 - Geometry" ;
+        String JN_BASE_CHP_NAME = "Geometry" ;
+        int    JN_CHAPTER_NUM   = 12 ;
+        int    JN_SUB_CHP_START = 4 ;
 
         File rootJNDir = new File( JN_ROOT_DIR ) ;
         File clsJNDir  = new File( rootJNDir, JN_CLS_DIR ) ;
         File subJNDir  = new File( clsJNDir,  JN_SUBJECT ) ;
         File chpJNDir  = new File( subJNDir,  JN_CHAPTER ) ;
         
+        
+        List<String> exerciseNames = new ArrayList<>() ;
+        if( args.length > 0 ) {
+            for( String arg : args ) {
+                exerciseNames.add( arg ) ;
+            }
+        }
+        
+        
         ExerciseGen gen = new ExerciseGen( chpJNDir, 
                                            JN_SUBJECT, 
                                            JN_BASE_CHP_NAME, 
                                            JN_CHAPTER_NUM, 
                                            JN_SUB_CHP_START ) ;
-        gen.generateExercises( null, null ) ;
+        gen.generateExercises( null, null, exerciseNames ) ;
         gen.generateExercisesForBooks() ;
     }
 }

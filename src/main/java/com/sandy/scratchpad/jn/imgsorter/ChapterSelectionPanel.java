@@ -12,6 +12,7 @@ import java.util.List ;
 import javax.swing.* ;
 
 import org.apache.commons.io.FileUtils ;
+import org.apache.commons.lang.StringUtils ;
 import org.apache.log4j.Logger ;
 
 import com.sandy.scratchpad.jn.chpage.ChPageCreator ;
@@ -84,7 +85,8 @@ public class ChapterSelectionPanel extends JPanel
                 listModel.remove( chapterList.getSelectedIndex() ) ;
                 if( !listModel.isEmpty() ) {
                     chapterList.setSelectedIndex( 0 ) ;
-                }            }
+                }
+            }
         }
     }
     
@@ -128,8 +130,8 @@ public class ChapterSelectionPanel extends JPanel
             File hiResFolder  = new File( this.subjectFolder, selectedChapter + "/img/pages/hi-res" ) ;
             File lowResFolder = new File( this.subjectFolder, selectedChapter + "/img/pages" ) ;
             
-            moveFiles( largeFiles, hiResFolder ) ;
-            moveFiles( smallFiles, lowResFolder ) ;
+            moveFiles( largeFiles, hiResFolder, null ) ;
+            moveFiles( smallFiles, lowResFolder, "Ex" ) ;
             
             createJNFileForPages( selectedChapter ) ;
             
@@ -144,11 +146,18 @@ public class ChapterSelectionPanel extends JPanel
         return message ;
     }
     
-    private void moveFiles( List<File> files, File destFolder ) 
+    private void moveFiles( List<File> files, File destFolder, String suffix ) 
         throws IOException {
         
         for( File srcFile : files ) {
-            File destFile = new File( destFolder, srcFile.getName() ) ;
+            
+            String destFileName = srcFile.getName() ;
+            if( !StringUtils.isEmpty( suffix ) ) {
+                destFileName = destFileName.substring( 0, destFileName.length()-4 ) + 
+                               "_" + suffix + destFileName.substring( destFileName.length()-4 ) ;
+            }
+            
+            File destFile = new File( destFolder, destFileName ) ;
             FileUtils.moveFile( srcFile, destFile ) ;
         }
     }

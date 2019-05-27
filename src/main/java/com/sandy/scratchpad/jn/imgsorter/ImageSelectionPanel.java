@@ -21,6 +21,7 @@ public class ImageSelectionPanel extends JPanel
     private JNImageSorter   parent          = null ;
     private JButton         imgFolderSelBtn = new JButton( "Select image folder" ) ;
     private JButton         moveImgsBtn     = new JButton( ">" ) ;
+    private JButton         removeChapterBtn= new JButton( "X" ) ;
     private JFileChooser    fileChooser     = new JFileChooser() ;
     
     private DefaultListModel<String> listModel = new DefaultListModel<>() ;
@@ -51,9 +52,13 @@ public class ImageSelectionPanel extends JPanel
         fileChooser.setDialogTitle( "Select image folder" ) ;
         fileChooser.setMultiSelectionEnabled( false ) ;
         
+        JPanel btnPanel = new JPanel( new BorderLayout() ) ;
+        btnPanel.add( imgFolderSelBtn, BorderLayout.CENTER ) ;
+        btnPanel.add( removeChapterBtn, BorderLayout.EAST ) ;
+        
         JScrollPane sp = new JScrollPane( imageList ) ;
         add( sp, BorderLayout.CENTER ) ;
-        add( imgFolderSelBtn, BorderLayout.NORTH ) ;
+        add( btnPanel, BorderLayout.NORTH ) ;
         add( moveImgsBtn, BorderLayout.EAST ) ;
         
         setUpEventListeners() ;
@@ -61,6 +66,7 @@ public class ImageSelectionPanel extends JPanel
     
     private void setUpEventListeners() {
         imgFolderSelBtn.addActionListener( this ) ;
+        removeChapterBtn.addActionListener( this ) ;
         moveImgsBtn.addActionListener( this ) ;
         imageList.addListSelectionListener( this ) ;
         imageList.addKeyListener(new KeyAdapter() {
@@ -80,6 +86,17 @@ public class ImageSelectionPanel extends JPanel
             if( fileChooser.showOpenDialog( this.parent ) == JFileChooser.APPROVE_OPTION ) {
                 imageFolderChanged( fileChooser.getSelectedFile() ) ;
             } ;
+        }
+        else if( e.getSource() == removeChapterBtn ) {
+            if( imageList.getSelectedIndex() != -1 ) {
+                int[] selIndices = imageList.getSelectedIndices() ;
+                for( int i=0; i<selIndices.length; i++ ) {
+                    listModel.remove( 0 ) ;
+                }
+                if( !listModel.isEmpty() ) {
+                    imageList.setSelectedIndex( 0 ) ;
+                }
+            }
         }
         else if( e.getSource() == moveImgsBtn ) {
             moveSelectedImages() ;
