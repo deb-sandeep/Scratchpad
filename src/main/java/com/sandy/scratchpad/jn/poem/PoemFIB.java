@@ -2,10 +2,12 @@ package com.sandy.scratchpad.jn.poem;
 
 import java.io.File ;
 import java.util.ArrayList ;
+import java.util.Iterator ;
 import java.util.List ;
 
 import org.apache.commons.io.FileUtils ;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils ;
 
 public class PoemFIB {
     
@@ -119,6 +121,14 @@ public class PoemFIB {
         }
         
         List<String> lines = FileUtils.readLines( file ) ;
+        
+        for( Iterator<String> iter = lines.iterator(); iter.hasNext(); ) {
+            String line = iter.next() ;
+            if( StringUtils.isEmpty( line.trim() ) ) {
+                iter.remove() ;
+            }
+        }
+        
         createLineGroups( lines ) ;
         createBlankLineGroups( lines ) ;
     }
