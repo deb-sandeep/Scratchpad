@@ -337,11 +337,11 @@ public class ExerciseGen {
         String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-V" ;
         String JN_CLS_DIR       = "Class-5" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "01 - Large Numbers" ;
-        String JN_BASE_CHP_NAME = "Large Numbers" ;
-        int    JN_CHAPTER_NUM   = 1 ;
-        int    JN_SUB_CHP_START = 4 ;
-        String includedExercises[]  = { "Rev", "1.2", "1.3" } ;
+        String JN_CHAPTER       = "03 - Multiplication Division" ;
+        String JN_BASE_CHP_NAME = "Multiplication Division" ;
+        int    JN_CHAPTER_NUM   = 3 ;
+        int    JN_SUB_CHP_START = 2 ;
+        String includedExercises[]  = { "Recap", "3.1" } ;
 
         File rootJNDir = new File( JN_ROOT_DIR ) ;
         File clsJNDir  = new File( rootJNDir, JN_CLS_DIR ) ;
