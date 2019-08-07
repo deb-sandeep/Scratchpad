@@ -29,8 +29,15 @@ public class ThumbnailViewer extends JLabel {
         
         try {
             bufferedImg = ImageIO.read( imgFile ) ;
+            
             scaledImg = bufferedImg.getScaledInstance( getWidth(), -1,
-                                                       Image.SCALE_SMOOTH ) ;
+                        Image.SCALE_SMOOTH ) ;
+            
+            if( scaledImg.getHeight( null ) > getHeight() ) {
+                scaledImg = bufferedImg.getScaledInstance( getWidth(), getHeight(),
+                        Image.SCALE_SMOOTH ) ;
+            
+            }
             
             setIcon( new ImageIcon( scaledImg ) ) ;
         } 

@@ -55,6 +55,8 @@ public class FileProcessor {
             line = line.replaceAll( "_\\.\\.", "_" ) ;
             line = line.replaceAll( "_\\.", "_" ) ;
             line = line.replaceAll( "â", "'" ) ;
+            line = line.replaceAll( "’", "'" ) ;
+            line = line.replaceAll( "–", "-" ) ;
             if( line.matches( "Answers" ) ) {
                 state = STATE_A ;
                 continue ;

@@ -29,9 +29,9 @@ public class GrammarGen {
     
     private List<String> getExerciseTopics() {
         List<String> topics = new ArrayList<String>() ;
-        topics.add( "sequence" ) ;
-//        topics.add( "active" ) ;
-//        topics.add( "passive" ) ;
+        topics.add( "subject" ) ;
+        topics.add( "predicate" ) ;
+        topics.add( "sentences" ) ;
 //        topics.add( "indirect" ) ;
 //        topics.add( "direct " ) ;
         return topics ;
