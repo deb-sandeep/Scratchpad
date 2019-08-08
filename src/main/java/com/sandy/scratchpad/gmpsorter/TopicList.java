@@ -38,8 +38,47 @@ public class TopicList extends JList<String> {
             }
         } ) ;
         
-        for( File dir : topicDirs ) {
-            listModel.addElement( dir.getName() ) ;
+        for( int i=0; i<topicDirs.length; i++ ) {
+            File dir = topicDirs[i] ;
+            String listVal = String.format( "%02d - %s", (i+1), dir.getName() ) ;
+            listModel.addElement( listVal ) ;
+        }
+    }
+    
+    public String getSelectedDirName() {
+        String selVal = getSelectedValue() ;
+        return selVal.substring( 5 ) ;
+    }
+
+    public void selectValueWithFirstLetter( char key ) {
+        int selIndex = getSelectedIndex() ;
+        int upDistance = 999 ;
+        int downDistance = 999 ;
+        
+        for( int i=selIndex-1; i>=0; i-- ) {
+            if( listModel.get( i ).charAt( 5 ) == Character.toUpperCase( key ) ) {
+                upDistance = selIndex-i ;
+                break ;
+            }
+        }
+
+        for( int i=selIndex+1; i<listModel.size(); i++ ) {
+            if( listModel.get( i ).charAt( 5 ) == Character.toUpperCase( key ) ) {
+                downDistance = i-selIndex ;
+                break ;
+            }
+        }
+        
+        int newSelIndex = selIndex ;
+        if( upDistance < downDistance ) {
+            newSelIndex = selIndex-upDistance ;
+        }
+        else {
+            newSelIndex = selIndex+downDistance;
+        }
+        
+        if( newSelIndex != selIndex ) {
+            setSelectedIndex( newSelIndex ) ;
         }
     }
 }

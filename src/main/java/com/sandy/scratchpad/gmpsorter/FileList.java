@@ -24,7 +24,7 @@ public class FileList extends JList<String> {
     private void populateModel() {
         File[] files = this.baseDir.listFiles( new FileFilter() {
             public boolean accept( File file ) {
-                return file.getName().startsWith( "Chem_Q_GMP_" ) ;
+                return file.getName().startsWith( "Math_Q_GMP_" ) ;
             }
         } ) ;
         

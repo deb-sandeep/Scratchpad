@@ -4,6 +4,7 @@ import java.awt.* ;
 import java.awt.event.KeyEvent ;
 import java.io.File ;
 import java.util.Stack ;
+import java.util.concurrent.ArrayBlockingQueue ;
 
 import javax.swing.* ;
 import javax.swing.event.ListSelectionEvent ;
@@ -17,7 +18,48 @@ import com.sandy.scratchpad.jn.imgsorter.ThumbnailViewer ;
 @SuppressWarnings( "serial" )
 public class GMPSorter extends JFrame implements ListSelectionListener {
     
+    private class TopicShortcutProcessor extends Thread {
+        
+        private ArrayBlockingQueue<Integer> keyStrokes = new ArrayBlockingQueue<>( 10 ) ;
+        
+        public TopicShortcutProcessor() {
+            setDaemon( true ) ;
+        }
+        
+        public void run() {
+            while( true ) {
+                try {
+                    // This call will block till the user presses a numeric key
+                    Integer k1 = keyStrokes.take() ;
+                    
+                    // Once the user presses a key, there is a possibility that 
+                    // he might want to enter a two digit number. To cater for
+                    // that possibility, we sleep for some time, wake up to see
+                    // if the queue has more key strokes. If so, we assemble the 
+                    // number else we proceed with the first key.
+                    Thread.sleep( 250 ) ;
+                    
+                    int index = 0 ;
+                    if( keyStrokes.isEmpty() ) {
+                        index = k1-1 ;
+                    }
+                    else {
+                        Integer k2 = keyStrokes.take() ;
+                        index = ( k1*10 + k2 ) - 1 ;
+                        keyStrokes.clear() ;
+                    }
+                    
+                    topicList.setSelectedIndex( index ) ;
+                }
+                catch( InterruptedException e ) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    
     static final Logger log = Logger.getLogger( GMPSorter.class ) ;
+    static final Font LIST_FONT = new Font( "Arial", Font.PLAIN, 18 ) ;
     
     private static final int WIDTH = 900 ;
     
@@ -28,6 +70,7 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     private File baseDir = null ;
     
     private Stack<File> undoStack = new Stack<>() ;
+    private TopicShortcutProcessor tsProcessor = new TopicShortcutProcessor() ;
 
     public GMPSorter( File dir ) {
         super( "GMP question sorter." ) ;
@@ -38,7 +81,9 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
         
         setVisible( true ) ;
         
+        imgViewer.requestFocus() ;
         fileList.setSelectedIndex( 0 ) ;
+        tsProcessor.start() ;
     }
     
     private void setUpUI() {
@@ -61,6 +106,9 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
 
         this.fileList = new FileList( this ) ;
         this.topicList = new TopicList( this ) ;
+        
+        this.fileList.setFont( LIST_FONT );
+        this.topicList.setFont( LIST_FONT );
         
         JPanel panel = new JPanel() ;
         panel.setLayout( new GridLayout( 1, 2 ) ) ;
@@ -115,25 +163,33 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     }
     
     private void processKeyStroke( char key ) {
-        switch( key ) {
-            case 'f':
-                moveSelectionDown( fileList ) ;
-                break ;
-            case 'j':
-                moveSelectionDown( topicList ) ;
-                break ;
-            case 'd':
-                moveSelectionUp( fileList ) ;
-                break ;
-            case 'k':
-                moveSelectionUp( topicList ) ;
-                break ;
-            case ' ':
-                moveImageFile() ;
-                break ;
-            case 'z':
-                undo() ;
-                break ;
+        if( key >= '0' && key <= '9' ) {
+            tsProcessor.keyStrokes.offer( key - '0' ) ;
+        }
+        else {
+            switch( key ) {
+                case 'f':
+                    moveSelectionDown( fileList ) ;
+                    break ;
+                case 'j':
+                    moveSelectionDown( topicList ) ;
+                    break ;
+                case 'd':
+                    moveSelectionUp( fileList ) ;
+                    break ;
+                case 'k':
+                    moveSelectionUp( topicList ) ;
+                    break ;
+                case ' ':
+                    moveImageFile() ;
+                    break ;
+                case 'z':
+                    undo() ;
+                    break ;
+                default:
+                    topicList.selectValueWithFirstLetter( key ) ;
+                    break ;
+            }
         }
     }
     
@@ -163,7 +219,7 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     
     private void moveImageFile() {
         File srcFile = new File( getBaseDir(), fileList.getSelectedValue() ) ;
-        File destDir = new File( getBaseDir(), topicList.getSelectedValue() ) ;
+        File destDir = new File( getBaseDir(), topicList.getSelectedDirName() ) ;
         destDir = new File( destDir, "GMP 1718" ) ;
         File destFile = new File( destDir, fileList.getSelectedValue() ) ;
         
@@ -195,7 +251,7 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     }
     
     public static void main( String[] args ) {
-        File baseDir = new File( "/home/sandeep/projects/source/SConsoleProcessedImages/IIT - Chemistry" ) ;
+        File baseDir = new File( "/home/sandeep/projects/source/SConsoleProcessedImages/IIT - Maths" ) ;
         new GMPSorter( baseDir ) ;
     }
 
