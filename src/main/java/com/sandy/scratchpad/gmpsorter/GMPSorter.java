@@ -18,6 +18,10 @@ import com.sandy.scratchpad.jn.imgsorter.ThumbnailViewer ;
 @SuppressWarnings( "serial" )
 public class GMPSorter extends JFrame implements ListSelectionListener {
     
+    public static final String BOOK_SHORT_NAME = "YG File 1 - 2019" ;
+    public static final String SUBJECT_FOLDER_NAME = "IIT - Physics" ;
+    public static final String IMG_PREFIX = "Phy_Q_YG1_" ;
+    
     private class TopicShortcutProcessor extends Thread {
         
         private ArrayBlockingQueue<Integer> keyStrokes = new ArrayBlockingQueue<>( 10 ) ;
@@ -59,7 +63,7 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     }
     
     static final Logger log = Logger.getLogger( GMPSorter.class ) ;
-    static final Font LIST_FONT = new Font( "Arial", Font.PLAIN, 18 ) ;
+    static final Font LIST_FONT = new Font( "Arial", Font.PLAIN, 14 ) ;
     
     private static final int WIDTH = 900 ;
     
@@ -220,7 +224,7 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     private void moveImageFile() {
         File srcFile = new File( getBaseDir(), fileList.getSelectedValue() ) ;
         File destDir = new File( getBaseDir(), topicList.getSelectedDirName() ) ;
-        destDir = new File( destDir, "GMP 1718" ) ;
+        destDir = new File( destDir, BOOK_SHORT_NAME ) ;
         File destFile = new File( destDir, fileList.getSelectedValue() ) ;
         
         log.debug( destFile.getAbsolutePath().substring( getBaseDir().getAbsolutePath().length() ) ) ;
@@ -251,7 +255,8 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     }
     
     public static void main( String[] args ) {
-        File baseDir = new File( "/home/sandeep/projects/source/SConsoleProcessedImages/IIT - Maths" ) ;
+        File baseDir = new File( "/home/sandeep/projects/source/SConsoleProcessedImages/", 
+                                 SUBJECT_FOLDER_NAME ) ;
         new GMPSorter( baseDir ) ;
     }
 

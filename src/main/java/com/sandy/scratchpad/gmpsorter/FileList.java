@@ -24,7 +24,7 @@ public class FileList extends JList<String> {
     private void populateModel() {
         File[] files = this.baseDir.listFiles( new FileFilter() {
             public boolean accept( File file ) {
-                return file.getName().startsWith( "Math_Q_GMP_" ) ;
+                return file.getName().startsWith( GMPSorter.IMG_PREFIX ) ;
             }
         } ) ;
         
@@ -76,7 +76,7 @@ public class FileList extends JList<String> {
     }
     
     private String getQType( String fileName ) {
-        String typePart = fileName.substring( "Chem_Q_GMP_".length() ) ;
+        String typePart = fileName.substring( GMPSorter.IMG_PREFIX.length() ) ;
         if( typePart.contains( "_" ) ) {
             return typePart.substring( 0, typePart.indexOf( '_' ) ) ;
         }
@@ -85,7 +85,12 @@ public class FileList extends JList<String> {
     
     private int getIntegerId( String fileName ) {
         String intStr = fileName.substring( fileName.lastIndexOf( "_" ) + 1 ) ;
-        intStr = intStr.substring( 0, intStr.indexOf( '.' )  ) ;
+        if( intStr.contains( "(" ) ) {
+            intStr = intStr.substring( 0, intStr.indexOf( '(' )  ) ;
+        }
+        else {
+            intStr = intStr.substring( 0, intStr.indexOf( '.' )  ) ;
+        }
         return Integer.parseInt( intStr ) ;
     }
     
