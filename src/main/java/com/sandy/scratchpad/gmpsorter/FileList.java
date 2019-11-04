@@ -21,6 +21,10 @@ public class FileList extends JList<String> {
         addListSelectionListener( sorter ) ;
     }
     
+    public int getNumFiles() {
+        return listModel.getSize() ;
+    }
+    
     private void populateModel() {
         File[] files = this.baseDir.listFiles( new FileFilter() {
             public boolean accept( File file ) {
