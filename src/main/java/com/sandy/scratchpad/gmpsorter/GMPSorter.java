@@ -19,8 +19,13 @@ import com.sandy.scratchpad.jn.imgsorter.ThumbnailViewer ;
 public class GMPSorter extends JFrame implements ListSelectionListener {
     
     public static final String BOOK_SHORT_NAME = "AITS" ;
+<<<<<<< HEAD
     public static final String SUBJECT_FOLDER_NAME = "IIT - Chemistry" ;
     public static final String IMG_PREFIX = "Chem_Q_FJ14_" ;
+=======
+    public static final String SUBJECT_FOLDER_NAME = "IIT - Physics" ;
+    public static final String IMG_PREFIX = "Phy_Q_FJ" ;
+>>>>>>> 59b4702ee481004e983d9aaf9916333764135ede
     
     private class TopicShortcutProcessor extends Thread {
         
@@ -227,11 +232,14 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
         destDir = new File( destDir, BOOK_SHORT_NAME ) ;
         File destFile = new File( destDir, fileList.getSelectedValue() ) ;
         
-        log.debug( destFile.getAbsolutePath().substring( getBaseDir().getAbsolutePath().length() ) ) ;
+        log.debug( destFile.getAbsolutePath()
+                           .substring( getBaseDir().getAbsolutePath()
+                                                   .length() ) ) ;
         try {
             FileUtils.moveFile( srcFile, destFile ) ;
             fileList.removeSelectedValue() ;
             undoStack.push( destFile ) ;
+            setTitle( "Num files left = " + fileList.getNumFiles() ) ;
         }
         catch( Exception e ) {
             e.printStackTrace();
