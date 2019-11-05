@@ -19,8 +19,8 @@ import com.sandy.scratchpad.jn.imgsorter.ThumbnailViewer ;
 public class GMPSorter extends JFrame implements ListSelectionListener {
     
     public static final String BOOK_SHORT_NAME = "AITS" ;
-    public static final String SUBJECT_FOLDER_NAME = "IIT - Maths" ;
-    public static final String IMG_PREFIX = "Math_Q_FJ" ;
+    public static final String SUBJECT_FOLDER_NAME = "IIT - Physics" ;
+    public static final String IMG_PREFIX = "Phy_Q_FJ" ;
     
     private class TopicShortcutProcessor extends Thread {
         
@@ -234,7 +234,7 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
             FileUtils.moveFile( srcFile, destFile ) ;
             fileList.removeSelectedValue() ;
             undoStack.push( destFile ) ;
-            log.debug( "\t File left = " + fileList.getNumFiles() ) ;
+            setTitle( "Num files left = " + fileList.getNumFiles() ) ;
         }
         catch( Exception e ) {
             e.printStackTrace();

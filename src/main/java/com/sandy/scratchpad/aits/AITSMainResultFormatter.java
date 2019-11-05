@@ -65,7 +65,7 @@ public class AITSMainResultFormatter {
     }
     
     private void printQImgName( String sub, String qNo, String paperId, String ans ) {
-        log.debug( sub + "_" + paperId + "_" + qNo + "=" + ans ) ; 
+        log.debug( sub + "_Q_" + paperId + "_" + qNo + "=" + ans ) ; 
     }
     
     private List<String> getInputLines() throws Exception {
