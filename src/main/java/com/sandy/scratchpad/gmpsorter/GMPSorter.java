@@ -19,8 +19,8 @@ import com.sandy.scratchpad.jn.imgsorter.ThumbnailViewer ;
 public class GMPSorter extends JFrame implements ListSelectionListener {
     
     public static final String BOOK_SHORT_NAME = "AITS" ;
-    public static final String SUBJECT_FOLDER_NAME = "IIT - Physics" ;
-    public static final String IMG_PREFIX = "Phy_Q_FJ" ;
+    public static final String SUBJECT_FOLDER_NAME = "IIT - Chemistry" ;
+    public static final String IMG_PREFIX = "Chem_Q_FJ" ;
     
     private class TopicShortcutProcessor extends Thread {
         
@@ -53,7 +53,7 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
                         keyStrokes.clear() ;
                     }
                     
-                    topicList.setSelectedIndex( index ) ;
+//                    topicList.setSelectedIndex( index ) ;
                 }
                 catch( InterruptedException e ) {
                     e.printStackTrace();
@@ -68,7 +68,8 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     private static final int WIDTH = 900 ;
     
     private FileList fileList = null ;
-    private TopicList topicList = null ;
+//    private TopicList topicList = null ;
+    private TopicButtonPanel topicBtnPanel = null ;
     private ThumbnailViewer imgViewer = null ;
     
     private File baseDir = null ;
@@ -101,7 +102,7 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     
     private JPanel getFrameUI() {
         JPanel panel = new JPanel( new BorderLayout() ) ;
-        panel.add( getImageViewer(), BorderLayout.SOUTH ) ;
+        panel.add( getImageViewer(), BorderLayout.NORTH ) ;
         panel.add( getListPanel(), BorderLayout.CENTER ) ;
         return panel ;
     }
@@ -109,15 +110,18 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     private JPanel getListPanel() {
 
         this.fileList = new FileList( this ) ;
-        this.topicList = new TopicList( this ) ;
-        
         this.fileList.setFont( LIST_FONT );
-        this.topicList.setFont( LIST_FONT );
+        
+//        this.topicList = new TopicList( this ) ;
+//        this.topicList.setFont( LIST_FONT );
+
+        this.topicBtnPanel = new TopicButtonPanel( this ) ;
+        
         
         JPanel panel = new JPanel() ;
-        panel.setLayout( new GridLayout( 1, 2 ) ) ;
-        panel.add( getScrollPane( this.fileList ) ) ;
-        panel.add( getScrollPane( this.topicList ) ) ;
+        panel.setLayout( new BorderLayout() ) ;
+        panel.add( getScrollPane( this.fileList ), BorderLayout.WEST ) ;
+        panel.add( this.topicBtnPanel, BorderLayout.CENTER ) ;
         return panel ;
     }
     
@@ -176,13 +180,13 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
                     moveSelectionDown( fileList ) ;
                     break ;
                 case 'j':
-                    moveSelectionDown( topicList ) ;
+//                    moveSelectionDown( topicList ) ;
                     break ;
                 case 'd':
                     moveSelectionUp( fileList ) ;
                     break ;
                 case 'k':
-                    moveSelectionUp( topicList ) ;
+//                    moveSelectionUp( topicList ) ;
                     break ;
                 case ' ':
                     moveImageFile() ;
@@ -191,7 +195,7 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
                     undo() ;
                     break ;
                 default:
-                    topicList.selectValueWithFirstLetter( key ) ;
+//                    topicList.selectValueWithFirstLetter( key ) ;
                     break ;
             }
         }
@@ -221,9 +225,9 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
         }
     }
     
-    private void moveImageFile() {
+    void moveImageFile() {
         File srcFile = new File( getBaseDir(), fileList.getSelectedValue() ) ;
-        File destDir = new File( getBaseDir(), topicList.getSelectedDirName() ) ;
+        File destDir = new File( getBaseDir(), topicBtnPanel.getSelectedDirName() ) ;
         destDir = new File( destDir, BOOK_SHORT_NAME ) ;
         File destFile = new File( destDir, fileList.getSelectedValue() ) ;
         
@@ -255,6 +259,10 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
                 e.printStackTrace();
             }
         }
+    }
+    
+    void nextImage() {
+        moveSelectionDown( fileList ) ;
     }
     
     public static void main( String[] args ) {
