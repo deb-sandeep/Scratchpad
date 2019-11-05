@@ -18,9 +18,9 @@ import com.sandy.scratchpad.jn.imgsorter.ThumbnailViewer ;
 @SuppressWarnings( "serial" )
 public class GMPSorter extends JFrame implements ListSelectionListener {
     
-    public static final String BOOK_SHORT_NAME = "Rank Booster" ;
-    public static final String SUBJECT_FOLDER_NAME = "IIT - Maths" ;
-    public static final String IMG_PREFIX = "Math_Q_RB_" ;
+    public static final String BOOK_SHORT_NAME = "AITS" ;
+    public static final String SUBJECT_FOLDER_NAME = "IIT - Chemistry" ;
+    public static final String IMG_PREFIX = "Chem_Q_FJ14_" ;
     
     private class TopicShortcutProcessor extends Thread {
         

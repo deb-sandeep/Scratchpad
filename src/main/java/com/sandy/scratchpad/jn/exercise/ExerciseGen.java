@@ -337,9 +337,9 @@ public class ExerciseGen {
         String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-V" ;
         String JN_CLS_DIR       = "Class-5" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "04 - Negative Numbers" ;
-        String JN_BASE_CHP_NAME = "Negative Numbers" ;
-        int    JN_CHAPTER_NUM   = 4 ;
+        String JN_CHAPTER       = "05 - Multiples and Factors" ;
+        String JN_BASE_CHP_NAME = "Multiples and Factors" ;
+        int    JN_CHAPTER_NUM   = 5 ;
         int    JN_SUB_CHP_START = 2 ;
         String includedExercises[]  = {} ;
 
