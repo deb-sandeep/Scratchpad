@@ -1,6 +1,7 @@
 package com.sandy.scratchpad.sconsole.lapreconstruct;
 
-import static com.sandy.common.xlsutil.filter.NumFilter.* ;
+import static com.sandy.scratchpad.xlsutil.filter.NumFilter.GTE ;
+import static com.sandy.scratchpad.xlsutil.filter.NumFilter.LTE ;
 
 import java.io.InputStream ;
 import java.util.HashMap ;
@@ -10,13 +11,12 @@ import java.util.List ;
 import org.apache.commons.lang.StringUtils ;
 import org.apache.log4j.Logger ;
 
-import com.sandy.common.xlsutil.XLSRow ;
-import com.sandy.common.xlsutil.XLSRowFilter ;
-import com.sandy.common.xlsutil.XLSUtil ;
-import com.sandy.common.xlsutil.XLSWrapper ;
-import com.sandy.common.xlsutil.XLSRowFilter.AND ;
-import com.sandy.common.xlsutil.filter.NumFilter ;
-import com.sandy.common.xlsutil.filter.StrFilter ;
+import com.sandy.scratchpad.xlsutil.XLSRow ;
+import com.sandy.scratchpad.xlsutil.XLSRowFilter ;
+import com.sandy.scratchpad.xlsutil.XLSRowFilter.AND ;
+import com.sandy.scratchpad.xlsutil.XLSWrapper ;
+import com.sandy.scratchpad.xlsutil.filter.NumFilter ;
+import com.sandy.scratchpad.xlsutil.filter.StrFilter ;
 
 class LapState {
     public int timeSpent = 0 ;

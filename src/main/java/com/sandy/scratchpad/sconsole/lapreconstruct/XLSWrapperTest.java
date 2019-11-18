@@ -5,12 +5,12 @@ import java.util.List ;
 
 import org.apache.log4j.Logger ;
 
-import com.sandy.common.xlsutil.XLSRow ;
-import com.sandy.common.xlsutil.XLSUtil ;
-import com.sandy.common.xlsutil.XLSWrapper ;
-import com.sandy.common.xlsutil.XLSRowFilter.AND ;
-import com.sandy.common.xlsutil.filter.NumFilter ;
-import com.sandy.common.xlsutil.filter.StrFilter ;
+import com.sandy.scratchpad.xlsutil.XLSRow ;
+import com.sandy.scratchpad.xlsutil.XLSUtil ;
+import com.sandy.scratchpad.xlsutil.XLSWrapper ;
+import com.sandy.scratchpad.xlsutil.XLSRowFilter.AND ;
+import com.sandy.scratchpad.xlsutil.filter.NumFilter ;
+import com.sandy.scratchpad.xlsutil.filter.StrFilter ;
 
 public class XLSWrapperTest {
 
