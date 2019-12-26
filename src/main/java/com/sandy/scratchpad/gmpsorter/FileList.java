@@ -28,6 +28,9 @@ class Question {
             qIdStr += "." ;
         }
         qIdStr = qIdStr.substring( 0, qIdStr.length()-1 ) ;
+        if( qIdStr.contains( "(" ) ) {
+            qIdStr = qIdStr.substring( 0, qIdStr.indexOf( '(' ) ) ;
+        }
         qId = Float.parseFloat( qIdStr ) ;
     }
 }
@@ -54,7 +57,8 @@ public class FileList extends JList<String> {
     private void populateModel() {
         File[] files = this.baseDir.listFiles( new FileFilter() {
             public boolean accept( File file ) {
-                return file.getName().startsWith( GMPSorter.IMG_PREFIX ) ;
+                String fileName = file.getName() ;
+                return fileName.startsWith( GMPSorter.IMG_PREFIX ) ;
             }
         } ) ;
         
@@ -74,7 +78,6 @@ public class FileList extends JList<String> {
                 
                 if( q1.paperId.equals( q2.paperId ) ) {
                     if( q1.qType.equals( q2.qType ) ) {
-                        log.debug( q1.qId + " :: " + q2.qId ) ;
                         return ( q1.qId < q2.qId ) ? -1 : 1 ;
                     }
                     return q1.qType.compareTo( q2.qType ) ;
