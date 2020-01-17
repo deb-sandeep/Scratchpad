@@ -8,8 +8,37 @@ import java.util.Comparator ;
 import javax.swing.DefaultListModel ;
 import javax.swing.JList ;
 
+import org.apache.log4j.Logger ;
+
+class Question {
+    
+    String paperId = null ;
+    String qType = null ;
+    float qId = 0.0F ;
+    
+    Question( String fileName ) {
+        String[] parts = fileName.substring( 0, fileName.length()-4 ).split( "_" ) ;
+        paperId = parts[2] + "_" + parts[3] ;
+        qType = parts[4] ;
+        String qIdStr = "" ;
+        
+        int qIdPartsLen = parts.length - 5 ;
+        for( int i=0; i<qIdPartsLen; i++ ) {
+            qIdStr += parts[i+5] ;
+            qIdStr += "." ;
+        }
+        qIdStr = qIdStr.substring( 0, qIdStr.length()-1 ) ;
+        if( qIdStr.contains( "(" ) ) {
+            qIdStr = qIdStr.substring( 0, qIdStr.indexOf( '(' ) ) ;
+        }
+        qId = Float.parseFloat( qIdStr ) ;
+    }
+}
+
 @SuppressWarnings( "serial" )
 public class FileList extends JList<String> {
+    
+    private static final Logger log = Logger.getLogger( FileList.class ) ;
 
     private File baseDir = null ;
     private DefaultListModel<String> listModel = new DefaultListModel<>() ;
@@ -28,7 +57,8 @@ public class FileList extends JList<String> {
     private void populateModel() {
         File[] files = this.baseDir.listFiles( new FileFilter() {
             public boolean accept( File file ) {
-                return file.getName().startsWith( GMPSorter.IMG_PREFIX ) ;
+                String fileName = file.getName() ;
+                return fileName.startsWith( GMPSorter.IMG_PREFIX ) ;
             }
         } ) ;
         
@@ -43,69 +73,18 @@ public class FileList extends JList<String> {
         
         Arrays.sort( files, new Comparator<File>() {
             public int compare( File f1, File f2 ) {
+                Question q1 = new Question( f1.getName() ) ;
+                Question q2 = new Question( f2.getName() ) ;
                 
-                String type1 = getQType( f1.getName() ) ;
-                String type2 = getQType( f2.getName() ) ;
-                
-                if( !type1.equals( type2 ) ) {
-                    return type1.compareTo( type2 ) ;
+                if( q1.paperId.equals( q2.paperId ) ) {
+                    if( q1.qType.equals( q2.qType ) ) {
+                        return ( q1.qId < q2.qId ) ? -1 : 1 ;
+                    }
+                    return q1.qType.compareTo( q2.qType ) ;
                 }
-                
-                int f1IntId = getIntegerId( f1.getName() ) ;
-                int f2IntId = getIntegerId( f2.getName() ) ;
-                
-                int f1IntPart = (int)Math.floor( f1IntId ) ;
-                int f2IntPart = (int)Math.floor( f2IntId ) ;
-                
-                if( f1IntPart < f2IntPart ) {
-                    return -1 ;
-                }
-                else if( f1IntPart > f2IntPart ) {
-                    return 1 ;
-                }
-                
-                int f1DecimalId = getDecimalId( f1.getName() ) ;
-                int f2DecimalId = getDecimalId( f2.getName() ) ;
-                
-                if( f1DecimalId < f2DecimalId ) {
-                    return -1 ;
-                }
-                else if( f1DecimalId > f2DecimalId ) {
-                    return 1 ;
-                }
-
-                return 0 ;
+                return q1.paperId.compareTo( q2.paperId ) ;
             }
         } ) ;
-    }
-    
-    private String getQType( String fileName ) {
-        String typePart = fileName.substring( GMPSorter.IMG_PREFIX.length() ) ;
-        if( typePart.contains( "_" ) ) {
-            return typePart.substring( 0, typePart.indexOf( '_' ) ) ;
-        }
-        return "" ;
-    }
-    
-    private int getIntegerId( String fileName ) {
-        String intStr = fileName.substring( fileName.lastIndexOf( "_" ) + 1 ) ;
-        if( intStr.contains( "(" ) ) {
-            intStr = intStr.substring( 0, intStr.indexOf( '(' )  ) ;
-        }
-        else {
-            intStr = intStr.substring( 0, intStr.indexOf( '.' )  ) ;
-        }
-        return Integer.parseInt( intStr ) ;
-    }
-    
-    private int getDecimalId( String fileName ) {
-        String intStr = fileName.substring( fileName.lastIndexOf( "_" ) + 1 ) ;
-        intStr = intStr.substring( intStr.indexOf( '.' )+1  ) ;
-        if( intStr.contains( "." ) ) {
-            intStr = intStr.substring( 0, intStr.indexOf( "." ) ) ;
-            return Integer.parseInt( intStr ) ;
-        }
-        return 0 ;
     }
 
     public void removeSelectedValue() {
