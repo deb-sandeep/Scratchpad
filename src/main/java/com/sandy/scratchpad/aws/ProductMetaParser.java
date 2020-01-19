@@ -2,7 +2,7 @@ package com.sandy.scratchpad.aws;
 
 import java.io.InputStream ;
 import java.util.ArrayList ;
-import java.util.HashMap ;
+import java.util.LinkedHashMap ;
 import java.util.List ;
 import java.util.Map ;
 
@@ -16,7 +16,7 @@ public class ProductMetaParser {
     static final Logger log = Logger.getLogger( ProductMetaParser.class ) ;
     
     private List<String> lines = new ArrayList<>() ;
-    private Map<String, List<AWSProductMeta>> map = new HashMap<>() ;
+    private Map<String, List<AWSProductMeta>> map = new LinkedHashMap<>() ;
 
     public Map<String, List<AWSProductMeta>> parseMeta() throws Exception {
         

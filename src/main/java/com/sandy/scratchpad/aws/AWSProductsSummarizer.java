@@ -40,6 +40,22 @@ public class AWSProductsSummarizer {
         fw.close() ;
     }
     
+    public void printTOC() throws Exception {
+        
+        Map<String, List<AWSProductMeta>> metaMap = null ;
+        metaMap = new ProductMetaParser().parseMeta() ;
+        
+        for( String category : metaMap.keySet() ) {
+            log.debug( category ) ;
+            List<AWSProductMeta> metaList = metaMap.get( category ) ;
+            for( AWSProductMeta meta : metaList ) {
+                log.debug( "\t" + meta.getProductName() ) ;
+                log.debug( "\t\t" + meta.getShortDescription() ) ;
+                log.debug( "" ) ;
+            }
+        }
+    }
+    
     private void captureLongDescription( AWSProductMeta meta ) 
         throws Exception {
         
@@ -66,6 +82,6 @@ public class AWSProductsSummarizer {
     }
 
     public static void main( String[] args ) throws Exception {
-        new AWSProductsSummarizer().execute() ;
+        new AWSProductsSummarizer().printTOC() ;
     }
 }
