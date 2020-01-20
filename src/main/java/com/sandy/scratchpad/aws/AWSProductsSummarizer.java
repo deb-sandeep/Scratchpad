@@ -1,15 +1,15 @@
 package com.sandy.scratchpad.aws;
 
+import java.io.File ;
+import java.io.FileInputStream ;
+import java.io.FileOutputStream ;
 import java.io.FileWriter ;
-import java.net.URI ;
+import java.io.ObjectInputStream ;
+import java.io.ObjectOutputStream ;
 import java.util.List ;
 import java.util.Map ;
 
 import org.apache.log4j.Logger ;
-import org.jsoup.Jsoup ;
-import org.jsoup.nodes.Document ;
-import org.jsoup.nodes.Element ;
-import org.jsoup.select.Elements ;
 
 public class AWSProductsSummarizer {
     
@@ -17,7 +17,8 @@ public class AWSProductsSummarizer {
     
     public void execute() throws Exception {
         Map<String, List<AWSProductMeta>> metaMap = null ;
-        metaMap = new ProductMetaParser().parseMeta() ;
+        
+        metaMap = getProductMeta() ;
         
         FileWriter fw = new FileWriter( "/home/sandeep/temp/AWSProducts.txt" ) ;
         for( String category : metaMap.keySet() ) {
@@ -27,7 +28,6 @@ public class AWSProductsSummarizer {
             
             List<AWSProductMeta> metaList = metaMap.get( category ) ;
             for( AWSProductMeta meta : metaList ) {
-                captureLongDescription( meta ) ;
                 fw.write( "# " + meta.getProductName() + "\n\n" ) ;
                 fw.write( "[" + meta.getProductCategory() + "]\n"  ) ;
                 fw.write( "[" + meta.getUrl() + "]\n\n"  ) ;
@@ -38,6 +38,31 @@ public class AWSProductsSummarizer {
         }
         fw.flush() ;
         fw.close() ;
+    }
+    
+    @SuppressWarnings( { "resource", "unchecked" } )
+    private Map<String, List<AWSProductMeta>> getProductMeta() 
+        throws Exception {
+        
+        Map<String, List<AWSProductMeta>> metaMap = null ;
+        File persistedObjFile = new File( "/home/sandeep/temp/AWSProducts.obj" ) ;
+        if( persistedObjFile.exists() ) {
+            log.debug( "Loading persisted meta map." ) ;
+            ObjectInputStream oIs = null ; 
+            oIs = new ObjectInputStream( new FileInputStream( persistedObjFile ) ) ;
+            metaMap = (Map<String, List<AWSProductMeta>>)oIs.readObject() ;
+            oIs.close() ;
+        }
+        else {
+            log.debug( "Loading live meta map." ) ;
+            metaMap = new ProductMetaParser().parseMeta() ;
+            ObjectOutputStream oOs = null ;
+            oOs = new ObjectOutputStream( new FileOutputStream( persistedObjFile ) ) ;
+            oOs.writeObject( metaMap ) ;
+            oOs.flush() ;
+            oOs.close() ;
+        }
+        return metaMap ;
     }
     
     public void printTOC() throws Exception {
@@ -56,32 +81,7 @@ public class AWSProductsSummarizer {
         }
     }
     
-    private void captureLongDescription( AWSProductMeta meta ) 
-        throws Exception {
-        
-        log.debug( "Fetching " + 
-                   meta.getProductCategory() + 
-                   ">" 
-                   + meta.getProductName() ) ;
-        
-        Document doc = Jsoup.parse( new URI( meta.getUrl() ).toURL(), 5000 ) ;
-        Elements descDivs = doc.select( "main>div" ) ;
-        for( Element div : descDivs ) {
-            StringBuilder builder = new StringBuilder() ;
-            Elements descriptionParas = div.select( "p" ) ;
-            if( descriptionParas.isEmpty() ) {
-                continue ;
-            }
-            
-            for( Element para : descriptionParas ) {
-                builder.append( para.text() ).append( "\n\n" ) ;
-            }
-            meta.setLongDescription( builder.toString() ) ;
-            break ;
-        }
-    }
-
     public static void main( String[] args ) throws Exception {
-        new AWSProductsSummarizer().printTOC() ;
+        new AWSProductsSummarizer().execute() ;
     }
 }

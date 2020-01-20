@@ -1,7 +1,11 @@
 package com.sandy.scratchpad.aws;
 
-public class AWSProductMeta {
+import java.io.Serializable ;
 
+public class AWSProductMeta implements Serializable {
+
+    private static final long serialVersionUID = 8930840689028146299L ;
+    
     private String productCategory = null ;
     private String productName = null ;
     private String shortDescription = null ;
