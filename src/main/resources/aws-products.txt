@@ -1,0 +1,815 @@
+@Analytics
+            #Amazon Athena
+            $Query Data in S3 using SQL
+            /athena/?c=1&amp;pt=1
+
+            #Amazon CloudSearch
+            $Managed Search Service
+            /cloudsearch/?c=1&amp;pt=2
+
+            #Amazon Elasticsearch Service
+            $Run and Scale Elasticsearch Clusters
+            /elasticsearch-service/?c=1&amp;pt=3
+
+            #Amazon EMR
+            $Hosted Hadoop Framework
+            /elasticmapreduce/?c=1&amp;pt=4
+
+            #Amazon Kinesis
+            $Work with Real-time Streaming Data
+            /kinesis/?c=1&amp;pt=5
+
+            #Amazon Managed Streaming for Apache Kafka
+            $Fully managed Apache Kafka service
+            /msk/?c=1&amp;pt=6
+
+            #Amazon Redshift
+            $Fast, Simple, Cost-effective Data Warehousing
+            /redshift/?c=1&amp;pt=7
+
+            #Amazon QuickSight
+            $Fast Business Analytics Service
+            /quicksight/?c=1&amp;pt=8
+
+            #AWS Data Exchange
+            $Find, subscribe to, and use third-party data in the cloud
+            /data-exchange/?c=1&amp;pt=9
+
+            #AWS Data Pipeline
+            $Orchestration Service for Periodic, Data-driven Workflows
+            /datapipeline/?c=1&amp;pt=10
+
+            #AWS Glue
+            $Prepare and Load Data
+            /glue/?c=1&amp;pt=11
+
+            #AWS Lake Formation
+            $Build a secure data lake in days
+            /lake-formation/?c=1&amp;pt=12
+
+@Application Integration
+            #AWS Step Functions
+            $Coordinate Distributed Applications
+            /step-functions/?c=2&amp;pt=1
+
+            #Amazon EventBridge
+            $Serverless event bus for SaaS apps &amp; AWS services
+            /eventbridge/?c=2&amp;pt=2
+
+            #Amazon MQ
+            $Managed Message Broker for ActiveMQ
+            /amazon-mq/?c=2&amp;pt=3
+
+            #Amazon Simple Notification Service (SNS)
+            $Pub/Sub, Mobile Push and SMS
+            /sns/?c=2&amp;pt=4
+
+            #Amazon Simple Queue Service (SQS) 
+            $Managed Message Queues
+            /sqs/?c=2&amp;pt=5
+
+            #Amazon AppSync
+            $Power your apps with the right data from many sources, at scale
+            /appsync/?c=2&amp;pt=6
+
+@AR &amp; VR
+            #Amazon Sumerian
+            $Build and Run VR and AR Applications
+            /sumerian/?c=3&amp;pt=1
+
+@AWS Cost Management
+            #AWS Cost Explorer
+            $Analyze Your AWS Cost and Usage
+            /aws-cost-management/aws-cost-explorer/?c=4&amp;pt=1
+
+            #AWS Budgets
+            $Set Custom Cost and Usage Budgets
+            /aws-cost-management/aws-budgets/?c=4&amp;pt=2
+
+            #AWS Cost and Usage Report
+            $Access Comprehensive Cost and Usage Information
+            /aws-cost-management/aws-cost-and-usage-reporting/?c=4&amp;pt=3
+
+            #Reserved Instance Reporting
+            $Dive Deeper into Your Reserved Instances (RIs)
+            /aws-cost-management/reserved-instance-reporting/?c=4&amp;pt=4
+
+            #Savings Plans
+            $Save up to 72% on compute usage with flexible pricing
+            /savingsplans/?c=4&amp;pt=5
+
+@Blockchain
+            #Amazon Managed Blockchain
+            $Create and manage scalable blockchain networks
+            /blockchain/?c=5&amp;pt=1
+
+            #Amazon Quantum Ledger Database (QLDB)
+            $Fully managed ledger database
+            /qldb/?c=5&amp;pt=2
+
+@Business Applications
+            #Alexa for Business
+            $Empower your Organization with Alexa
+            /alexaforbusiness/?c=6&amp;pt=1
+
+            #Amazon Chime
+            $Frustration-free Meetings, Video Calls, and Chat
+            /chime/?c=6&amp;pt=2
+
+            #Amazon WorkDocs
+            $Secure enterprise document storage and sharing
+            /workdocs/?c=6&amp;pt=3
+
+            #Amazon WorkMail
+            $Secure and Managed Business Email and Calendaring
+            /workmail/?c=6&amp;pt=4
+
+@Compute
+            #Amazon EC2
+            $Virtual Servers in the Cloud
+            /ec2/?c=7&amp;pt=1
+
+            #Amazon EC2 Auto Scaling
+            $Scale Compute Capacity to Meet Demand
+            /ec2/autoscaling/?c=7&amp;pt=2
+
+            #Amazon Elastic Container Registry
+            $Store and Retrieve Docker Images
+            /ecr/?c=7&amp;pt=3
+
+            #Amazon Elastic Container Service
+            $Run and Manage Docker Containers
+            /ecs/?c=7&amp;pt=4
+
+            #Amazon Elastic Kubernetes Service
+            $Run Managed Kubernetes on AWS
+            /eks/?c=7&amp;pt=5
+
+            #Amazon Lightsail
+            $Launch and Manage Virtual Private Servers
+            /lightsail/?c=7&amp;pt=6
+
+            #AWS Batch
+            $Run Batch Jobs at Any Scale
+            /batch/?c=7&amp;pt=7
+
+            #AWS Elastic Beanstalk
+            $Run and Manage Web Apps
+            /elasticbeanstalk/?c=7&amp;pt=8
+
+            #AWS Fargate
+            $Run Containers without Managing Servers or Clusters
+            /fargate/?c=7&amp;pt=9
+
+            #AWS Lambda
+            $Run your Code in Response to Events
+            /lambda/?c=7&amp;pt=10
+
+            #AWS Outposts
+            $Run AWS services on-premises
+            /outposts/?c=7&amp;pt=11
+
+            #AWS Serverless Application Repository
+            $Discover, Deploy, and Publish Serverless Applications
+            /serverlessrepo/?c=7&amp;pt=12
+
+            #AWS Wavelength
+            $Deliver ultra-low latency applications for 5G devices
+            /wavelength/?c=7&amp;pt=13
+
+            #VMware Cloud on AWS
+            $Build a Hybrid Cloud without Custom Hardware
+            /vmware/?c=7&amp;pt=14
+
+@Customer Engagement
+            #Amazon Connect
+            $Cloud-based Contact Center
+            /connect/?c=8&amp;pt=1
+
+            #Amazon Pinpoint
+            $Personalized User Engagement Across Channels
+            /pinpoint/?c=8&amp;pt=2
+
+            #Amazon Simple Email Service (SES)
+            $Email Sending and Receiving
+            /ses/?c=8&amp;pt=3
+
+            #Contact Lens for Amazon Connect
+            $Contact center analytics powered by ML
+            /connect/contact-lens/?c=8&amp;pt=4
+
+@Database
+            #Amazon Aurora
+            $High Performance Managed Relational Database
+            /rds/aurora/?c=9&amp;pt=1
+
+            #Amazon DynamoDB
+            $Managed NoSQL Database
+            /dynamodb/?c=9&amp;pt=2
+
+            #Amazon DocumentDB (with MongoDB compatibility)
+            $Fully managed document database
+            /documentdb/?c=9&amp;pt=3
+
+            #Amazon ElastiCache
+            $In-memory Caching System
+            /elasticache/?c=9&amp;pt=4
+
+            #Amazon Managed Apache Cassandra Service
+            $Managed Cassandra-compatible database
+            /mcs/?c=9&amp;pt=5
+
+            #Amazon Neptune 
+            $Fully Managed Graph Database Service
+            /neptune/?c=9&amp;pt=6
+
+            #Amazon Quantum Ledger Database (QLDB)
+            $Fully managed ledger database
+            /qldb/?c=9&amp;pt=7
+
+            #Amazon RDS
+            $Managed Relational Database Service for MySQL, PostgreSQL, Oracle, SQL Server, and MariaDB
+            /rds/?c=9&amp;pt=8
+
+            #Amazon RDS on VMware
+            $Automate on-premises database management
+            /rds/vmware/?c=9&amp;pt=9
+
+            #Amazon Redshift
+            $Fast, Simple, Cost-effective Data Warehousing
+            /redshift/?c=9&amp;pt=10
+
+            #Amazon Timestream
+            $Fully managed time series database
+            /timestream/?c=9&amp;pt=11
+
+            #AWS Database Migration Service
+            $Migrate Databases with Minimal Downtime
+            /dms/?c=9&amp;pt=12
+
+@Developer Tools
+            #Amazon Corretto
+            $Production-ready distribution of OpenJDK
+            /corretto/?c=10&amp;pt=1
+
+            #AWS Cloud Development Kit (CDK)
+            $Model cloud infrastructure using code
+            /cdk/?c=10&amp;pt=2
+
+            #AWS Cloud9
+            $Write, Run, and Debug Code on a Cloud IDE
+            /cloud9/?c=10&amp;pt=3
+
+            #AWS CodeBuild
+            $Build and Test Code
+            /codebuild/?c=10&amp;pt=4
+
+            #AWS CodeCommit
+            $Store Code in Private Git Repositories
+            /codecommit/?c=10&amp;pt=5
+
+            #AWS CodeDeploy
+            $Automate Code Deployment
+            /codedeploy/?c=10&amp;pt=6
+
+            #AWS CodePipeline
+            $Release Software using Continuous Delivery
+            /codepipeline/?c=10&amp;pt=7
+
+            #AWS CodeStar
+            $Develop and Deploy AWS Applications 
+            /codestar/?c=10&amp;pt=8
+
+            #AWS Command Line Interface
+            $Unified Tool to Manage AWS Services
+            /cli/?c=10&amp;pt=9
+
+            #AWS Device Farm
+            $Test Android, iOS, and web apps on real devices in the AWS cloud
+            /device-farm/?c=10&amp;pt=10
+
+            #AWS Tools and SDKs
+            $Tools and SDKs for AWS
+            /getting-started/tools-sdks/?c=10&amp;pt=11
+
+            #AWS X-Ray
+            $Analyze and debug your applications
+            /xray/?c=10&amp;pt=12
+
+@End User Computing
+            #Amazon AppStream 2.0
+            $Stream Desktop Applications Securely to a Browser
+            /appstream2/?c=11&amp;pt=1
+
+            #Amazon WorkDocs
+            $Secure enterprise document storage and sharing
+            /workdocs/?c=11&amp;pt=2
+
+            #Amazon WorkLink
+            $Enable mobile access to internal websites
+            /worklink/?c=11&amp;pt=3
+
+            #Amazon WorkSpaces
+            $Desktop Computing Service
+            /workspaces/?c=11&amp;pt=4
+
+@Game Tech
+            #Amazon GameLift
+            $Simple, Fast, Cost-effective Dedicated Game Server Hosting
+            /gamelift/?c=12&amp;pt=1
+
+            #Amazon Lumberyard
+            $A Free Cross-platform 3D Game Engine with Full Source, Integrated with AWS and Twitch
+            /lumberyard/?c=12&amp;pt=2
+
+@Internet of Things
+            #AWS IoT Core
+            $Connect Devices to the Cloud
+            /iot-core/?c=13&amp;pt=1
+
+            #Amazon FreeRTOS
+            $IoT Operating System for Microcontrollers
+            /freertos/?c=13&amp;pt=2
+
+            #AWS Greengrass
+            $Local Compute, Messaging, and Sync for Devices
+            /greengrass/?c=13&amp;pt=3
+
+            #AWS IoT 1-Click
+            $One Click Creation of an AWS Lambda Trigger
+            /iot-1-click/?c=13&amp;pt=4
+
+            #AWS IoT Analytics
+            $Analytics for IoT Devices
+            /iot-analytics/?c=13&amp;pt=5
+
+            #AWS IoT Button
+            $Cloud Programmable Dash Button
+            /iot/button/?c=13&amp;pt=6
+
+            #AWS IoT Device Defender
+            $Security Management for IoT Devices
+            /iot-device-defender/?c=13&amp;pt=7
+
+            #AWS IoT Device Management
+            $Onboard, Organize, and Remotely Manage IoT Devices
+            /iot-device-management/?c=13&amp;pt=8
+
+            #AWS IoT Events
+            $IoT event detection and response
+            /iot-events/?c=13&amp;pt=9
+
+            #AWS IoT SiteWise
+            $IoT data collector and interpreter
+            /iot-sitewise/?c=13&amp;pt=10
+
+            #AWS IoT Things Graph
+            $Easily connect devices and web services
+            /iot-things-graph/?c=13&amp;pt=11
+
+            #AWS Partner Device Catalog
+            $Curated catalog of AWS-compatible IoT hardware
+            /partners/dqp/?c=13&amp;pt=12
+
+@Machine Learning
+            #Amazon SageMaker
+            $Build, Train, and Deploy Machine Learning Models at Scale
+            /sagemaker/?c=14&amp;pt=1
+
+            #Amazon Augmented AI
+            $Easily implement human review of ML predictions
+            /augmented-ai/?c=14&amp;pt=2
+
+            #Amazon CodeGuru (Preview)
+            $Automate code reviews and identify expensive lines of code
+            /codeguru/?c=14&amp;pt=3
+
+            #Amazon Comprehend
+            $Discover Insights and Relationships in Text
+            /comprehend/?c=14&amp;pt=4
+
+            #Amazon Elastic Inference
+            $Deep learning inference acceleration
+            /elastic-inference/?c=14&amp;pt=5
+
+            #Amazon Forecast
+            $Increase forecast accuracy using machine learning
+            /forecast/?c=14&amp;pt=6
+
+            #Amazon Fraud Detector
+            $Detect more online fraud faster
+            /fraud-detector/?c=14&amp;pt=7
+
+            #Amazon Kendra
+            $Reinvent enterprise search with ML
+            /kendra/?c=14&amp;pt=8
+
+            #Amazon Lex
+            $Build Voice and Text Chatbots
+            /lex/?c=14&amp;pt=9
+
+            #Amazon Personalize
+            $Build real-time recommendations into your applications
+            /personalize/?c=14&amp;pt=10
+
+            #Amazon Polly
+            $Turn Text into Lifelike Speech
+            /polly/?c=14&amp;pt=11
+
+            #Amazon Rekognition
+            $Analyze Image and Video
+            /rekognition/?c=14&amp;pt=12
+
+            #Amazon SageMaker Ground Truth
+            $Build accurate ML training datasets
+            /sagemaker/groundtruth/?c=14&amp;pt=13
+
+            #Amazon Textract
+            $Extract text and data from documents
+            /textract/?c=14&amp;pt=14
+
+            #Amazon Translate
+            $Natural and Fluent Language Translation
+            /translate/?c=14&amp;pt=15
+
+            #Amazon Transcribe
+            $Automatic Speech Recognition
+            /transcribe/?c=14&amp;pt=16
+
+            #AWS Deep Learning AMIs
+            $Quickly Start Deep Learning on EC2
+            /machine-learning/amis/?c=14&amp;pt=17
+
+            #AWS Deep Learning Containers
+            $Docker images for deep learning
+            /machine-learning/containers/?c=14&amp;pt=18
+
+            #AWS DeepComposer
+            $ML enabled musical keyboard
+            /deepcomposer/?c=14&amp;pt=19
+
+            #AWS DeepLens
+            $Deep Learning Enabled Video Camera
+            /deeplens/?c=14&amp;pt=20
+
+            #AWS DeepRacer
+            $Autonomous 1/18th scale race car, driven by ML
+            /deepracer/?c=14&amp;pt=21
+
+            #Amazon Inferentia
+            $Machine learning inference chip
+            /inferentia/?c=14&amp;pt=22
+
+            #Apache MXNet on AWS
+            $Scalable, High-performance Deep Learning
+            /mxnet/?c=14&amp;pt=23
+
+            #TensorFlow on AWS
+            $Open-source Machine Intelligence Library
+            /tensorflow/?c=14&amp;pt=24
+
+@Management &amp; Governance
+            #Amazon CloudWatch
+            $Monitor Resources and Applications
+            /cloudwatch/?c=15&amp;pt=1
+
+            #AWS Auto Scaling
+            $Scale Multiple Resources to Meet Demand
+            /autoscaling/?c=15&amp;pt=2
+
+            #AWS Chatbot
+            $ChatOps for AWS
+            /chatbot/?c=15&amp;pt=3
+
+            #AWS CloudFormation
+            $Create and Manage Resources with Templates
+            /cloudformation/?c=15&amp;pt=4
+
+            #AWS CloudTrail
+            $Track User Activity and API Usage
+            /cloudtrail/?c=15&amp;pt=5
+
+            #AWS Command Line Interface
+            $Unified tool to manage AWS services
+            /cli/?c=15&amp;pt=6
+
+            #AWS Compute Optimizer
+            $Identify optimal AWS Compute resources
+            /compute-optimizer/?c=15&amp;pt=7
+
+            #AWS Config
+            $Track Resource Inventory and Changes
+            /config/?c=15&amp;pt=8
+
+            #AWS Control Tower
+            $Set up and govern a secure, compliant, multi-account environment
+            /controltower/?c=15&amp;pt=9
+
+            #AWS Console Mobile Application
+            $Access resources on the go
+            /console/mobile/?c=15&amp;pt=10
+
+            #AWS License Manager
+            $Track, manage, and control licenses
+            /license-manager/?c=15&amp;pt=11
+
+            #AWS Management Console
+            $Web-based user interface
+            /console/?c=15&amp;pt=12
+
+            #AWS Managed Services
+            $Infrastructure operations management for AWS
+            /managed-services/?c=15&amp;pt=13
+
+            #AWS OpsWorks
+            $Automate Operations with Chef and Puppet
+            /opsworks/?c=15&amp;pt=14
+
+            #AWS Organizations
+            $Central governance and management across AWS accounts
+            /organizations/?c=15&amp;pt=15
+
+            #AWS Personal Health Dashboard
+            $Personalized View of AWS Service Health
+            /premiumsupport/phd/?c=15&amp;pt=16
+
+            #AWS Service Catalog
+            $Create and Use Standardized Products
+            /servicecatalog/?c=15&amp;pt=17
+
+            #AWS Systems Manager
+            $Gain Operational Insights and Take Action
+            /systems-manager/?c=15&amp;pt=18
+
+            #AWS Trusted Advisor
+            $Optimize Performance and Security
+            /trustedadvisor/?c=15&amp;pt=19
+
+            #AWS Well-Architected Tool
+            $Review and improve your workloads
+            /well-architected-tool/?c=15&amp;pt=20
+
+@Media Services
+            #Amazon Elastic Transcoder
+            $Easy-to-use Scalable Media Transcoding
+            /elastictranscoder/?c=16&amp;pt=1
+
+            #Amazon Kinesis Video Streams
+            $Process and Analyze Video Streams
+            /kinesis/video-streams/?c=16&amp;pt=2
+
+            #AWS Elemental MediaConnect
+            $Reliable and secure live video transport
+            /mediaconnect/?c=16&amp;pt=3
+
+            #AWS Elemental MediaConvert
+            $Convert File-based Video Content
+            /mediaconvert/?c=16&amp;pt=4
+
+            #AWS Elemental MediaLive
+            $Convert Live Video Content
+            /medialive/?c=16&amp;pt=5
+
+            #AWS Elemental MediaPackage
+            $Video Origination and Packaging
+            /mediapackage/?c=16&amp;pt=6
+
+            #AWS Elemental MediaStore
+            $Media Storage and Simple HTTP Origin
+            /mediastore/?c=16&amp;pt=7
+
+            #AWS Elemental MediaTailor
+            $Video Personalization and Monetization
+            /mediatailor/?c=16&amp;pt=8
+
+            #AWS Elemental Appliances &amp; Software
+            $On-premises media solutions
+            /elemental-appliances-software/?c=16&amp;pt=9
+
+@Migration &amp; Transfer
+            #AWS Migration Hub
+            $Track Migrations from a Single Place
+            /migration-hub/?c=17&amp;pt=1
+
+            #AWS Application Discovery Service
+            $Discover On-Premises Applications to Streamline Migration
+            /application-discovery/?c=17&amp;pt=2
+
+            #AWS Database Migration Service
+            $Migrate Databases with Minimal Downtime
+            /dms/?c=17&amp;pt=3
+
+            #AWS DataSync
+            $Simple, fast, online data transfer
+            /datasync/?c=17&amp;pt=4
+
+            #AWS Server Migration Service 
+            $Migrate On-Premises Servers to AWS
+            /server-migration-service/?c=17&amp;pt=5
+
+            #AWS Snow Family
+            $Physical devices to migrate data into and out of AWS
+            /snow/?c=17&amp;pt=6
+
+            #AWS Transfer for SFTP
+            $Fully managed SFTP service
+            /sftp/?c=17&amp;pt=7
+
+            #CloudEndure Migration
+            $Automate your mass migration to AWS
+            /cloudendure-migration/?c=17&amp;pt=8
+
+@Mobile
+            #AWS Amplify
+            $Build and deploy mobile and web applications
+            /amplify/?c=18&amp;pt=1
+
+            #Amazon API Gateway
+            $Build, Deploy, and Manage APIs
+            /api-gateway/?c=18&amp;pt=2
+
+            #Amazon Pinpoint
+            $Personalized User Engagement Across Channels
+            /pinpoint/?c=18&amp;pt=3
+
+            #AWS AppSync
+            $Power your apps with the right data from many sources, at scale
+            /appsync/?c=18&amp;pt=4
+
+            #AWS Device Farm
+            $Test Android, iOS, and web apps on real devices in the AWS cloud
+            /device-farm/?c=18&amp;pt=5
+
+@Networking &amp; Content Delivery
+            #Amazon VPC
+            $Isolated Cloud Resources
+            /vpc/?c=19&amp;pt=1
+
+            #Amazon API Gateway
+            $Build, Deploy, and Manage APIs
+            /api-gateway/?c=19&amp;pt=2
+
+            #Amazon CloudFront
+            $Global Content Delivery Network
+            /cloudfront/?c=19&amp;pt=3
+
+            #Amazon Route 53
+            $Scalable Domain Name System
+            /route53/?c=19&amp;pt=4
+
+            #AWS PrivateLink
+            $Securely Access Services Hosted on AWS
+            /privatelink/?c=19&amp;pt=5
+
+            #AWS App Mesh
+            $Monitor and control microservices
+            /app-mesh/?c=19&amp;pt=6
+
+            #AWS Cloud Map
+            $Application resource registry for microservices
+            /cloud-map/?c=19&amp;pt=7
+
+            #AWS Direct Connect
+            $Dedicated Network Connection to AWS
+            /directconnect/?c=19&amp;pt=8
+
+            #AWS Global Accelerator
+            $Improve application availability and performance
+            /global-accelerator/?c=19&amp;pt=9
+
+            #AWS Transit Gateway
+            $Easily scale VPC and account connections
+            /transit-gateway/?c=19&amp;pt=10
+
+            #Elastic Load Balancing
+            $Distribute incoming traffic across multiple targets
+            /elasticloadbalancing/?c=7&amp;pt=11
+
+@Quantum Technologies
+            #Amazon Braket
+            $Explore and experiment with quantum computing
+            /braket/
+
+            #AWS RoboMaker
+            $Develop, test, and deploy robotics applications
+            /robomaker/?c=20&amp;pt=1
+
+@Satellite
+            #AWS Ground Station
+            $Fully managed ground station as a service
+            /ground-station/?c=21&amp;pt=1
+
+@Security, Identity &amp; Compliance
+            #AWS Identity &amp; Access Management
+            $Manage User Access and Encryption Keys
+            /iam/?c=22&amp;pt=1
+
+            #Amazon Cognito
+            $Identity Management for your Apps
+            /cognito/?c=22&amp;pt=2
+
+            #Amazon Detective
+            $Investigate potential security issues
+            /detective/?c=22&amp;pt=3
+
+            #Amazon GuardDuty
+            $Managed Threat Detection Service
+            /guardduty/?c=22&amp;pt=4
+
+            #Amazon Inspector
+            $Analyze Application Security
+            /inspector/?c=22&amp;pt=5
+
+            #Amazon Macie
+            $Discover, Classify, and Protect your Data
+            /macie/?c=22&amp;pt=6
+
+            #AWS Artifact
+            $On-demand access to AWS compliance reports
+            /artifact/?c=22&amp;pt=7
+
+            #AWS Certificate Manager
+            $Provision, Manage, and Deploy SSL/TLS Certificates
+            /certificate-manager/?c=22&amp;pt=8
+
+            #AWS CloudHSM
+            $Hardware-based Key Storage for Regulatory Compliance
+            /cloudhsm/?c=22&amp;pt=9
+
+            #AWS Directory Service
+            $Host and Manage Active Directory
+            /directoryservice/?c=22&amp;pt=10
+
+            #AWS Firewall Manager
+            $Central Management of Firewall Rules
+            /firewall-manager/?c=22&amp;pt=11
+
+            #AWS Key Management Service
+            $Managed Creation and Control of Encryption Keys
+            /kms/?c=22&amp;pt=12
+
+            #AWS Resource Access Manager
+            $Simple, secure service to share AWS resources
+            /ram/?c=22&amp;pt=13
+
+            #AWS Secrets Manager
+            $Rotate, Manage, and Retrieve Secrets
+            /secrets-manager/?c=22&amp;pt=14
+
+            #AWS Security Hub
+            $Unified security and compliance center
+            /security-hub/?c=22&amp;pt=15
+
+            #AWS Shield
+            $DDoS Protection
+            /shield/?c=22&amp;pt=16
+
+            #AWS Single Sign-On
+            $Cloud Single Sign-On (SSO) Service
+            /single-sign-on/?c=22&amp;pt=17
+
+            #AWS WAF
+            $Filter Malicious Web Traffic
+            /waf/?c=22&amp;pt=18
+
+@Storage
+            #Amazon Simple Storage Service (S3)
+            $Scalable Storage in the Cloud
+            /s3/?c=23&amp;pt=1
+
+            #Amazon Elastic Block Store (EBS)
+            $EC2 block storage volumes
+            /ebs/?c=23&amp;pt=2
+
+            #Amazon Elastic File System (EFS)
+            $Fully managed file system for EC2
+            /efs/?c=23&amp;pt=3
+
+            #Amazon FSx for Lustre
+            $High-performance file system integrated with S3
+            /fsx/lustre/?c=23&amp;pt=4
+
+            #Amazon FSx for Windows File Server
+            $Fully managed Windows native file system
+            /fsx/windows/?c=23&amp;pt=5
+
+            #Amazon S3 Glacier
+            $Low-cost Archive Storage in the Cloud
+            /glacier1/?c=23&amp;pt=6
+
+            #AWS Backup
+            $Centralized backup across AWS services
+            /backup/?c=23&amp;pt=7
+
+            #AWS Snow Family
+            $Physical devices to migrate data into and out of AWS
+            /snow/?c=23&amp;pt=8
+
+            #AWS Storage Gateway
+            $Hybrid Storage Integration
+            /storagegateway/?c=23&amp;pt=9
+
+            #CloudEndure Disaster Recovery
+            $Highly automated disaster recovery
+            /cloudendure-disaster-recovery/?c=23&amp;pt=10
+
