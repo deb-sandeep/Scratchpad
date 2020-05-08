@@ -22,10 +22,12 @@ public class AWSProductsSummarizer {
         Map<String, List<AWSProductMeta>> metaMap = null ;
         
         metaMap = getProductMeta() ;
-        createJoveNotes( metaMap ) ;
+        //createJoveNotes( metaMap ) ;
+        log.debug( "Generating TOC" ) ;
+        printTOC( metaMap ) ;
     }
     
-    private void createJoveNotes( Map<String, List<AWSProductMeta>> metaMap ) 
+    public void createJoveNotes( Map<String, List<AWSProductMeta>> metaMap ) 
         throws Exception {
         
         int subChapterNumber = 1 ;
@@ -132,20 +134,22 @@ public class AWSProductsSummarizer {
         return metaMap ;
     }
     
-    public void printTOC() throws Exception {
+    public void printTOC(  Map<String, List<AWSProductMeta>> metaMap ) throws Exception {
         
-        Map<String, List<AWSProductMeta>> metaMap = null ;
-        metaMap = new ProductMetaParser().parseMeta() ;
-        
+        int totalProducts = 0 ;
         for( String category : metaMap.keySet() ) {
-            log.debug( category ) ;
             List<AWSProductMeta> metaList = metaMap.get( category ) ;
+            log.debug( category + " (" + metaList.size() + ")" ) ;
+            totalProducts += metaList.size() ;
             for( AWSProductMeta meta : metaList ) {
                 log.debug( "\t" + meta.getProductName() ) ;
                 log.debug( "\t\t" + meta.getShortDescription() ) ;
                 log.debug( "" ) ;
             }
         }
+        
+        log.debug( "Total categories = " + metaMap.size() ) ;
+        log.debug( "Total products = " + totalProducts ) ;
     }
     
     public static void main( String[] args ) throws Exception {
