@@ -16,15 +16,33 @@ class Question {
     String qType = null ;
     float qId = 0.0F ;
     
+//    Question( String fileName ) {
+//        String[] parts = fileName.substring( 0, fileName.length()-4 ).split( "_" ) ;
+//        paperId = parts[2] + "_" + parts[3] ;
+//        qType = parts[4] ;
+//        String qIdStr = "" ;
+//        
+//        int qIdPartsLen = parts.length - 5 ;
+//        for( int i=0; i<qIdPartsLen; i++ ) {
+//            qIdStr += parts[i+5] ;
+//            qIdStr += "." ;
+//        }
+//        qIdStr = qIdStr.substring( 0, qIdStr.length()-1 ) ;
+//        if( qIdStr.contains( "(" ) ) {
+//            qIdStr = qIdStr.substring( 0, qIdStr.indexOf( '(' ) ) ;
+//        }
+//        qId = Float.parseFloat( qIdStr ) ;
+//    }
+//
     Question( String fileName ) {
         String[] parts = fileName.substring( 0, fileName.length()-4 ).split( "_" ) ;
-        paperId = parts[2] + "_" + parts[3] ;
-        qType = parts[4] ;
+        paperId = parts[2] ;
+        qType = parts[3] ;
         String qIdStr = "" ;
         
-        int qIdPartsLen = parts.length - 5 ;
+        int qIdPartsLen = parts.length - 4 ;
         for( int i=0; i<qIdPartsLen; i++ ) {
-            qIdStr += parts[i+5] ;
+            qIdStr += parts[i+4] ;
             qIdStr += "." ;
         }
         qIdStr = qIdStr.substring( 0, qIdStr.length()-1 ) ;
@@ -38,7 +56,7 @@ class Question {
 @SuppressWarnings( "serial" )
 public class FileList extends JList<String> {
     
-    private static final Logger log = Logger.getLogger( FileList.class ) ;
+    static final Logger log = Logger.getLogger( FileList.class ) ;
 
     private File baseDir = null ;
     private DefaultListModel<String> listModel = new DefaultListModel<>() ;

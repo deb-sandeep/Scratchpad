@@ -327,8 +327,8 @@ Math,76,MCA,AB
 Math,77,,AD
 Math,78,LCT,A
 Math,79,,A
-Math,80,MMT,A
-Math,81,,ATBRCQDP
+Math,80,,A
+Math,81,MMT,ATBRCQDP
 Math,82,SCA,A
 Math,83,,C
 Math,84,,A
@@ -465,7 +465,7 @@ Math,214,LCT,D
 Math,215,,C
 Math,216,,A
 Math,217,NT,6
-Math,218,6,4
+Math,218,,4
 Math,219,,2
 Math,220,,4
 Math,221,,8
