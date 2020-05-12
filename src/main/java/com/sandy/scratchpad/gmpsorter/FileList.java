@@ -16,6 +16,7 @@ class Question {
     String qType = null ;
     float qId = 0.0F ;
     
+// AITS
 //    Question( String fileName ) {
 //        String[] parts = fileName.substring( 0, fileName.length()-4 ).split( "_" ) ;
 //        paperId = parts[2] + "_" + parts[3] ;
@@ -34,6 +35,8 @@ class Question {
 //        qId = Float.parseFloat( qIdStr ) ;
 //    }
 //
+
+//    YG & Allen
     Question( String fileName ) {
         String[] parts = fileName.substring( 0, fileName.length()-4 ).split( "_" ) ;
         paperId = parts[2] ;
