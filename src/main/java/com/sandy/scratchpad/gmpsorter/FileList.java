@@ -38,6 +38,7 @@ class Question {
 
 //    YG & Allen
     Question( String fileName ) {
+        System.out.println( fileName ) ;
         String[] parts = fileName.substring( 0, fileName.length()-4 ).split( "_" ) ;
         paperId = parts[2] ;
         qType = parts[3] ;
