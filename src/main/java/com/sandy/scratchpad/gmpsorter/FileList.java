@@ -80,7 +80,7 @@ public class FileList extends JList<String> {
         File[] files = this.baseDir.listFiles( new FileFilter() {
             public boolean accept( File file ) {
                 String fileName = file.getName() ;
-                return fileName.startsWith( GMPSorter.IMG_PREFIX ) ;
+                return fileName.contains( GMPSorter.IMG_MATCH ) ;
             }
         } ) ;
         
