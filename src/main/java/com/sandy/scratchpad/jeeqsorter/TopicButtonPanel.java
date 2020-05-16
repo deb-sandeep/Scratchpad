@@ -1,5 +1,6 @@
-package com.sandy.scratchpad.gmpsorter;
+package com.sandy.scratchpad.jeeqsorter;
 
+import java.awt.BorderLayout ;
 import java.awt.Font ;
 import java.awt.GridLayout ;
 import java.awt.event.ActionEvent ;
@@ -13,6 +14,7 @@ import java.util.List ;
 
 import javax.swing.JButton ;
 import javax.swing.JPanel ;
+import javax.swing.JTabbedPane ;
 
 import org.apache.log4j.Logger ;
 
@@ -24,19 +26,29 @@ public class TopicButtonPanel extends JPanel implements ActionListener {
     static final Font BTN_FONT = new Font( "Arial", Font.PLAIN, 18 ) ;
     
     private File baseDir = null ;
-    private List<String> topicNames = new ArrayList<>() ;
-    private GMPSorter sorter = null ;
+    
+    private List<String> phyTopicNames  = new ArrayList<>() ;
+    private List<String> chemTopicNames = new ArrayList<>() ;
+    private List<String> mathTopicNames = new ArrayList<>() ;
+    
+    private JEEQSorter sorter = null ;
     private String selectedTopic = null ;
 
-    public TopicButtonPanel( GMPSorter sorter ) {
+    private JTabbedPane tabPane = new JTabbedPane() ;
+    
+    public TopicButtonPanel( JEEQSorter sorter ) {
         this.sorter = sorter ;
-        this.baseDir = sorter.getBaseDir() ;
-        populateModel() ;
+        this.baseDir = sorter.getBaseDestDir() ;
+        populateModel( phyTopicNames,  JEEQSorter.SUB_PHY   ) ;
+        populateModel( chemTopicNames, JEEQSorter.SUB_CHEM  ) ;
+        populateModel( mathTopicNames, JEEQSorter.SUB_MATHS ) ;
         setUpUI() ;
     }
     
-    private void populateModel() {
-        File[] topicDirs = this.baseDir.listFiles( new FileFilter() {
+    private void populateModel( List<String> topicNames, String subName ) {
+        
+        File subDir = new File( this.baseDir, subName ) ;
+        File[] topicDirs = subDir.listFiles( new FileFilter() {
             public boolean accept( File pathname ) {
                 return pathname.isDirectory() ;
             }
@@ -57,22 +69,36 @@ public class TopicButtonPanel extends JPanel implements ActionListener {
     
     private void setUpUI() {
         
+        tabPane.addTab( "Physics",   setUpSubjectUI( phyTopicNames  ) ) ;
+        tabPane.addTab( "Chemistry", setUpSubjectUI( chemTopicNames ) ) ;
+        tabPane.addTab( "Maths",     setUpSubjectUI( mathTopicNames ) ) ;
+        
+        setLayout( new BorderLayout() ) ;
+        add( tabPane, BorderLayout.CENTER ) ;
+    }
+    
+    private JPanel setUpSubjectUI( List<String> topicNames ) {
+        
+        JPanel panel = new JPanel() ;
+        
         int numColumns = 6 ;
         int numRows = 4 ;
         
-        setLayout( new GridLayout( numRows, numColumns ) ) ;
+        panel.setLayout( new GridLayout( numRows, numColumns ) ) ;
         for( String topic : topicNames ) {
             JButton btn = new JButton( getWrappedText( topic ) ) ;
             btn.addActionListener( this ) ;
             btn.setFont( BTN_FONT ) ;
             btn.setActionCommand( topic ) ;
-            add( btn ) ;
+            panel.add( btn ) ;
         }
         
         JButton btn = new JButton( " >> " ) ;
         btn.addActionListener( this ) ;
         btn.setFont( BTN_FONT ) ;
-        add( btn ) ;
+        panel.add( btn ) ;
+        
+        return panel ;
     }
     
     public String getSelectedDirName() {
@@ -101,6 +127,22 @@ public class TopicButtonPanel extends JPanel implements ActionListener {
         else {
             this.selectedTopic = src.getActionCommand() ;
             this.sorter.moveImageFile() ;
+        }
+    }
+    
+    public void showTab( String subName ) {
+        switch( subName ) {
+            case JEEQSorter.SUB_PHY:
+                tabPane.setSelectedIndex( 0 ) ;
+                break ;
+                
+            case JEEQSorter.SUB_CHEM:
+                tabPane.setSelectedIndex( 1 ) ;
+                break ;
+                
+            case JEEQSorter.SUB_MATHS:
+                tabPane.setSelectedIndex( 2 ) ;
+                break ;
         }
     }
 }

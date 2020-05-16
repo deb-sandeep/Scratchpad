@@ -1,12 +1,20 @@
-package com.sandy.scratchpad.gmpsorter ;
+package com.sandy.scratchpad.jeeqsorter ;
 
-import java.awt.* ;
+import java.awt.BorderLayout ;
+import java.awt.Container ;
+import java.awt.Dimension ;
+import java.awt.Font ;
+import java.awt.KeyEventDispatcher ;
+import java.awt.KeyboardFocusManager ;
 import java.awt.event.KeyEvent ;
 import java.io.File ;
 import java.util.Stack ;
-import java.util.concurrent.ArrayBlockingQueue ;
 
-import javax.swing.* ;
+import javax.swing.JComponent ;
+import javax.swing.JFrame ;
+import javax.swing.JList ;
+import javax.swing.JPanel ;
+import javax.swing.JScrollPane ;
 import javax.swing.event.ListSelectionEvent ;
 import javax.swing.event.ListSelectionListener ;
 
@@ -16,70 +24,37 @@ import org.apache.log4j.Logger ;
 import com.sandy.scratchpad.jn.imgsorter.ThumbnailViewer ;
 
 @SuppressWarnings( "serial" )
-public class GMPSorter extends JFrame implements ListSelectionListener {
+public class JEEQSorter extends JFrame implements ListSelectionListener {
     
-    public static final String BOOK_SHORT_NAME = "Allen" ;
-    public static final String SUBJECT_FOLDER_NAME = "IIT - Maths" ;
+    static final Logger log = Logger.getLogger( JEEQSorter.class ) ;
+    
+    public static final String BK_ALLEN = "Allen" ;
+    public static final String BK_AITS  = "AITS" ;
+    public static final String BK_YG202 = "YG File 2 - 2020" ;
+    
+    public static final String SUB_MATHS = "IIT - Maths" ;
+    public static final String SUB_PHY   = "IIT - Physics" ;
+    public static final String SUB_CHEM  = "IIT - Chemistry" ;
+    
     public static final String IMG_MATCH = "_Q_" ;
     
-    private class TopicShortcutProcessor extends Thread {
-        
-        private ArrayBlockingQueue<Integer> keyStrokes = new ArrayBlockingQueue<>( 10 ) ;
-        
-        public TopicShortcutProcessor() {
-            setDaemon( true ) ;
-        }
-        
-        public void run() {
-            while( true ) {
-                try {
-                    // This call will block till the user presses a numeric key
-                    Integer k1 = keyStrokes.take() ;
-                    
-                    // Once the user presses a key, there is a possibility that 
-                    // he might want to enter a two digit number. To cater for
-                    // that possibility, we sleep for some time, wake up to see
-                    // if the queue has more key strokes. If so, we assemble the 
-                    // number else we proceed with the first key.
-                    Thread.sleep( 250 ) ;
-                    
-                    int index = 0 ;
-                    if( keyStrokes.isEmpty() ) {
-                        index = k1-1 ;
-                    }
-                    else {
-                        Integer k2 = keyStrokes.take() ;
-                        index = ( k1*10 + k2 ) - 1 ;
-                        keyStrokes.clear() ;
-                    }
-                    
-//                    topicList.setSelectedIndex( index ) ;
-                }
-                catch( InterruptedException e ) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-    
-    static final Logger log = Logger.getLogger( GMPSorter.class ) ;
     static final Font LIST_FONT = new Font( "Arial", Font.PLAIN, 14 ) ;
     
     private static final int WIDTH = 900 ;
     
     private FileList fileList = null ;
-//    private TopicList topicList = null ;
     private TopicButtonPanel topicBtnPanel = null ;
     private ThumbnailViewer imgViewer = null ;
     
-    private File baseDir = null ;
+    private File baseDestDir = null ;
+    private File baseSrcDir = null ;
     
     private Stack<File> undoStack = new Stack<>() ;
-    private TopicShortcutProcessor tsProcessor = new TopicShortcutProcessor() ;
 
-    public GMPSorter( File dir ) {
+    public JEEQSorter( File baseDestDir, File baseSrcDir ) {
         super( "GMP question sorter." ) ;
-        this.baseDir = dir ;
+        this.baseDestDir = baseDestDir ;
+        this.baseSrcDir = baseSrcDir ;
         
         setUpUI() ;
         setUpListeners() ;
@@ -88,7 +63,6 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
         
         imgViewer.requestFocus() ;
         fileList.setSelectedIndex( 0 ) ;
-        tsProcessor.start() ;
     }
     
     private void setUpUI() {
@@ -111,10 +85,6 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
 
         this.fileList = new FileList( this ) ;
         this.fileList.setFont( LIST_FONT );
-        
-//        this.topicList = new TopicList( this ) ;
-//        this.topicList.setFont( LIST_FONT );
-
         this.topicBtnPanel = new TopicButtonPanel( this ) ;
         
         
@@ -160,56 +130,37 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
         if( !e.getValueIsAdjusting() ){
             FileList list = ( FileList )e.getSource() ;
             if( list.getSelectedValue() != null ) {
-                File imgFile = new File( getBaseDir(), list.getSelectedValue() ) ;
+                File imgFile = new File( getBaseSrcDir(), list.getSelectedValue() ) ;
                 this.imgViewer.showImage( imgFile ) ;
+                
+                String srcFName = imgFile.getName() ;
+                if( srcFName.startsWith( "Phy_Q_" ) ) {
+                    topicBtnPanel.showTab( SUB_PHY ) ;
+                }
+                else if( srcFName.startsWith( "Chem_Q_" ) ) {
+                    topicBtnPanel.showTab( SUB_CHEM ) ;
+                }
+                else if( srcFName.startsWith( "Math_Q_" ) ) {
+                    topicBtnPanel.showTab( SUB_MATHS ) ;
+                }
+
             }
         }
     }
     
-    public File getBaseDir() {
-        return this.baseDir ;
+    public File getBaseDestDir() {
+        return this.baseDestDir ;
+    }
+    
+    public File getBaseSrcDir() {
+        return this.baseSrcDir ;
     }
     
     private void processKeyStroke( char key ) {
-        if( key >= '0' && key <= '9' ) {
-            tsProcessor.keyStrokes.offer( key - '0' ) ;
-        }
-        else {
-            switch( key ) {
-                case 'f':
-                    moveSelectionDown( fileList ) ;
-                    break ;
-                case 'j':
-//                    moveSelectionDown( topicList ) ;
-                    break ;
-                case 'd':
-                    moveSelectionUp( fileList ) ;
-                    break ;
-                case 'k':
-//                    moveSelectionUp( topicList ) ;
-                    break ;
-                case ' ':
-                    moveImageFile() ;
-                    break ;
-                case 'z':
-                    undo() ;
-                    break ;
-                default:
-//                    topicList.selectValueWithFirstLetter( key ) ;
-                    break ;
-            }
-        }
-    }
-    
-    private void moveSelectionUp( JList<String> list ) {
-        int selIndex = list.getSelectedIndex() ;
-        if( selIndex > 0 ) {
-            list.setSelectedIndex( --selIndex ) ;
-        }
-        else {
-            if( list.getModel().getSize() > 0 ) {
-                list.setSelectedIndex( list.getModel().getSize()-1 ) ;
-            }
+        switch( key ) {
+            case 'z':
+                undo() ;
+                break ;
         }
     }
     
@@ -226,16 +177,17 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     }
     
     void moveImageFile() {
-        File srcFile = new File( getBaseDir(), fileList.getSelectedValue() ) ;
-        File destDir = new File( getBaseDir(), topicBtnPanel.getSelectedDirName() ) ;
-        destDir = new File( destDir, BOOK_SHORT_NAME ) ;
+        File srcFile = new File( getBaseSrcDir(), fileList.getSelectedValue() ) ;
+        File destDir = getDestFolder( srcFile ) ;
         File destFile = new File( destDir, fileList.getSelectedValue() ) ;
         
-        log.debug( destFile.getAbsolutePath()
-                           .substring( getBaseDir().getAbsolutePath()
-                                                   .length() ) ) ;
         try {
             FileUtils.moveFile( srcFile, destFile ) ;
+            log.debug( srcFile.getName() + "   ->   " + 
+                       destFile.getParent()
+                               .substring( baseDestDir.getAbsolutePath()
+                                                      .length() ) ) ;
+            
             fileList.removeSelectedValue() ;
             undoStack.push( destFile ) ;
             setTitle( "Num files left = " + fileList.getNumFiles() ) ;
@@ -245,11 +197,43 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
         }
     }
     
+    private File getDestFolder( File srcFile ) {
+        String srcFName = srcFile.getName() ;
+        String bookFolderName = null ;
+        String subFolderName = null ;
+        
+        if( srcFName.contains( "_Q_FJ" ) ) {
+            bookFolderName = BK_AITS ;
+        }
+        else if( srcFName.contains( "_Q_AL" ) ) {
+            bookFolderName = BK_ALLEN ;
+        }
+        if( srcFName.contains( "_Q_YG202" ) ) {
+            bookFolderName = BK_YG202 ;
+        }
+        
+        if( srcFName.startsWith( "Phy_Q_" ) ) {
+            subFolderName = SUB_PHY ;
+        }
+        else if( srcFName.startsWith( "Chem_Q_" ) ) {
+            subFolderName = SUB_CHEM ;
+        }
+        else if( srcFName.startsWith( "Math_Q_" ) ) {
+            subFolderName = SUB_MATHS ;
+        }
+        
+        File destFolder = new File( this.baseDestDir, subFolderName ) ;
+        destFolder = new File( destFolder, topicBtnPanel.getSelectedDirName() ) ;
+        destFolder = new File( destFolder, bookFolderName ) ;
+        
+        return destFolder ;
+    }
+    
     private void undo() {
         
         if( !undoStack.isEmpty() ) {
             File lastMovedFile = undoStack.pop() ;
-            File destFile = new File( getBaseDir(), lastMovedFile.getName() ) ;
+            File destFile = new File( getBaseSrcDir(), lastMovedFile.getName() ) ;
             
             try {
                 FileUtils.moveFile( lastMovedFile, destFile ) ;
@@ -266,9 +250,9 @@ public class GMPSorter extends JFrame implements ListSelectionListener {
     }
     
     public static void main( String[] args ) {
-        File baseDir = new File( "/home/sandeep/projects/source/SConsoleProcessedImages/", 
-                                 SUBJECT_FOLDER_NAME ) ;
-        new GMPSorter( baseDir ) ;
+        File baseDestDir = new File( "/home/sandeep/projects/source/SConsoleProcessedImages/" ) ;
+        File baseSrcDir = new File( "/home/sandeep/temp/question-scrapes" ) ;
+        new JEEQSorter( baseDestDir, baseSrcDir ) ;
     }
 
 }
