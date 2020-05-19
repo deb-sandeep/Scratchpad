@@ -13,54 +13,6 @@ import javax.swing.SwingUtilities ;
 
 import org.apache.log4j.Logger ;
 
-class Question {
-    
-    String sub = null ;
-    String paperId = null ;
-    String qType = null ;
-    float qId = 0.0F ;
-    
-// AITS
-//    Question( String fileName ) {
-//        String[] parts = fileName.substring( 0, fileName.length()-4 ).split( "_" ) ;
-//        paperId = parts[2] + "_" + parts[3] ;
-//        qType = parts[4] ;
-//        String qIdStr = "" ;
-//        
-//        int qIdPartsLen = parts.length - 5 ;
-//        for( int i=0; i<qIdPartsLen; i++ ) {
-//            qIdStr += parts[i+5] ;
-//            qIdStr += "." ;
-//        }
-//        qIdStr = qIdStr.substring( 0, qIdStr.length()-1 ) ;
-//        if( qIdStr.contains( "(" ) ) {
-//            qIdStr = qIdStr.substring( 0, qIdStr.indexOf( '(' ) ) ;
-//        }
-//        qId = Float.parseFloat( qIdStr ) ;
-//    }
-//
-
-//    YG & Allen
-    Question( String fileName ) {
-        String[] parts = fileName.substring( 0, fileName.length()-4 ).split( "_" ) ;
-        sub = parts[0] ;
-        paperId = parts[2] ;
-        qType = parts[3] ;
-        String qIdStr = "" ;
-        
-        int qIdPartsLen = parts.length - 4 ;
-        for( int i=0; i<qIdPartsLen; i++ ) {
-            qIdStr += parts[i+4] ;
-            qIdStr += "." ;
-        }
-        qIdStr = qIdStr.substring( 0, qIdStr.length()-1 ) ;
-        if( qIdStr.contains( "(" ) ) {
-            qIdStr = qIdStr.substring( 0, qIdStr.indexOf( '(' ) ) ;
-        }
-        qId = Float.parseFloat( qIdStr ) ;
-    }
-}
-
 @SuppressWarnings( "serial" )
 public class FileList extends JList<String> {
     
@@ -142,23 +94,32 @@ public class FileList extends JList<String> {
         }
     }
 
+//    private void sortFileArray( File[] files ) {
+//        
+//        Arrays.sort( files, new Comparator<File>() {
+//            public int compare( File f1, File f2 ) {
+//                Question q1 = new Question( f1.getName() ) ;
+//                Question q2 = new Question( f2.getName() ) ;
+//                
+//                if( q1.sub.equals( q2.sub ) ) {
+//                    if( q1.paperId.equals( q2.paperId ) ) {
+//                        if( q1.qType.equals( q2.qType ) ) {
+//                            return ( q1.qId < q2.qId ) ? -1 : 1 ;
+//                        }
+//                        return q1.qType.compareTo( q2.qType ) ;
+//                    }
+//                    return q1.paperId.compareTo( q2.paperId ) ;
+//                }
+//                return q1.sub.compareTo( q2.sub ) ;
+//            }
+//        } ) ;
+//    }
+//
     private void sortFileArray( File[] files ) {
         
         Arrays.sort( files, new Comparator<File>() {
             public int compare( File f1, File f2 ) {
-                Question q1 = new Question( f1.getName() ) ;
-                Question q2 = new Question( f2.getName() ) ;
-                
-                if( q1.sub.equals( q2.sub ) ) {
-                    if( q1.paperId.equals( q2.paperId ) ) {
-                        if( q1.qType.equals( q2.qType ) ) {
-                            return ( q1.qId < q2.qId ) ? -1 : 1 ;
-                        }
-                        return q1.qType.compareTo( q2.qType ) ;
-                    }
-                    return q1.paperId.compareTo( q2.paperId ) ;
-                }
-                return q1.sub.compareTo( q2.sub ) ;
+                return (int)(f1.lastModified() - f2.lastModified()) ;
             }
         } ) ;
     }

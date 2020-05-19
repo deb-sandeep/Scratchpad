@@ -8,6 +8,8 @@ import java.awt.KeyEventDispatcher ;
 import java.awt.KeyboardFocusManager ;
 import java.awt.event.KeyEvent ;
 import java.io.File ;
+import java.io.FileWriter ;
+import java.io.IOException ;
 import java.util.Stack ;
 
 import javax.swing.JComponent ;
@@ -48,6 +50,7 @@ public class JEEQSorter extends JFrame implements ListSelectionListener {
     
     private File baseDestDir = null ;
     private File baseSrcDir = null ;
+    private File qmetaCSVFile = null ;
     
     private Stack<File> undoStack = new Stack<>() ;
 
@@ -55,6 +58,7 @@ public class JEEQSorter extends JFrame implements ListSelectionListener {
         super( "GMP question sorter." ) ;
         this.baseDestDir = baseDestDir ;
         this.baseSrcDir = baseSrcDir ;
+        this.qmetaCSVFile = new File( baseDestDir, "q-meta.csv" ) ;
         
         setUpUI() ;
         setUpListeners() ;
@@ -191,9 +195,35 @@ public class JEEQSorter extends JFrame implements ListSelectionListener {
             fileList.removeSelectedValue() ;
             undoStack.push( destFile ) ;
             setTitle( "Num files left = " + fileList.getNumFiles() ) ;
+            makeMetaEntry( srcFile ) ;
         }
         catch( Exception e ) {
             e.printStackTrace();
+        }
+    }
+    
+    private void makeMetaEntry( File srcFile ) {
+        
+        Question question = new Question( srcFile.getName() ) ;
+
+        if( !question.isLCTParagraph() ) {
+            StringBuilder sb = new StringBuilder() ;
+            sb.append( question.sub )
+              .append( "," )
+              .append( question.paperId )
+              .append( "," )
+              .append( question.qType )
+              .append( "," )
+              .append( question.qNumber ) ;
+            try {
+                FileWriter fw = new FileWriter( qmetaCSVFile, true ) ;
+                fw.append( sb.toString() + "\n" ) ;
+                fw.flush() ;
+                fw.close() ;
+            }
+            catch( IOException e ) {
+                log.error( "Could not save meta" ) ;
+            }
         }
     }
     
