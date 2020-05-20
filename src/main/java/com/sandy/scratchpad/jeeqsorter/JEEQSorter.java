@@ -51,6 +51,7 @@ public class JEEQSorter extends JFrame implements ListSelectionListener {
     private File baseDestDir = null ;
     private File baseSrcDir = null ;
     private File qmetaCSVFile = null ;
+    private File classificationLog = null ;
     
     private Stack<File> undoStack = new Stack<>() ;
 
@@ -58,7 +59,8 @@ public class JEEQSorter extends JFrame implements ListSelectionListener {
         super( "GMP question sorter." ) ;
         this.baseDestDir = baseDestDir ;
         this.baseSrcDir = baseSrcDir ;
-        this.qmetaCSVFile = new File( baseDestDir, "q-meta.csv" ) ;
+        this.qmetaCSVFile = new File( baseDestDir, "meta.csv" ) ;
+        this.classificationLog = new File( baseDestDir, "classification-log.csv" ) ;
         
         setUpUI() ;
         setUpListeners() ;
@@ -187,15 +189,12 @@ public class JEEQSorter extends JFrame implements ListSelectionListener {
         
         try {
             FileUtils.moveFile( srcFile, destFile ) ;
-            log.debug( srcFile.getName() + "   ->   " + 
-                       destFile.getParent()
-                               .substring( baseDestDir.getAbsolutePath()
-                                                      .length() ) ) ;
             
             fileList.removeSelectedValue() ;
             undoStack.push( destFile ) ;
             setTitle( "Num files left = " + fileList.getNumFiles() ) ;
             makeMetaEntry( srcFile ) ;
+            makeClassificationLogEntry( srcFile, destFile ) ;
         }
         catch( Exception e ) {
             e.printStackTrace();
@@ -224,6 +223,26 @@ public class JEEQSorter extends JFrame implements ListSelectionListener {
             catch( IOException e ) {
                 log.error( "Could not save meta" ) ;
             }
+        }
+    }
+    
+    private void makeClassificationLogEntry( File src, File dest ) {
+        
+        String srcFName = src.getName() ;
+        String entry = srcFName.substring( 0, srcFName.length()-4 ) + "," + 
+                       dest.getParent()
+                           .substring( baseDestDir.getAbsolutePath()
+                                                  .length() ) ;
+        
+        try {
+            FileWriter fw = new FileWriter( classificationLog, true ) ;
+            fw.append( entry + "\n" ) ;
+            fw.flush() ;
+            fw.close() ;
+            log.debug( entry ) ;
+        }
+        catch( IOException e ) {
+            log.error( "Could not save classification" ) ;
         }
     }
     

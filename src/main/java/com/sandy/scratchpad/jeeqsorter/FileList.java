@@ -51,8 +51,6 @@ public class FileList extends JList<String> {
     
     private void populateModel() {
         
-        log.debug( "Scanning..." ) ;
-
         List<String> elementsToRemove = new ArrayList<>() ;
         for( int i=0; i<listModel.size(); i++ ) {
             String entry = listModel.get( i ) ;
@@ -86,7 +84,6 @@ public class FileList extends JList<String> {
             if( !listModel.contains( file.getName() ) ) {
                 SwingUtilities.invokeLater( new Runnable() {
                     public void run() {
-                        log.debug( "Discovered -> " + file.getName() ) ;
                         listModel.addElement( file.getName() ) ;
                     }
                 } ) ;
