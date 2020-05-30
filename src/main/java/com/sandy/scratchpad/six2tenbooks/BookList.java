@@ -115,7 +115,9 @@ public class BookList {
             imagifyPDF( file ) ;
             log.debug( "Processing complete. Num files left = " + 
                        (filesForImagification.size()-i-1) ) ;
-            System.exit( 0 ) ;
+            
+            // Let the system cool down a bit
+            Thread.sleep( 5*1000 ) ;
         }
     }
     
