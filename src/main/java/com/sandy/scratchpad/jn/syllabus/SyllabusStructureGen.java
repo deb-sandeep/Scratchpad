@@ -1,48 +1,56 @@
 package com.sandy.scratchpad.jn.syllabus;
 
 import java.io.File ;
-import java.util.ArrayList ;
+import java.util.LinkedHashMap ;
 import java.util.List ;
+import java.util.Map ;
 
-import org.apache.commons.io.FileUtils ;
+import com.sandy.common.xlsutil.XLSRow ;
+import com.sandy.common.xlsutil.XLSWrapper ;
 
 public class SyllabusStructureGen {
 
-    private File jnRoot = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-V/Class-5" ) ;
-    private File inputFile = new File( "/home/sandeep/temp/syllabus.txt" ) ;
+    private File baseDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-VI" ) ;
+    private File jnRoot = new File( baseDir, "Class-6" ) ;
+    private File inputFile = new File( baseDir, "Syllabus.xlsx" ) ;
 
-    private Subject currentSubject = null ;
-    private List<Subject> subjects = new ArrayList<>() ;
+
+    private Map<String, Subject> subjectMap = new LinkedHashMap<>() ;
     
     public void execute() throws Exception {
-        parse() ;
-        for( Subject subject : subjects ) {
+        parseXlsx() ;
+        for( Subject subject : subjectMap.values() ) {
             subject.createFolderStructure() ;
         }
     }
     
-    private void parse() throws Exception {
+    private void parseXlsx() throws Exception {
         
-        List<String> lines = FileUtils.readLines( inputFile ) ;
-        for( String line : lines ) {
-            if( line.trim().equals( "" ) ) continue ;
+        XLSWrapper xlWrapper = new XLSWrapper( inputFile ) ;
+        List<XLSRow> rows = xlWrapper.getRows( 0, 0, 2 ) ;
+        
+        for( XLSRow row : rows ) {
+            String subjectName = row.getCellValue( 0 ) ;
+            String chapterNum  = row.getCellValue( 1 ) ;
+            String chapterName = row.getCellValue( 2 ) ;
             
-            if( line.matches( "^[0-9]+\\s+.*$" ) ) {
+            Subject subject = getSubject( subjectName ) ;
+            Chapter chapter = new Chapter( subject, 
+                                           Integer.parseInt( chapterNum ), 
+                                           chapterName ) ;
             
-                String chNum = line.substring( 0, 3 ) ;
-                String chName = line.substring( 3 ).trim() ;
-                
-                int chapterNumber = Integer.parseInt( chNum.trim() ) ;
-                
-                Chapter chapter = new Chapter( this.currentSubject, chapterNumber, chName ) ;
-                this.currentSubject.addChapter( chapter ) ;
-            }
-            else {
-                Subject subject = new Subject( line.trim(), jnRoot ) ;
-                subjects.add( subject ) ;
-                this.currentSubject = subject ;
-            }
+            subject.addChapter( chapter ) ;
         }
+    }
+    
+    private Subject getSubject( String subjectName ) {
+        
+        Subject subject = subjectMap.get( subjectName ) ;
+        if( subject == null ) {
+            subject = new Subject( subjectName, jnRoot ) ;
+            subjectMap.put( subjectName, subject ) ;
+        }
+        return subject ;
     }
     
     public static void main( String[] args ) 

@@ -6,8 +6,6 @@ import java.io.FileWriter ;
 import org.apache.commons.io.FileUtils ;
 import org.apache.log4j.Logger ;
 
-import com.sandy.scratchpad.jn.chpage.ChPageCreator ;
-
 public class Chapter {
 
     private static final Logger log = Logger.getLogger( Chapter.class ) ;
