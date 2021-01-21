@@ -210,7 +210,6 @@ public class PoemFIB {
     }
 
     public static void main( String[] args ) throws Exception {
-        System.out.println( "----------------------------------" ) ;
         PoemFIB driver = new PoemFIB( "/home/sandeep/temp/poem.txt" ) ;
         driver.initialize() ;
         driver.createFIBs() ;
