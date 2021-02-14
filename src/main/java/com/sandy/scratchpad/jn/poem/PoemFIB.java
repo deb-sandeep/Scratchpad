@@ -6,112 +6,19 @@ import java.util.Iterator ;
 import java.util.List ;
 
 import org.apache.commons.io.FileUtils ;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils ;
 
 public class PoemFIB {
     
+    public static final int MIN_BLANK_LINE_HALF_WIDTH = 2 ;  
+    public static final int MIN_BLANK_LINE_WIDTH_RND_WIDTH = 3 ;
+    public static final float PCT_SINGLE_BLANK_LINE_GROUPS = 0.5f ; 
+    
     private File file = null ;
-    private ArrayList<LineGroup> groups = new ArrayList<PoemFIB.LineGroup>() ;
+    private ArrayList<LineGroup> groups = new ArrayList<LineGroup>() ;
     
-    class LineGroup {
-        int startLine = 0 ;
-        int numLines  = 0 ;
-        int blankLineIndex = -1 ;
-        
-        List<String> lines = new ArrayList<String>() ;
-        
-        private ArrayList<String> qLines  = new ArrayList<String>() ;
-        private ArrayList<String> answers = new ArrayList<String>() ;
-        private List<String> ineligibleWords = null;
-        
-        LineGroup( int start, int numLines ) throws Exception {
-            this.startLine = start ;
-            this.numLines  = numLines ;
-            initIneligibleWordList();
-        }
-        
-        LineGroup( int start, int numLines, int blankLineIndex ) throws Exception {
-            this( start, numLines ) ;
-            this.blankLineIndex = blankLineIndex ;
-        }
-        
-        void initIneligibleWordList() throws Exception {
-        	ineligibleWords = IOUtils.readLines(
-		    		PoemFIB.class.getResourceAsStream( "/ineligibleWords.txt" )  
-    		);
-        }
-        
-        void extractBlanks() {
-            
-            if( this.blankLineIndex == -1 ) {
-                for( String line : lines ) {
-                    StringBuffer qLine = new StringBuffer() ;
-                    String[] words = line.split( "\\s+" ) ;
-                    
-                    for( String word : words ) {
-                        if( word.length() <= 3 ) {
-                            qLine.append( word + " " ) ;
-                        }
-                        else {
-                            if( Math.random() > 0.6 && isEligibleForBlank( word ) ) {
-                                answers.add( word ) ;
-                                qLine.append( "{" + (answers.size()-1) + "} " ) ;
-                            }
-                            else {
-                                qLine.append( word + " ") ;
-                            }
-                        }
-                    }
-                    qLines.add( qLine.toString() ) ;
-                }
-            }
-            else {
-                for( int i=0; i<lines.size(); i++ ) {
-                    String line = lines.get( i ) ;
-                    
-                    StringBuffer qLine = new StringBuffer() ;
-                    String[] words = line.split( "\\s+" ) ;
-                    
-                    for( String word : words ) {
-                        if( i != blankLineIndex ) {
-                            qLine.append( word ).append( " " ) ;
-                        }
-                        else {
-                            answers.add( word ) ;
-                            qLine.append( "{" + (answers.size()-1) + "} " ) ;
-                        }
-                    }
-                    qLines.add( qLine.toString() ) ;
-                }
-            }
-        }
-        
-        boolean isEligibleForBlank( String word ) {
-        	if( ineligibleWords.contains( word.toLowerCase() ) ) {
-        		return false;
-        	}
-        	return true;
-        }
-        
-        boolean isValid() {
-            return !answers.isEmpty() ;
-        }
-        
-        void generateFIB() {
-            System.out.println( "@fib \"" ) ;
-            for( String qLine : qLines ) {
-                System.out.println( "### " + qLine.replaceAll( "\"", "\\\\\\\"" ) ) ;
-            }
-            System.out.println( "\"" ) ;
-            for( String answer : answers ) {
-                System.out.println( "\"" + answer.replaceAll( "\"", "\\\\\\\"" ) + "\"" ) ;
-            }
-        }
-    }
-    
-    public PoemFIB( String filePath ) throws Exception {
-        this.file = new File( filePath ) ;
+    public PoemFIB( File file ) throws Exception {
+        this.file = file ;
     }
     
     private void initialize() throws Exception {
@@ -135,14 +42,16 @@ public class PoemFIB {
     
     private void createLineGroups( List<String> lines ) throws Exception {
         
+        int maxGroups = (int)( lines.size()*PCT_SINGLE_BLANK_LINE_GROUPS ) ;
         int numCycles = 0 ;
 
-        while( groups.size() < lines.size()*2 ) {
+        while( groups.size() < maxGroups ) {
             
             numCycles++ ;
             
             int randomStartLine = 0 ;
-            int randomGroupLen  = 2 + (int)(Math.random()*3) ;
+            int randomGroupLen  = (MIN_BLANK_LINE_HALF_WIDTH*2) + 
+                                  (int)( Math.random()*MIN_BLANK_LINE_WIDTH_RND_WIDTH ) ;
             
             if( numCycles >= lines.size() ) {
                 randomStartLine = (int)(Math.random()*lines.size()) ;
@@ -177,15 +86,18 @@ public class PoemFIB {
                 }
             }
             
-            if( (numCycles - groups.size()) > 100 ) break ;
+            if( (numCycles - groups.size()) > 500 ) break ;
         }
     }
     
     private void createBlankLineGroups( List<String> lines ) throws Exception {
-        for( int i=0; i<lines.size(); i++ ) {
+        
+        for( int i=0; i<lines.size(); i+=(MIN_BLANK_LINE_HALF_WIDTH*2) ) {
             
-            int randPrevLines = (int)( 1 + Math.random() * 2 ) ;
-            int randNextLines = (int)( 1 + Math.random() * 2 ) ;
+            int randPrevLines = (int)( MIN_BLANK_LINE_HALF_WIDTH + 
+                                       Math.random() * MIN_BLANK_LINE_WIDTH_RND_WIDTH ) ;
+            int randNextLines = (int)( MIN_BLANK_LINE_HALF_WIDTH + 
+                                       Math.random() * MIN_BLANK_LINE_WIDTH_RND_WIDTH ) ;
             
             int fromLine = i - randPrevLines ;
             int toLine   = i + randNextLines ;
@@ -207,12 +119,19 @@ public class PoemFIB {
             group.generateFIB() ;
             System.out.println() ;
         }
+        System.out.println( "// Num FIB = " + groups.size() ) ;
     }
 
     public static void main( String[] args ) throws Exception {
-        PoemFIB driver = new PoemFIB( "/home/sandeep/temp/poem.txt" ) ;
+        File poemFile = getPoemFile() ;
+        PoemFIB driver = new PoemFIB( poemFile ) ;
         driver.initialize() ;
         driver.createFIBs() ;
     }
-
+    
+    public static File getPoemFile() {
+        
+        File userHomeDir = new File( System.getProperty("user.home") ) ;
+        return new File( userHomeDir, "poem.txt" ) ;
+    }
 }

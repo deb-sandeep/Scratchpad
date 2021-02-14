@@ -24,7 +24,7 @@ public class AWSProductsSummarizer {
         metaMap = getProductMeta() ;
         //createJoveNotes( metaMap ) ;
         log.debug( "Generating TOC" ) ;
-        printTOC( metaMap ) ;
+        printTOCCsv( metaMap ) ;
     }
     
     public void createJoveNotes( Map<String, List<AWSProductMeta>> metaMap ) 
@@ -114,7 +114,7 @@ public class AWSProductsSummarizer {
         throws Exception {
         
         Map<String, List<AWSProductMeta>> metaMap = null ;
-        File persistedObjFile = new File( "/home/sandeep/temp/AWSProducts.obj" ) ;
+        File persistedObjFile = new File( "c:/Temp/AWSProducts.obj" ) ;
         if( persistedObjFile.exists() ) {
             log.debug( "Loading persisted meta map." ) ;
             ObjectInputStream oIs = null ; 
@@ -150,6 +150,16 @@ public class AWSProductsSummarizer {
         
         log.debug( "Total categories = " + metaMap.size() ) ;
         log.debug( "Total products = " + totalProducts ) ;
+    }
+    
+    public void printTOCCsv(  Map<String, List<AWSProductMeta>> metaMap ) throws Exception {
+        
+        for( String category : metaMap.keySet() ) {
+            List<AWSProductMeta> metaList = metaMap.get( category ) ;
+            for( AWSProductMeta meta : metaList ) {
+                log.debug( meta.getProductName() + ";" + category ) ;
+            }
+        }
     }
     
     public static void main( String[] args ) throws Exception {
