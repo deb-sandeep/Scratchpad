@@ -10,8 +10,8 @@ import com.sandy.common.xlsutil.XLSWrapper ;
 
 public class SyllabusStructureGen {
 
-    private File baseDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-VI" ) ;
-    private File jnRoot = new File( baseDir, "Class-6" ) ;
+    private File baseDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-7" ) ;
+    private File jnRoot = new File( baseDir, "Class-7" ) ;
     private File inputFile = new File( baseDir, "Syllabus.xlsx" ) ;
 
 

@@ -8,8 +8,8 @@ import java.util.Comparator ;
 
 public class ChPageCreator {
     
-    private String[] subjects = { "TomSawyer" } ;
-    private File jnRoot = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-IV/Class-4" ) ;
+    private String[] subjects = { "History", "Civics" } ;
+    private File jnRoot = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-7/Class-7" ) ;
     
     public void execute() throws Exception {
         for( String subject : subjects ) {
