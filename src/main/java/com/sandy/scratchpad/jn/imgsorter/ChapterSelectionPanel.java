@@ -36,7 +36,7 @@ public class ChapterSelectionPanel extends JPanel
     public ChapterSelectionPanel( JNImageSorter parent ) {
         this.parent = parent ;
         
-        File subDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-V/Class-5" ) ;
+        File subDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-7/Class-7" ) ;
         if( subDir.exists() ) {
             subjectFolder = subDir ;
         }
@@ -131,7 +131,7 @@ public class ChapterSelectionPanel extends JPanel
             File lowResFolder = new File( this.subjectFolder, selectedChapter + "/img/pages" ) ;
             
             moveFiles( largeFiles, hiResFolder, null ) ;
-            moveFiles( smallFiles, lowResFolder, "Ex" ) ;
+            moveFiles( smallFiles, lowResFolder, null ) ;
             
             createJNFileForPages( selectedChapter ) ;
             
