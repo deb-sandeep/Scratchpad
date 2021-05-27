@@ -1,179 +1,149 @@
 package com.sandy.scratchpad.jn.exercise;
 
+import lombok.Data ;
 
-public class ImgMeta implements Comparable<ImgMeta> {
+@Data
+public class ImgMeta implements Comparable<ImgMeta>{
     
-    private boolean isExample     = false ;
-    private String  exerciseName  = null ;
-    private boolean isAnswer      = false ;
-    private int     partNumber    = -1 ;
-    private int[]   sequenceParts = null ;
-    private boolean isHeader      = false ;
-
-    public void setExample( boolean isExample ) {
-        this.isExample = isExample ;
+    private int     chapterNum     = -1 ;
+    private String  exerciseName   = null ;
+    private int     questionNum    = 0 ;
+    private int     subQuestionNum = -1 ;
+    private boolean header         = false ;
+    private boolean answer         = false ;
+    private int     partNum        = -1 ;
+    
+    public ImgMeta( String fileName ) {
+        parseFileName( fileName ) ;
     }
     
-    public boolean isGroupedQuestion() {
-        return sequenceParts.length > 1 ;
-    }
-    
-    public String getGroupId() {
+    private void parseFileName( String fileName ) {
         
-        if( isGroupedQuestion() ) {
-            String id = getQuestionId() ;
-            id = id.substring( 0, id.lastIndexOf( '.' ) ) ;
-            return id ;
+        String fName = fileName ;
+        
+        // Strip the file extension
+        if( fName.endsWith( ".png" ) ) {
+            fName = fileName.substring( 0, fileName.length()-4 ) ;
         }
-        else if( isHeader ) {
-            return getQuestionId() ;
+        
+        // If this is a part, 
+        if( fName.contains( "(" ) ) {
+            int startIndex = fName.indexOf( "(" ) ;
+            int endIndex   = fName.indexOf( ")", startIndex ) ;
+            
+            String partNumStr = fName.substring( startIndex+1, endIndex ) ;
+            partNum = Integer.parseInt( partNumStr ) ;
+            
+            fName = fName.substring( 0, startIndex ) ;
         }
-        return null ;
-    }
-    
-    public boolean isExample() {
-        return isExample ;
-    }
-    
-    public boolean isExercise() {
-        return !isExample() ;
-    }
-    
-    public void setExerciseName( String exName ) {
-        this.exerciseName = exName ;
-    }
-    
-    public String getExerciseName() {
-        return this.exerciseName ;
-    }
-    
-    public void setAnswer( boolean isAnswer ) {
-        this.isAnswer = isAnswer ;
-    }
-    
-    public boolean isAnswer() {
-        return this.isAnswer ;
-    }
-    
-    public void setPartNumber( int partNum ) {
-        this.partNumber = partNum ;
-    }
-    
-    public boolean isPart() {
-        return this.partNumber != -1 ;
-    }
-    
-    public void setSequenceParts( int[] seqParts ) {
-        this.sequenceParts = seqParts ;
-    }
-    
-    public int[] getSequenceParts() {
-        return this.sequenceParts ;
-    }
-    
-    public boolean isHeader() {
-        return this.isHeader ;
-    }
-    
-    public void setHeader( boolean isHeader ) {
-        this.isHeader = isHeader ;
-    }
-    
-    public String getQuestionId() {
-        StringBuilder buffer = new StringBuilder() ;
-        if( isExample ) {
-            buffer.append( "ex_" ) ;
+        
+        String[] parts = fName.split( "_" ) ;
+        
+        // Extract the chapter number
+        chapterNum = Integer.parseInt( parts[0].substring( 2 ) ) ;
+        
+        // Extract exercise name
+        exerciseName = parts[1].trim() ;
+        
+        fName = parts[2] ;
+        // If this is a header, extract the flag and strip 'Hdr'
+        if( fName.endsWith( "Hdr" ) ) {
+            header = true ;
+            fName = fName.substring( 0, fName.length()-3 ) ;
+        }
+        else if( fName.endsWith( "Ans" ) ) {
+            answer = true ;
+            fName = fName.substring( 0, fName.length()-3 ) ;
+        }
+        
+        // Parse question and sub-question number
+        if( fName.contains( "." ) ) {
+            parts = fName.split( "\\." ) ;
+            questionNum = Integer.parseInt( parts[0] ) ;
+            subQuestionNum = Integer.parseInt( parts[1] ) ;
         }
         else {
-            buffer.append( "Ex" ).append( exerciseName ).append( '_' ) ; 
+            questionNum = Integer.parseInt( fName ) ;
+        }
+    }
+    
+    public String getFileName() {
+        
+        StringBuilder buffer = new StringBuilder() ;
+        
+        buffer.append( "Ch" ).append( chapterNum ).append( "_" ) ;
+        buffer.append( exerciseName ).append( "_" ) ;
+        buffer.append( questionNum ) ;
+        
+        if( subQuestionNum != - 1 ) {
+            buffer.append( "." ).append( subQuestionNum ) ;
         }
         
-        for( int i=0; i<sequenceParts.length; i++ ) {
-            buffer.append( sequenceParts[i] ) ;
-            if( i < sequenceParts.length-1 ) {
-                buffer.append( "." ) ;
-            }
+        if( header ) {
+            buffer.append( "Hdr" ) ;
         }
+        
+        if( answer ) {
+            buffer.append( "Ans" ) ;
+        }
+        
+        if( partNum != -1 ) {
+            buffer.append( "(" + partNum + ")" ) ;
+        }
+        
+        buffer.append( ".png" ) ;
         
         return buffer.toString() ;
     }
     
     public String toString() {
-        StringBuilder buffer = new StringBuilder( getQuestionId() ) ;
-        
-        if( isPart() ) {
-            buffer.append( "(" ).append( this.partNumber ).append( ")" ) ;
-        }
-        
-        if( isAnswer() ) {
-            buffer.append( "Ans" ) ;
-        }
-        else if( isHeader() ) {
-            buffer.append( "Hdr" ) ;
-        }
-        
-        return buffer.toString() ;
+        return getFileName() ;
     }
-
+    
     @Override
-    public int compareTo( ImgMeta q ) {
+    public int compareTo( ImgMeta m ) {
+        if( chapterNum != m.chapterNum ) {
+            return chapterNum - m.chapterNum ;
+        }
         
-        if( this.isExample() && !q.isExample() ) {
-            return Integer.MIN_VALUE ;
+        if( !exerciseName.equals( m.exerciseName ) ) {
+            return exerciseName.compareTo( m.exerciseName ) ;
         }
-        else if( !this.isExample() && q.isExample() ) {
-            return Integer.MAX_VALUE ;
+        
+        if( questionNum != m.questionNum ) {
+            return questionNum - m.questionNum ;
         }
-        else {
-            
-            if( !this.isExample() && !q.isExample() ) {
-                int comp = getExerciseName().compareTo( q.getExerciseName() ) ;
-                if( comp != 0 ) {
-                    return comp ;
-                }
-            }
-            
-            int seqCompare = compare( this.sequenceParts, q.sequenceParts ) ;
-            if( seqCompare == 0 ) {
-                if( this.isHeader && !q.isHeader ) {
-                    return Integer.MIN_VALUE ;
-                }
-                else if( !this.isHeader && q.isHeader ) {
-                    return Integer.MAX_VALUE ;
-                }
-                else if( this.isAnswer && !q.isAnswer ) {
-                    return Integer.MAX_VALUE ;
-                }
-                else if( !this.isAnswer && q.isAnswer ) {
-                    return Integer.MIN_VALUE ;
-                }
-                else {
-                    if( this.isPart() && q.isPart() ) {
-                        return Integer.compare( this.partNumber, q.partNumber ) ;
-                    }
-                    else if( !this.isPart() && q.isPart() ) {
-                        return Integer.MIN_VALUE ;
-                    }
-                    else if( this.isPart() && !q.isPart() ) {
-                        return Integer.MAX_VALUE ;
-                    }
-                }
-            }
-            else {
-                return seqCompare ;
-            }
+        
+        if( header ) {
+            return -1 ;
+        }
+        
+        if( subQuestionNum != m.subQuestionNum ) {
+            return subQuestionNum - m.subQuestionNum ;
+        }
+        
+        if( partNum != m.partNum ) {
+            return partNum - m.partNum ;
         }
         
         return 0 ;
     }
-    
-    private int compare( int[] seqA, int[] seqB ) {
-        int loopSize = Math.min( seqA.length, seqB.length ) ;
-        for( int i=0; i<loopSize; i++ ) {
-            if( seqA[i] != seqB[i] ) {
-                return Integer.compare( seqA[i], seqB[i] ) ; 
-            }
+
+    public String getId() {
+        StringBuilder sb = new StringBuilder() ;
+        sb.append( getQuestionNum() ) ;
+        if( getSubQuestionNum() > -1 ) {
+            sb.append( "." ).append( getSubQuestionNum() ) ;
         }
-        return Integer.compare( seqA.length, seqB.length ) ;
+        return sb.toString() ;
+    }
+    
+    public String getGroupId() {
+        if( subQuestionNum > -1 || header ) {
+            return "" + questionNum ;
+        }
+        return null ;
     }
 }
+
+

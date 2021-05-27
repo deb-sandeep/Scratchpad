@@ -19,10 +19,10 @@ public class QuestionGroup extends Question {
     
     public void buildQuestion( ImgMeta meta ) {
         if( meta.isHeader() ) {
-            headers.add( meta ) ;
+            addHeaderPart( meta ) ;
         }
         else {
-            Question q = getQuestion( meta.getQuestionId() ) ;
+            Question q = getQuestion( meta.getId() ) ;
             q.buildQuestion( meta ) ;
         }
     }

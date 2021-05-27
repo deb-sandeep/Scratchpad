@@ -24,24 +24,12 @@ public class Question {
         this.group = group ;
     }
     
-    public boolean isExample() {
-        return imgMeta.isExample() ;
-    }
-    
-    public boolean isExercise() {
-        return !isExample() ;
-    }
-    
     public String getExerciseName() {
         return imgMeta.getExerciseName() ;
     }
     
-    public int[] getSequenceParts() {
-        return imgMeta.getSequenceParts() ;
-    }
-    
     public String getId() {
-        return imgMeta.getQuestionId() ;
+        return imgMeta.getId() ;
     }
     
     public void buildQuestion( ImgMeta meta ) {

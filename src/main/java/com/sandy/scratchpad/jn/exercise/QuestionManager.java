@@ -8,7 +8,6 @@ import java.util.Map ;
 import java.util.regex.Matcher ;
 import java.util.regex.Pattern ;
 
-import org.apache.commons.lang.StringUtils ;
 import org.apache.log4j.Logger ;
 
 public class QuestionManager {
@@ -29,32 +28,25 @@ public class QuestionManager {
     }
     
     public void buildImageMeta( String imageName ) {
-        
-        log.debug( "Building image meta for " + imageName );
-        ImgMeta m = new ImgMeta() ;
-        if( imageName.startsWith( "ex_" ) ) {
-            m.setExample( true ) ;
-            parseAndPopulateExerciseImageName( imageName, m ) ;
-        }
-        else if( imageName.startsWith( "Ex" ) ) {
-            parseAndPopulateQuestionImageName( imageName, m ) ;
-        }
-        
+        ImgMeta m = new ImgMeta( imageName ) ;
         metaList.add( m ) ;
         Collections.sort( metaList );
     }
     
-    public Map<String, Exercise> createQuestions() {
+    public void printImgMetaList() {
+        for( ImgMeta meta : metaList ) {
+            log.debug( meta.getFileName() ) ;
+        }
+    }
+    
+    public Map<String, Exercise> createExercises() {
         
         for( ImgMeta meta : metaList ) {
-            
-            String exerciseName = null ;
-            exerciseName = (meta.isExample()) ? "ex_" : meta.getExerciseName() ; 
-            
+            log.debug( "Building question - " + meta ) ;
+            String exerciseName = meta.getExerciseName() ;
             Exercise exercise = getExercise( exerciseName ) ;
             exercise.buildQuestion( meta ) ; 
         }
-        
         return this.exerciseMap ;
     }
     
@@ -70,53 +62,6 @@ public class QuestionManager {
     
     public List<ImgMeta> getImgMetaList() {
         return this.metaList ;
-    }
-    
-    private void parseAndPopulateExerciseImageName( String imgName, ImgMeta m ) {
-        
-        String name = StringUtils.substringAfter( imgName, "ex_" ) ;
-        populateSequenceAttributes( name, m ) ;
-    }
-    
-    private void parseAndPopulateQuestionImageName( String imgName, ImgMeta m ) {
-        
-        String[] nameParts = imgName.split( "_" ) ;
-        String exName = StringUtils.substringAfter( nameParts[0], "Ex" ) ; 
-        m.setExerciseName( exName ) ;
-        
-        populateSequenceAttributes( nameParts[1], m ) ;
-    }
-    
-    private void populateSequenceAttributes( String seqPart, ImgMeta m ) {
-        
-        Matcher matcher = pattern.matcher( seqPart ) ;
-        if( matcher.matches() ) {
-            if( matcher.group( 5 ) != null ) {
-                if( matcher.group( 5 ).equals( "Ans" ) ) {
-                    m.setAnswer( true ) ;
-                }
-                else if( matcher.group(5).equals( "Hdr" ) ) {
-                    m.setHeader( true ) ;
-                }
-            }
-            
-            if( matcher.group( 4 ) != null ) {
-                m.setPartNumber( Integer.parseInt( matcher.group( 4 ) ) ) ;
-            }
-            
-            String[] seqParts  = matcher.group( 1 ).split( "\\." ) ;
-            int[]    qSeqParts = new int[seqParts.length] ;
-            
-            for( int i=0; i<seqParts.length; i++ ) {
-                qSeqParts[i] = Integer.parseInt( seqParts[i] ) ;
-            }
-            
-            m.setSequenceParts( qSeqParts ) ;
-        }
-        else {
-            throw new IllegalArgumentException( 
-                 "Image " + seqPart + " does not match established pattern." ) ;
-        }
     }
     
     public static void main( String[] args ) throws Exception {

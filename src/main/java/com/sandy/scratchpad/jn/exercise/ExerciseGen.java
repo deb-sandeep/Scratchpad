@@ -115,12 +115,13 @@ public class ExerciseGen {
         QuestionManager qMgr = new QuestionManager( bookName, chapterName ) ;
         
         for( File file : relevantFiles ) {
-            
             String fileName = file.getName() ;
-            qMgr.buildImageMeta( fileName.substring( 0, fileName.length()-4 ) ) ;
+            qMgr.buildImageMeta( fileName ) ;
         }
         
-        Map<String, Exercise> exMap = qMgr.createQuestions() ;
+        qMgr.printImgMetaList() ;
+        
+        Map<String, Exercise> exMap = qMgr.createExercises() ;
         for( Exercise ex : exMap.values() ) {
             
             String id = ex.getExId() ;
@@ -153,8 +154,7 @@ public class ExerciseGen {
                 File file = new File( dir, name ) ;
                 if( !file.isDirectory() ) {
                     
-                    if( name.startsWith( "Ex" ) || 
-                        name.startsWith( "ex_" ) ) {
+                    if( name.startsWith( "Ch" ) ) {
                         return true ;
                     }
                     else if( name.endsWith( ".png" ) ) {
@@ -227,7 +227,7 @@ public class ExerciseGen {
     private void writeQuestionToFile( Exercise ex, File file, Question q ) 
         throws Exception {
         
-        int marks = q.isPartOfGroup() ? 50 : 70 ;
+        int marks = q.isPartOfGroup() ? 20 : 50 ;
         
         StringBuilder buffer = new StringBuilder() ;
         buffer.append( "// " + q.getId() + "\n" )
@@ -275,12 +275,12 @@ public class ExerciseGen {
     private String getTaggedImage( Exercise ex, ImgMeta imgMeta ) {
         
         if( ex.getBookName() == null ) {
-            return "{{@img " + imgMeta + ".png}}" ;
+            return "{{@img " + imgMeta + "}}" ;
         }
         else {
             return "{{@img books/" + ex.getBookName() + "/" + 
                                      ex.getChapterName() + "/" + 
-                                     imgMeta + ".png}}" ;
+                                     imgMeta + "}}" ;
         }
     }
     
@@ -334,12 +334,12 @@ public class ExerciseGen {
 
     public static void main( String[] args ) throws Exception {
         
-        String JN_ROOT_DIR      = "/home/sandeep/Documents/StudyNotes/JoveNotes-V" ;
-        String JN_CLS_DIR       = "Class-5" ;
+        String JN_ROOT_DIR      = "c:\\Users\\125806\\Documents\\StudyNotes\\JoveNotes-Std-7" ;
+        String JN_CLS_DIR       = "Class-7" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "05 - Multiples and Factors" ;
-        String JN_BASE_CHP_NAME = "Multiples and Factors" ;
-        int    JN_CHAPTER_NUM   = 5 ;
+        String JN_CHAPTER       = "01 - Integers" ;
+        String JN_BASE_CHP_NAME = "Integers" ;
+        int    JN_CHAPTER_NUM   = 1 ;
         int    JN_SUB_CHP_START = 2 ;
         String includedExercises[]  = {} ;
 

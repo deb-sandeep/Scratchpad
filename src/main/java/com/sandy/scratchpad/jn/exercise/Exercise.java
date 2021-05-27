@@ -13,6 +13,7 @@ public class Exercise {
     static final Logger log = Logger.getLogger( Exercise.class ) ;
     
     private Map<String, Question> questionMap = new LinkedHashMap<String, Question>() ;
+
     private String name = null ;
     private String bookName = null ;
     private String chapterName = null ;
@@ -37,7 +38,7 @@ public class Exercise {
     
     public void buildQuestion( ImgMeta meta ) {
         
-        String qId = meta.getQuestionId() ;
+        String qId = meta.getId() ;
         String gId = meta.getGroupId() ;
 
         Question question = null ;
