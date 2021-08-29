@@ -10,9 +10,9 @@ import org.apache.commons.lang.StringUtils ;
 
 public class PoemFIB {
     
-    public static final int MIN_BLANK_LINE_HALF_WIDTH = 2 ;  
-    public static final int MIN_BLANK_LINE_WIDTH_RND_WIDTH = 3 ;
-    public static final float PCT_SINGLE_BLANK_LINE_GROUPS = 0.5f ; 
+    public static final int MIN_BLANK_LINE_HALF_WIDTH = 1 ;  
+    public static final int MIN_BLANK_LINE_WIDTH_RND_WIDTH = 1 ;
+    public static final float PCT_SINGLE_BLANK_LINE_GROUPS = 2 ; 
     
     private File file = null ;
     private ArrayList<LineGroup> groups = new ArrayList<LineGroup>() ;

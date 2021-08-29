@@ -256,7 +256,10 @@ public class ExerciseGen {
         buffer.append( "answer\n\"" ) ;
         
         if( q.getAnswerParts().size() == 0 ) {
-            buffer.append( "Get it checked by teacher" ) ;
+            buffer.append( "Check anwer chapter " + 
+                           this.chapterNumber + "-" + 
+                           q.getExerciseName() + "-" + 
+                           q.getId() ) ;
         }
         else {
             for( int i=0; i<q.getAnswerParts().size(); i++ ) {
@@ -334,12 +337,12 @@ public class ExerciseGen {
 
     public static void main( String[] args ) throws Exception {
         
-        String JN_ROOT_DIR      = "c:\\Users\\125806\\Documents\\StudyNotes\\JoveNotes-Std-7" ;
+        String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-7/" ;
         String JN_CLS_DIR       = "Class-7" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "01 - Integers" ;
-        String JN_BASE_CHP_NAME = "Integers" ;
-        int    JN_CHAPTER_NUM   = 1 ;
+        String JN_CHAPTER       = "03 - Fractions" ;
+        String JN_BASE_CHP_NAME = "Fractions" ;
+        int    JN_CHAPTER_NUM   = 3 ;
         int    JN_SUB_CHP_START = 2 ;
         String includedExercises[]  = {} ;
 
