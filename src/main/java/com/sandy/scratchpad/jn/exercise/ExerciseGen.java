@@ -340,9 +340,9 @@ public class ExerciseGen {
         String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-7/" ;
         String JN_CLS_DIR       = "Class-7" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "08 - Percent and Percentage" ;
-        String JN_BASE_CHP_NAME = "Percent and Percentage" ;
-        int    JN_CHAPTER_NUM   = 8 ;
+        String JN_CHAPTER       = "11 - Algebra - Fundamentals" ;
+        String JN_BASE_CHP_NAME = "Algebra - Fundamentals" ;
+        int    JN_CHAPTER_NUM   = 11 ;
         int    JN_SUB_CHP_START = 2 ;
         String includedExercises[]  = {} ;
 
