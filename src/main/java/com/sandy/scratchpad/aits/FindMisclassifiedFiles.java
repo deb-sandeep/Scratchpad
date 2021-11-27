@@ -3,12 +3,9 @@ package com.sandy.scratchpad.aits;
 import java.io.File ;
 
 import org.apache.commons.io.FileUtils ;
-import org.apache.log4j.Logger ;
 
 public class FindMisclassifiedFiles {
 
-    private static final Logger log = Logger.getLogger( FindMisclassifiedFiles.class ) ;
-    
     private static final File ROOT_DIR = new File( "/home/sandeep/projects/source/SConsoleProcessedImages/IIT - Physics" ) ;
     
     private static final String[] MISSING_FILES = {

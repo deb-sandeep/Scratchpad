@@ -2,12 +2,12 @@ package com.sandy.scratchpad.jn.math;
 
 public class NumFaceValueIdentification {
     
-    private static String[] FACE_VALUES = {
+    public static String[] FACE_VALUES = {
        "HC", "TC", "C", "TL", "L", "TTh", "Th", "H", "T", "O",
        "TB", "B", "HM", "TM", "M", "HTh"  
     } ;
     
-    private static int[] FACE_VALUE_INDICES = {
+    public static int[] FACE_VALUE_INDICES = {
         9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
        10, 9, 8, 7, 6, 5
     } ;

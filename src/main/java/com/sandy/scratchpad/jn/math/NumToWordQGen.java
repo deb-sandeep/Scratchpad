@@ -25,6 +25,7 @@ public class NumToWordQGen {
         }
     }
     
+    @SuppressWarnings( "deprecation" )
     private WordForm generateWordForm( int numDigits ) {
         char digits[] = new char[numDigits] ;
         for( int i=0; i<numDigits; i++ ) {

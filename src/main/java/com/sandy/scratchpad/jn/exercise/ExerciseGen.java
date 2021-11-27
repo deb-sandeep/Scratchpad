@@ -340,12 +340,16 @@ public class ExerciseGen {
         String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-7/" ;
         String JN_CLS_DIR       = "Class-7" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "11 - Algebra - Fundamentals" ;
-        String JN_BASE_CHP_NAME = "Algebra - Fundamentals" ;
-        int    JN_CHAPTER_NUM   = 11 ;
+        String JN_CHAPTER       = "09 - Profit, Loss and Discount" ;
+        String JN_BASE_CHP_NAME = null ;
+        int    JN_CHAPTER_NUM   = 9 ;
         int    JN_SUB_CHP_START = 2 ;
         String includedExercises[]  = {} ;
-
+        
+        if( JN_BASE_CHP_NAME == null ) {
+            JN_BASE_CHP_NAME = getBaseChapterName( JN_CHAPTER ) ;
+        }
+        
         File rootJNDir = new File( JN_ROOT_DIR ) ;
         File clsJNDir  = new File( rootJNDir, JN_CLS_DIR ) ;
         File subJNDir  = new File( clsJNDir,  JN_SUBJECT ) ;
@@ -364,5 +368,13 @@ public class ExerciseGen {
                                            JN_SUB_CHP_START ) ;
         gen.generateExercises( null, null, exerciseNames ) ;
         gen.generateExercisesForBooks() ;
+    }
+    
+    private static String getBaseChapterName( String chapterName ) {
+        int index = chapterName.indexOf( '-' ) ;
+        if( index == -1 ) {
+            throw new IllegalArgumentException( "Chapter name invalid. - not found" ) ;
+        }
+        return chapterName.substring( index + 2 ).trim() ;
     }
 }
