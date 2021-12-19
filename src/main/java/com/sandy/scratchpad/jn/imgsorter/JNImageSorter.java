@@ -14,6 +14,16 @@ public class JNImageSorter extends JFrame {
     
     static final Logger log = Logger.getLogger( ImageSelectionPanel.class ) ;
     
+    public static boolean CREATE_JN_FILE = false ;
+    //public static String  DEST_IMG_SUBFOLDER = "/img/pages" ;
+    public static String  DEST_IMG_SUBFOLDER = "" ;
+    
+    public static void main( String[] args ) {
+        
+        JNImageSorter app = new JNImageSorter() ;
+        app.setVisible( true ) ;
+    }
+
     private ImageSelectionPanel   imgSelPanel     = null ;
     private ChapterSelectionPanel chapSelPanel    = null ;
     private ThumbnailViewer       thumbnailViewer = new ThumbnailViewer() ;
@@ -40,15 +50,9 @@ public class JNImageSorter extends JFrame {
         contentPane.add( chapSelPanel ) ;
     }
 
-    public static void main( String[] args ) {
-        
-        JNImageSorter app = new JNImageSorter() ;
-        app.setVisible( true ) ;
-    }
-
-    public String moveFiles( List<File> largeFiles, List<File> smallFiles ) {
+    public String moveFiles( List<File> largeFiles ) {
         try {
-            return chapSelPanel.acceptFiles( largeFiles, smallFiles ) ;
+            return chapSelPanel.acceptFiles( largeFiles ) ;
         }
         catch( Exception e ) {
             log.error( "Exception moving files.", e ) ;

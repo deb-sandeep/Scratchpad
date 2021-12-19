@@ -1,7 +1,8 @@
 package com.sandy.scratchpad.jn.imgsorter;
 
 import java.awt.BorderLayout ;
-import java.awt.event.* ;
+import java.awt.event.ActionEvent ;
+import java.awt.event.ActionListener ;
 import java.io.File ;
 import java.io.FileFilter ;
 import java.io.IOException ;
@@ -9,10 +10,15 @@ import java.util.Arrays ;
 import java.util.Comparator ;
 import java.util.List ;
 
-import javax.swing.* ;
+import javax.swing.DefaultListModel ;
+import javax.swing.JButton ;
+import javax.swing.JFileChooser ;
+import javax.swing.JList ;
+import javax.swing.JPanel ;
+import javax.swing.JScrollPane ;
+import javax.swing.ListSelectionModel ;
 
 import org.apache.commons.io.FileUtils ;
-import org.apache.commons.lang.StringUtils ;
 import org.apache.log4j.Logger ;
 
 import com.sandy.scratchpad.jn.chpage.ChPageCreator ;
@@ -120,20 +126,22 @@ public class ChapterSelectionPanel extends JPanel
         }
     }
     
-    public String acceptFiles( List<File> largeFiles, List<File> smallFiles ) 
+    public String acceptFiles( List<File> largeFiles ) 
         throws Exception {
         
         String message = null ;
         String selectedChapter = chapterList.getSelectedValue() ;
+        
         if( selectedChapter != null ) {
             
-            File hiResFolder  = new File( this.subjectFolder, selectedChapter + "/img/pages/hi-res" ) ;
-            File lowResFolder = new File( this.subjectFolder, selectedChapter + "/img/pages" ) ;
+            File pageFolder  = new File( this.subjectFolder, 
+                                         selectedChapter + JNImageSorter.DEST_IMG_SUBFOLDER ) ;
             
-            moveFiles( largeFiles, hiResFolder, null ) ;
-            moveFiles( smallFiles, lowResFolder, null ) ;
+            moveFiles( largeFiles, pageFolder ) ;
             
-            createJNFileForPages( selectedChapter ) ;
+            if( JNImageSorter.CREATE_JN_FILE ) {
+                createJNFileForPages( selectedChapter ) ;
+            }
             
             listModel.removeElement( selectedChapter ) ;
             if( !listModel.isEmpty() ) {
@@ -146,19 +154,16 @@ public class ChapterSelectionPanel extends JPanel
         return message ;
     }
     
-    private void moveFiles( List<File> files, File destFolder, String suffix ) 
+    private void moveFiles( List<File> files, File destFolder ) 
         throws IOException {
         
         for( File srcFile : files ) {
             
             String destFileName = srcFile.getName() ;
-            if( !StringUtils.isEmpty( suffix ) ) {
-                destFileName = destFileName.substring( 0, destFileName.length()-4 ) + 
-                               "_" + suffix + destFileName.substring( destFileName.length()-4 ) ;
-            }
-            
+            destFileName = "Page" + destFileName.substring( destFileName.indexOf( '_' ) ) ;
             File destFile = new File( destFolder, destFileName ) ;
-            FileUtils.moveFile( srcFile, destFile ) ;
+            //FileUtils.moveFile( srcFile, destFile ) ;
+            FileUtils.copyFile( srcFile, destFile ) ;
         }
     }
     
@@ -170,6 +175,5 @@ public class ChapterSelectionPanel extends JPanel
         String subjectName = this.subjectFolder.getName() ;
         
         pageCreator.createPageForChapter( subjectName, chapterFolder ) ;
-        
     }
 }

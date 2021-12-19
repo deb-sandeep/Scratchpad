@@ -27,8 +27,6 @@ public class ImageSelectionPanel extends JPanel
     private DefaultListModel<String> listModel = new DefaultListModel<>() ;
     private JList<String>            imageList = new JList<>( listModel ) ;
     
-    private Map<String, File> fileMap = new HashMap<>() ;
-    
     private File imgFolder = null ;
     
     public ImageSelectionPanel( JNImageSorter parent ) {
@@ -122,46 +120,39 @@ public class ImageSelectionPanel extends JPanel
             DefaultListModel<String> model = ( DefaultListModel<String> )imageList.getModel() ;
             Arrays.sort( files, new Comparator<File>() {
                 public int compare( File f1, File f2 ) {
-                    return (int)(f1.lastModified() - f2.lastModified()) ;
+                    int pgNum1 = getPageNum( f1 ) ;
+                    int pgNum2 = getPageNum( f2 ) ;
+                    
+                    return pgNum1 - pgNum2 ;
                 }
             } ) ;
             for( File file : files ) {
-                validateAndCatalogFile( file ) ;
                 model.addElement( file.getName() ) ;
             }
         }
     }
     
-    private void validateAndCatalogFile( File file ) {
+    private int getPageNum( File f ) {
+        String fName = f.getName() ;
+        String pageNum = fName.substring( 0, fName.length()-4 )
+                              .substring( fName.indexOf( '_' ) + 1 ) ;
         
-        String fName = file.getName() ;
-        String marker = fName.substring( 0, fName.indexOf( "_", fName.indexOf( "_" ) + 1 ) ) ;
-        
-        File smallImgFile = new File( this.imgFolder, "Page_" + marker + ".png" ) ;
-        if( smallImgFile.exists() ) {
-            fileMap.put( fName, smallImgFile ) ;
-        }
-        else {
-            throw new RuntimeException( "File " + fName + " doesn't have an associated small file." ) ;
-        }
+        return Integer.parseInt( pageNum ) ;
     }
     
     private void moveSelectedImages() {
         
         List<String> selectedFiles = imageList.getSelectedValuesList() ;
-        List<File> largeFiles = new ArrayList<>() ;
-        List<File> smallFiles = new ArrayList<>() ;
+        List<File> imgFiles = new ArrayList<>() ;
         
         for( String name : selectedFiles ) {
-            largeFiles.add( new File( this.imgFolder, name ) ) ;
-            smallFiles.add( this.fileMap.get( name ) ) ;
+            imgFiles.add( new File( this.imgFolder, name ) ) ;
         }
         
-        String moveResult = this.parent.moveFiles( largeFiles, smallFiles ) ;
+        String moveResult = this.parent.moveFiles( imgFiles ) ;
         if( moveResult == null ) {
             for( String name : selectedFiles ) {
                 listModel.removeElement( name ) ;
-                fileMap.remove( name ) ;
             }
             
             if( !listModel.isEmpty() ) {
@@ -181,7 +172,7 @@ public class ImageSelectionPanel extends JPanel
         
         List<String> files = imageList.getSelectedValuesList() ;
         if( files != null && !files.isEmpty() ) {
-            imgFile = fileMap.get( files.get( files.size()-1 ) ) ;
+            imgFile = new File( this.imgFolder, files.get( files.size()-1 ) ) ;
         }
         
         this.parent.showThumbnail( imgFile ) ;
