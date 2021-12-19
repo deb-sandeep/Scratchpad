@@ -256,7 +256,7 @@ public class ExerciseGen {
         buffer.append( "answer\n\"" ) ;
         
         if( q.getAnswerParts().size() == 0 ) {
-            buffer.append( "Check anwer chapter " + 
+            buffer.append( "Check answer chapter " + 
                            this.chapterNumber + "-" + 
                            q.getExerciseName() + "-" + 
                            q.getId() ) ;
@@ -340,14 +340,18 @@ public class ExerciseGen {
         String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-7/" ;
         String JN_CLS_DIR       = "Class-7" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "09 - Profit, Loss and Discount" ;
+        String JN_CHAPTER       = "17 - Symmetry" ;
         String JN_BASE_CHP_NAME = null ;
-        int    JN_CHAPTER_NUM   = 9 ;
+        int    JN_CHAPTER_NUM   = -1 ;
         int    JN_SUB_CHP_START = 2 ;
         String includedExercises[]  = {} ;
         
         if( JN_BASE_CHP_NAME == null ) {
             JN_BASE_CHP_NAME = getBaseChapterName( JN_CHAPTER ) ;
+        }
+        
+        if( JN_CHAPTER_NUM == -1 ) {
+            JN_CHAPTER_NUM = getBaseChapterNum( JN_CHAPTER ) ;
         }
         
         File rootJNDir = new File( JN_ROOT_DIR ) ;
@@ -377,4 +381,13 @@ public class ExerciseGen {
         }
         return chapterName.substring( index + 2 ).trim() ;
     }
+    
+    private static int getBaseChapterNum( String chapterName ) {
+        int index = chapterName.indexOf( '-' ) ;
+        if( index == -1 ) {
+            throw new IllegalArgumentException( "Chapter name invalid. - not found" ) ;
+        }
+        String str = chapterName.substring( 0, index ).trim() ;
+        return Integer.parseInt( str ) ;
+    }    
 }
