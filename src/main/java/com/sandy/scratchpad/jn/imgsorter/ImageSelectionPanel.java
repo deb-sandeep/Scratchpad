@@ -108,8 +108,7 @@ public class ImageSelectionPanel extends JPanel
         
         File[] files = this.imgFolder.listFiles( new FileFilter() {
             public boolean accept( File file ) {
-                if( file.getName().endsWith( ".png" ) && 
-                    !file.getName().startsWith( "Page" ) ) {
+                if( file.getName().endsWith( ".png" ) ) {
                     return true ;
                 }
                 return false ;
