@@ -51,7 +51,7 @@ public class Chapter {
     
     private void createImgFolder() throws Exception {
         
-        File imgFolder = new File( this.folder, "img/pages/hi-res" ) ;
+        File imgFolder = new File( this.folder, "img/pages" ) ;
         imgFolder.mkdirs() ;
         createDummyFile( imgFolder, "dummy.txt", "" ) ;
     }

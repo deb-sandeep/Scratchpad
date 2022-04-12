@@ -5,17 +5,23 @@ import java.util.LinkedHashMap ;
 import java.util.List ;
 import java.util.Map ;
 
+import org.apache.log4j.Logger ;
+
+import com.sandy.common.util.StringUtil ;
 import com.sandy.common.xlsutil.XLSRow ;
 import com.sandy.common.xlsutil.XLSWrapper ;
 
 public class SyllabusStructureGen {
+    
+    private static final Logger log = Logger.getLogger( SyllabusStructureGen.class ) ;
 
-    private File baseDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-7" ) ;
-    private File jnRoot = new File( baseDir, "Class-7" ) ;
+    private File baseDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-8" ) ;
+    private File jnRoot = new File( baseDir, "Class-8" ) ;
     private File inputFile = new File( baseDir, "Syllabus.xlsx" ) ;
 
-
     private Map<String, Subject> subjectMap = new LinkedHashMap<>() ;
+    
+    private String currentSubjectName = null ;
     
     public void execute() throws Exception {
         parseXlsx() ;
@@ -27,19 +33,34 @@ public class SyllabusStructureGen {
     private void parseXlsx() throws Exception {
         
         XLSWrapper xlWrapper = new XLSWrapper( inputFile ) ;
-        List<XLSRow> rows = xlWrapper.getRows( 0, 0, 2 ) ;
+        List<XLSRow> rows = xlWrapper.getRows( 0, 0, 1 ) ;
         
         for( XLSRow row : rows ) {
-            String subjectName = row.getCellValue( 0 ) ;
-            String chapterNum  = row.getCellValue( 1 ) ;
-            String chapterName = row.getCellValue( 2 ) ;
             
-            Subject subject = getSubject( subjectName ) ;
-            Chapter chapter = new Chapter( subject, 
-                                           Integer.parseInt( chapterNum ), 
-                                           chapterName ) ;
+            String col0 = row.getCellValue( 0 ) ;
+            String col1 = row.getCellValue( 1 ) ;
             
-            subject.addChapter( chapter ) ;
+            if( StringUtil.isEmptyOrNull( col0 ) ) {
+                continue ;
+            }
+            else if( StringUtil.isEmptyOrNull( col1 ) ) {
+                this.currentSubjectName = col0.trim() ;
+                log.debug( "\nSubject : " + this.currentSubjectName ) ;
+                log.debug( "-------------------------------------" ) ;
+                continue ;
+            }
+            else {
+                String chapterNum  = col0 ;
+                String chapterName = col1 ;
+                
+                Subject subject = getSubject( this.currentSubjectName ) ;
+                
+                Chapter chapter = new Chapter( subject, 
+                                               Integer.parseInt( chapterNum ), 
+                                               chapterName ) ;
+                
+                subject.addChapter( chapter ) ;
+            }
         }
     }
     
