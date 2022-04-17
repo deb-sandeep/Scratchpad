@@ -134,7 +134,7 @@ public class ImageSelectionPanel extends JPanel
     private int getPageNum( File f ) {
         String fName = f.getName() ;
         String pageNum = fName.substring( 0, fName.length()-4 )
-                              .substring( fName.indexOf( '_' ) + 1 ) ;
+                              .substring( fName.lastIndexOf( '_' ) + 1 ) ;
         
         return Integer.parseInt( pageNum ) ;
     }

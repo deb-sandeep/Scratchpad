@@ -44,9 +44,18 @@ public class SyllabusStructureGen {
                 continue ;
             }
             else if( StringUtil.isEmptyOrNull( col1 ) ) {
-                this.currentSubjectName = col0.trim() ;
-                log.debug( "\nSubject : " + this.currentSubjectName ) ;
-                log.debug( "-------------------------------------" ) ;
+                String subName = col0.trim() ;
+                if( subName.endsWith( "-X" ) ) {
+                    this.currentSubjectName = null ;
+                }
+                else {
+                    this.currentSubjectName = col0.trim() ;
+                    log.debug( "\nSubject : " + this.currentSubjectName ) ;
+                    log.debug( "-------------------------------------" ) ;
+                }
+                continue ;
+            }
+            else if( this.currentSubjectName == null ) {
                 continue ;
             }
             else {

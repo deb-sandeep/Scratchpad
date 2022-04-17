@@ -42,7 +42,7 @@ public class ChapterSelectionPanel extends JPanel
     public ChapterSelectionPanel( JNImageSorter parent ) {
         this.parent = parent ;
         
-        File subDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-7/Class-7" ) ;
+        File subDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-8/Class-8" ) ;
         if( subDir.exists() ) {
             subjectFolder = subDir ;
         }
@@ -160,10 +160,15 @@ public class ChapterSelectionPanel extends JPanel
         for( File srcFile : files ) {
             
             String destFileName = srcFile.getName() ;
-            destFileName = "Page" + destFileName.substring( destFileName.indexOf( '_' ) ) ;
+            destFileName = "Page" + destFileName.substring( destFileName.lastIndexOf( '_' ) ) ;
             File destFile = new File( destFolder, destFileName ) ;
             //FileUtils.moveFile( srcFile, destFile ) ;
             FileUtils.copyFile( srcFile, destFile ) ;
+            
+            File dummyFile = new File( destFolder, "dummuy.txt" ) ;
+            if( dummyFile.exists() ) {
+                dummyFile.delete() ;
+            }
         }
     }
     

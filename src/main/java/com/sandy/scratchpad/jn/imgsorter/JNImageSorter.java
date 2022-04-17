@@ -15,8 +15,8 @@ public class JNImageSorter extends JFrame {
     static final Logger log = Logger.getLogger( ImageSelectionPanel.class ) ;
     
     public static boolean CREATE_JN_FILE = false ;
-    //public static String  DEST_IMG_SUBFOLDER = "/img/pages" ;
-    public static String  DEST_IMG_SUBFOLDER = "" ;
+    public static String  DEST_IMG_SUBFOLDER = "/img/pages" ;
+    //public static String  DEST_IMG_SUBFOLDER = "" ;
     
     public static void main( String[] args ) {
         
