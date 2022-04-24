@@ -8,8 +8,21 @@ import java.util.Comparator ;
 
 public class ChPageCreator {
     
-    private String[] subjects = { "History", "Civics" } ;
-    private File jnRoot = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-7/Class-7" ) ;
+    private File jnRoot = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-8/Class-8" ) ;
+
+    private String[] subjects = { 
+            "Biology",
+            "Chemistry",
+            "Civics",
+            "English",
+            "English Grammar",
+            "Geography",
+            "Hindi",
+            "History",
+            "Mathematics",
+            "Physics",
+            "Rapid Reader"
+    } ;
     
     public void execute() throws Exception {
         for( String subject : subjects ) {
@@ -22,7 +35,7 @@ public class ChPageCreator {
         File[] chapters = subDir.listFiles() ;
         
         for( File chapter : chapters ) {
-            File hiResImgDir = new File( chapter, "img/pages/hi-res" ) ;
+            File hiResImgDir = new File( chapter, "img/pages" ) ;
             if( hiResImgDir.exists() ) {
                 createPageForChapter( subject, chapter ) ;
             }
@@ -45,11 +58,21 @@ public class ChPageCreator {
         
         Arrays.sort( pageImgs, new Comparator<File>() {
             public int compare( File o1, File o2 ) {
-                return (int)( o1.lastModified() - o2.lastModified() ) ;
+                int page1No = getPageNum( o1 ) ;
+                int page2No = getPageNum( o2 ) ;
+                
+                return page1No - page2No ;
             }
         } );
         
         writePageChapter( subject, chapter, pageImgs ) ;
+    }
+    
+    private int getPageNum( File f ) {
+        String fName = f.getName() ;
+        fName = fName.substring( 0, fName.length()-4 ) ;
+        String numStr = fName.substring( fName.lastIndexOf( "_" )+1 ) ;
+        return Integer.parseInt( numStr ) ;
     }
     
     private void writePageChapter( String subject, File chapter, File[] pageImgFiles ) 
