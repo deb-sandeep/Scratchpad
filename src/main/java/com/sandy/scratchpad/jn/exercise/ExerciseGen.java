@@ -303,7 +303,7 @@ public class ExerciseGen {
             buffer.append( " [" + ex.getBookName() + "_" + ex.getChapterName() + "]" ) ;
         }
               
-        buffer.append( " (ex-" )
+        buffer.append( " (" )
               .append( exName )
               .append( ").jn" ) ;
         
@@ -329,18 +329,19 @@ public class ExerciseGen {
         buffer.append( "@exercise_bank\n\n" )
               .append( "subject \"").append( subjectName ).append( "\"\n" )
               .append( "chapterNumber " + chapterNumber + "." + nextSubChapterNumber + "\n" )
-              .append( "chapterName \"" + chapterName +  " (ex-" + exName + ")\"\n" )
+              .append( "chapterName \"" + chapterName +  " (" + exName + ")\"\n" )
               .append( "\n" ) ;
               
         return buffer.toString() ;
     }
-
-    public static void main( String[] args ) throws Exception {
+    
+    public static void generateExercises( String chapterName ) 
+        throws Exception {
         
-        String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-7/" ;
-        String JN_CLS_DIR       = "Class-7" ;
+        String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-8/" ;
+        String JN_CLS_DIR       = "Class-8" ;
         String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = "13 - Set Concepts" ;
+        String JN_CHAPTER       = chapterName ;
         String JN_BASE_CHP_NAME = null ;
         int    JN_CHAPTER_NUM   = -1 ;
         int    JN_SUB_CHP_START = 2 ;
@@ -372,6 +373,19 @@ public class ExerciseGen {
                                            JN_SUB_CHP_START ) ;
         gen.generateExercises( null, null, exerciseNames ) ;
         gen.generateExercisesForBooks() ;
+    }
+
+    public static void main( String[] args ) throws Exception {
+
+        String[] chapterNames = {
+            "06 - Sets", 
+            "11 - Algebraic Expressions",
+            "12 - Identities"
+        } ;
+
+        for( String name : chapterNames ) {
+            generateExercises( name ) ;
+        }
     }
     
     private static String getBaseChapterName( String chapterName ) {
