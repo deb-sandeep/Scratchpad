@@ -378,9 +378,16 @@ public class ExerciseGen {
     public static void main( String[] args ) throws Exception {
 
         String[] chapterNames = {
-            "06 - Sets", 
-            "11 - Algebraic Expressions",
-            "12 - Identities"
+            "14 - Linear Equation in one Variable",
+            "15 - Linear Inequations",
+            "16 - Understanding Shapes",
+            "17 - Quadrilaterals",
+            "18 - Constructions",
+            "19 - 3D in 2D",
+            "20 - Area of Trapezium and Polygon",
+            "21 - Surface Area, Volume and Capacity",
+            "22 - Data Handling",
+            "23 - Probability"
         } ;
 
         for( String name : chapterNames ) {
