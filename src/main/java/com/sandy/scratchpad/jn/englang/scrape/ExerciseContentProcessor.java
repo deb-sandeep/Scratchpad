@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.jn.englang;
+package com.sandy.scratchpad.jn.englang.scrape;
 
 import java.util.ArrayList ;
 import java.util.List ;

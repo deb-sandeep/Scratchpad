@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.jn.englang;
+package com.sandy.scratchpad.jn.englang.scrape;
 
 import java.net.URL ;
 import java.util.Date ;
