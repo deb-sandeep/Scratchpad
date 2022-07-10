@@ -31,9 +31,9 @@ public class MCQ {
     }
     
     public String toString() {
+
         StringBuilder sb = new StringBuilder() ;
-        sb.append( "@multi_choice \"Find the right meaning  \n" )
-          .append( "## " + this.question + "\" {\n" )
+        sb.append( "@multi_choice \"" + question + "\" {\n" )
           .append( "    @options {\n" ) ;
         
         for( MCQOption option : options ) {
@@ -47,6 +47,7 @@ public class MCQ {
         sb.deleteCharAt( sb.length()-1 ) ;
         sb.deleteCharAt( sb.length()-1 ) ;
         sb.append( "\n    }" ) ;
+        sb.append( "\n    @numOptionsPerRow 3" ) ;
         sb.append( "\n}" ) ;
         return sb.toString() ;
     }
