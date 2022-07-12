@@ -10,15 +10,15 @@ import org.apache.log4j.Logger ;
 
 import com.sandy.common.util.StringUtil ;
 
-public class LineLoader {
+public class PronounQAGenerator {
     
-    private static final Logger log = Logger.getLogger( LineLoader.class ) ;
+    private static final Logger log = Logger.getLogger( PronounQAGenerator.class ) ;
     
-    public List<String> loadLines() throws Exception {
+    public List<Line> loadLines() throws Exception {
         
-        List<String> lines = new ArrayList<>() ;
+        List<Line> lines = new ArrayList<>() ;
         
-        InputStream is = LineLoader.class.getResourceAsStream( "/prose/pronoun-sentences.txt" ) ;
+        InputStream is = PronounQAGenerator.class.getResourceAsStream( "/prose/pronoun-sentences.txt" ) ;
         BufferedReader reader = new BufferedReader( new InputStreamReader( is ) ) ;
         
         String line = null ;
@@ -26,15 +26,16 @@ public class LineLoader {
             
             if( StringUtil.isNotEmptyOrNull( line ) ) {
                 log.debug( line ) ;
-                lines.add( line ) ;
+                lines.add( new Line( line ) ) ;
             }
         }
         
         return lines ;
     }
     
+    
     public static void main( String[] args ) throws Exception {
         
-        PronounMaster.instance() ;
+        new PronounQAGenerator().loadLines() ;
     }
 }
