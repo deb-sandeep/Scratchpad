@@ -16,10 +16,10 @@ public class Squares {
             generateSCA( "Square root", i*i, i ) ;
         }
         
-        for( int i=11; i<100; i++ ) {
-            log.debug( "@fib \"Square of **" + i + "** is {0}.\" \"" + i*i + "\"" );
-            log.debug( "@fib \"Square root of **" + (i*i) + "** is {0}.\" \"" + i + "\"" );
-        }
+        //for( int i=11; i<100; i++ ) {
+        //    log.debug( "@fib \"Square of **" + i + "** is {0}.\" \"" + i*i + "\"" );
+        //    log.debug( "@fib \"Square root of **" + (i*i) + "** is {0}.\" \"" + i + "\"" );
+        //}
     }
     
     private void generateSCA( String what, int i, int square ) {
@@ -56,6 +56,9 @@ public class Squares {
             for( int i=0; i<chars.length-1; i++ ) {
                 if( Math.random() <= 0.5 ) {
                     int randomInt = (int)(Math.random()*10) ;
+                    while( i == 0 && randomInt == 0 ) {
+                        randomInt = (int)(Math.random()*10) ;
+                    }
                     chars[i] = Integer.toString( randomInt ).charAt( 0 ) ;
                 }
             }
