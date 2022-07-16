@@ -3,11 +3,13 @@ package com.sandy.scratchpad.jn.englang.pronoun;
 import java.util.ArrayList ;
 import java.util.List ;
 
+import org.apache.log4j.Logger ;
+
 import com.sandy.common.util.StringUtil ;
 
 public class Line {
 
-    //private static final Logger log = Logger.getLogger( Line.class ) ;
+    private static final Logger log = Logger.getLogger( Line.class ) ;
     
     public static class Segment {
         
@@ -108,5 +110,18 @@ public class Line {
     
     private boolean isChar( char ch ) {
         return ( ch >= 'a' && ch <= 'z' ) || ( ch >= 'A' && ch <= 'Z' ) ;
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        return obj == this ;
+    }
+    
+    public void print() {
+        
+        log.debug( ">> " + lineStr ) ;
+        for( Segment seg : pronouns ) {
+            log.debug( "    " + seg.pronoun.getWord() + " (" + seg.pronoun.getType().getName() + ")" );
+        }
     }
 }

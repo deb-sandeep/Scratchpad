@@ -1,6 +1,7 @@
 package com.sandy.scratchpad.jn.englang.pronoun;
 
 import java.util.ArrayList ;
+import java.util.Collection ;
 import java.util.HashMap ;
 import java.util.List ;
 import java.util.Map ;
@@ -57,5 +58,9 @@ public class PronounMaster {
     
     public Pronoun getPronoun( String word ) {
         return pronounMap.get( word.toLowerCase() ) ;
+    }
+    
+    public Collection<PronounType> getPronounTypes() {
+        return typesMap.values() ;
     }
 }
