@@ -23,16 +23,13 @@ public class PronounQAGenerator {
         
         String line = null ;
         while( (line = reader.readLine()) != null ) {
-            
             if( StringUtil.isNotEmptyOrNull( line ) ) {
                 log.debug( line ) ;
                 lines.add( new Line( line ) ) ;
             }
         }
-        
         return lines ;
     }
-    
     
     public static void main( String[] args ) throws Exception {
         
