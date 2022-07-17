@@ -18,7 +18,7 @@ public class PronounMaster {
             { "Distributive",   "each", "either", "neither" },
             { "Indefinite",     "several", "all", "both", "anyone", "everyone", "someone", "everybody", "nobody", "one" },
             { "Reciprocal",     "one another", "each other" },
-            { "Relative",       "that", "which", "who", "whose", "whom", "where", "when" }            
+            { "Relative",       "which", "who", "whose", "whom", "where", "when" }            
     } ;
     
     private static PronounMaster instance = new PronounMaster() ;
