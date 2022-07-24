@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.jn.paryayvachi;
+package com.sandy.scratchpad.jn.one2many;
 
 import java.io.File ;
 import java.io.FileNotFoundException ;
@@ -99,12 +99,12 @@ public class OneToManyMCQCreator {
     
     private String createKeywordToValuesQuestion( String keyword ) {
         
-        return "Identify **" + keyword + "** pronouns."  ;
+        return "Identify **" + keyword + "** synonym."  ;
     }
     
     private String createValueToKeywordsQuestion( String keyword ) {
         
-        return "Identify the pronoun type for - **" + keyword + "**"  ;
+        return "Identify the synonym for - **" + keyword + "**"  ;
     }
     
     private void addRandomWrongValuesOptions( MCQ mcq, List<String> meanings ) {

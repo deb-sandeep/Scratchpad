@@ -9,7 +9,7 @@ import java.util.List ;
 import org.apache.log4j.Logger ;
 
 import com.sandy.common.util.StringUtil ;
-import com.sandy.scratchpad.jn.englang.pronoun.PronounQAGenerator ;
+import com.sandy.scratchpad.jn.englang.pronoun.PronounJNGen ;
 
 import static java.lang.Character.isWhitespace ;
 
@@ -29,7 +29,7 @@ public class LineLoader {
             
             StringBuilder sb = new StringBuilder() ;
             
-            InputStream is = PronounQAGenerator.class.getResourceAsStream( "/prose/" + resName ) ;
+            InputStream is = PronounJNGen.class.getResourceAsStream( "/prose/" + resName ) ;
             BufferedReader reader = new BufferedReader( new InputStreamReader( is ) ) ;
             
             String line = null ;
@@ -171,7 +171,7 @@ public class LineLoader {
             
         List<String> lines = new ArrayList<>() ;
         
-        InputStream is = PronounQAGenerator.class.getResourceAsStream( "/prose/" + resName ) ;
+        InputStream is = PronounJNGen.class.getResourceAsStream( "/prose/" + resName ) ;
         BufferedReader reader = new BufferedReader( new InputStreamReader( is ) ) ;
         
         String line = null ;

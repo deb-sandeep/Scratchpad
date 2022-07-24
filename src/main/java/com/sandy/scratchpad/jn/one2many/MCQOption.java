@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.jn.paryayvachi;
+package com.sandy.scratchpad.jn.one2many;
 
 public class MCQOption {
     public String answer = null ;
