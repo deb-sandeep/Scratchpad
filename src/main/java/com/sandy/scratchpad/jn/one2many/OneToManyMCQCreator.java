@@ -138,8 +138,8 @@ public class OneToManyMCQCreator {
     private void generateQuestions() {
         Collections.shuffle( mcqs ) ;
         for( MCQ mcq : mcqs ) {
-            log.debug( mcq ) ;
-            log.debug( "" ) ;
+            log.info( mcq ) ;
+            log.info( "" ) ;
         }
     }
 }
