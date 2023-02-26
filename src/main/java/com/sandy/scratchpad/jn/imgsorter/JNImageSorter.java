@@ -50,9 +50,11 @@ public class JNImageSorter extends JFrame {
         contentPane.add( chapSelPanel ) ;
     }
 
-    public String moveFiles( List<File> largeFiles ) {
+    public String moveFiles( List<File> largeFiles,
+                             boolean removeTargetFolderAfterMove ) {
         try {
-            return chapSelPanel.acceptFiles( largeFiles ) ;
+            return chapSelPanel.acceptFiles( largeFiles,
+                                             removeTargetFolderAfterMove ) ;
         }
         catch( Exception e ) {
             log.error( "Exception moving files.", e ) ;

@@ -42,7 +42,7 @@ public class ChapterSelectionPanel extends JPanel
     public ChapterSelectionPanel( JNImageSorter parent ) {
         this.parent = parent ;
         
-        File subDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-8/Class-8" ) ;
+        File subDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Class-9" ) ;
         if( subDir.exists() ) {
             subjectFolder = subDir ;
         }
@@ -126,7 +126,8 @@ public class ChapterSelectionPanel extends JPanel
         }
     }
     
-    public String acceptFiles( List<File> largeFiles ) 
+    public String acceptFiles( List<File> largeFiles,
+                               boolean removeTargetFolderAfterMove ) 
         throws Exception {
         
         String message = null ;
@@ -143,9 +144,11 @@ public class ChapterSelectionPanel extends JPanel
                 createJNFileForPages( selectedChapter ) ;
             }
             
-            listModel.removeElement( selectedChapter ) ;
-            if( !listModel.isEmpty() ) {
-                chapterList.setSelectedIndex( 0 ) ;
+            if( removeTargetFolderAfterMove ) {
+                listModel.removeElement( selectedChapter ) ;
+                if( !listModel.isEmpty() ) {
+                    chapterList.setSelectedIndex( 0 ) ;
+                }
             }
         }
         else {

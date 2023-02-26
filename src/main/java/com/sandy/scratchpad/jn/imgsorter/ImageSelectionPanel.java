@@ -12,6 +12,8 @@ import javax.swing.event.ListSelectionListener ;
 
 import org.apache.log4j.Logger ;
 
+import static java.awt.event.InputEvent.SHIFT_DOWN_MASK ;
+
 @SuppressWarnings( "serial" )
 public class ImageSelectionPanel extends JPanel 
     implements ActionListener, ListSelectionListener {
@@ -20,7 +22,11 @@ public class ImageSelectionPanel extends JPanel
     
     private JNImageSorter   parent          = null ;
     private JButton         imgFolderSelBtn = new JButton( "Select image folder" ) ;
+    // A move action removes the target folder from the list, while a file 
+    // image stores the images in the target folder without removing the folder
+    // from the list.
     private JButton         moveImgsBtn     = new JButton( ">" ) ;
+    private JButton         fileImgsBtn     = new JButton( ">>" ) ;
     private JButton         removeChapterBtn= new JButton( "X" ) ;
     private JFileChooser    fileChooser     = new JFileChooser() ;
     
@@ -54,10 +60,14 @@ public class ImageSelectionPanel extends JPanel
         btnPanel.add( imgFolderSelBtn, BorderLayout.CENTER ) ;
         btnPanel.add( removeChapterBtn, BorderLayout.EAST ) ;
         
+        JPanel transferPanel = new JPanel( new BorderLayout() ) ;
+        transferPanel.add( moveImgsBtn, BorderLayout.CENTER ) ;
+        transferPanel.add( fileImgsBtn, BorderLayout.NORTH ) ;
+        
         JScrollPane sp = new JScrollPane( imageList ) ;
         add( sp, BorderLayout.CENTER ) ;
         add( btnPanel, BorderLayout.NORTH ) ;
-        add( moveImgsBtn, BorderLayout.EAST ) ;
+        add( transferPanel, BorderLayout.EAST ) ;
         
         setUpEventListeners() ;
     }
@@ -66,12 +76,22 @@ public class ImageSelectionPanel extends JPanel
         imgFolderSelBtn.addActionListener( this ) ;
         removeChapterBtn.addActionListener( this ) ;
         moveImgsBtn.addActionListener( this ) ;
+        fileImgsBtn.addActionListener( this ) ;
         imageList.addListSelectionListener( this ) ;
+        
         imageList.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyPressed(KeyEvent e) {
+            public void keyPressed( KeyEvent e ) {
+                
                 if( e.getKeyCode() == KeyEvent.VK_RIGHT ) {
-                    moveSelectedImages() ;
+                    
+                    int modifiersEx = e.getModifiersEx() ;
+                    if( ( modifiersEx & SHIFT_DOWN_MASK ) != 0 ) {
+                        moveSelectedImages( false ) ;
+                    }
+                    else {
+                        moveSelectedImages( true ) ;
+                    }
                 }
             }
         } ) ;
@@ -97,7 +117,10 @@ public class ImageSelectionPanel extends JPanel
             }
         }
         else if( e.getSource() == moveImgsBtn ) {
-            moveSelectedImages() ;
+            moveSelectedImages( true ) ;
+        }
+        else if( e.getSource() == fileImgsBtn ) {
+            moveSelectedImages( false ) ;
         }
     }
     
@@ -139,7 +162,7 @@ public class ImageSelectionPanel extends JPanel
         return Integer.parseInt( pageNum ) ;
     }
     
-    private void moveSelectedImages() {
+    private void moveSelectedImages( boolean removeTargetFolderAfterMove ) {
         
         List<String> selectedFiles = imageList.getSelectedValuesList() ;
         List<File> imgFiles = new ArrayList<>() ;
@@ -148,7 +171,9 @@ public class ImageSelectionPanel extends JPanel
             imgFiles.add( new File( this.imgFolder, name ) ) ;
         }
         
-        String moveResult = this.parent.moveFiles( imgFiles ) ;
+        String moveResult = this.parent.moveFiles( imgFiles, 
+                                                   removeTargetFolderAfterMove ) ;
+        
         if( moveResult == null ) {
             for( String name : selectedFiles ) {
                 listModel.removeElement( name ) ;

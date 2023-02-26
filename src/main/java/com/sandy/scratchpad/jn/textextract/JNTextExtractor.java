@@ -17,7 +17,7 @@ public class JNTextExtractor {
     private static final Logger log = Logger.getLogger( JNTextExtractor.class ) ;
     
     public static File JN_DIR = new File( 
-            "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-8/Class-8" ) ;
+            "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Class-9" ) ;
     
     public static void main( String[] args ) throws Exception {
         new JNTextExtractor().process() ;
@@ -32,11 +32,12 @@ public class JNTextExtractor {
                 String dirName = dir.getName() ;
                 
                 //if( dirName.equals( "Hindi" ) ) continue ;
-                if( dirName.equals( "English Grammar" ) ) continue ;
-                if( dirName.equals( "Mathematics" ) ) continue ;
-                
-                log.debug( "Processing subject - " + dirName ) ;
-                processSubjectDir( dir ) ;
+                if( dirName.equals( "English Grammar" ) || 
+                    dirName.equals( "Computers" ) ) {
+                    
+                    log.debug( "Processing subject - " + dirName ) ;
+                    processSubjectDir( dir ) ;
+                }
             }
         }
     }
@@ -96,13 +97,30 @@ public class JNTextExtractor {
         
         retVal.sort( new Comparator<File>() {
             public int compare( File f1, File f2 ) {
-                return getFileId( f1 ) - getFileId( f2 ) ;
+                String f1Prefix = getFilePrefix( f1 ) ;
+                String f2Prefix = getFilePrefix( f2 ) ;
+                if( f1Prefix.equals( f2Prefix ) ) {
+                    return getFileSequence( f1 ) - getFileSequence( f2 ) ;
+                }
+                else {
+                    return f1Prefix.compareTo( f2Prefix ) ;
+                }
             }
         } ) ;
+        
         return retVal ;
     }
     
-    private int getFileId( File file ) {
+    private String getFilePrefix( File file ) {
+        
+        String fileName = file.getName() ;
+        fileName = fileName.substring( 0, fileName.length()-4 ) ;
+        
+        String[] parts = fileName.split( "_" ) ;
+        return parts[0] ;
+    }
+    
+    private int getFileSequence( File file ) {
         
         String fileName = file.getName() ;
         fileName = fileName.substring( 0, fileName.length()-4 ) ;
@@ -123,7 +141,7 @@ public class JNTextExtractor {
         
         boolean paragraphAdded = false ;
         
-        sb.append( "\n\n------- Page " + imgFile.getName() + " ----------\n\n" ) ;
+        sb.append( "\n\n------- " + imgFile.getName() + "\n\n" ) ;
         for( String line : text ) {
             if( !StringUtil.isEmptyOrNull( line ) ) {
                 sb.append( line.trim() + " " ) ;

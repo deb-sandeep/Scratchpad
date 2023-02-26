@@ -6,6 +6,8 @@ import java.util.List ;
 import org.apache.commons.io.IOUtils ;
 
 public class LineGroup {
+    
+    public static final float PROBABILITY_OF_BLANK = 0.7F ;
     int startLine = 0 ;
     int numLines  = 0 ;
     int blankLineIndex = -1 ;
@@ -45,7 +47,9 @@ public class LineGroup {
                         qLine.append( word + " " ) ;
                     }
                     else {
-                        if( Math.random() > 0.6 && isEligibleForBlank( word ) ) {
+                        if( Math.random() > PROBABILITY_OF_BLANK && 
+                            isEligibleForBlank( word ) ) {
+                            
                             answers.add( word ) ;
                             qLine.append( "{" + (answers.size()-1) + "} " ) ;
                         }

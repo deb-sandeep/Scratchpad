@@ -15,7 +15,7 @@ public class JNMkPDF {
     private static final Logger log = Logger.getLogger( JNMkPDF.class ) ;
     
     public static File JN_DIR = new File( 
-            "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-8/Class-8" ) ;
+            "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Class-9" ) ;
     
     public static void main( String[] args ) throws Exception {
         new JNMkPDF().process() ;
@@ -29,8 +29,10 @@ public class JNMkPDF {
                 
                 String dirName = dir.getName() ;
                 
-                log.debug( "Processing subject - " + dirName ) ;
-                processSubjectDir( dir ) ;
+                if( dirName.equals( "English Grammar" ) ) {
+                    log.debug( "Processing subject - " + dirName ) ;
+                    processSubjectDir( dir ) ;
+                }
             }
         }
     }
@@ -76,13 +78,34 @@ public class JNMkPDF {
         
         retVal.sort( new Comparator<File>() {
             public int compare( File f1, File f2 ) {
-                return getFileId( f1 ) - getFileId( f2 ) ;
+                String f1Prefix = getFilePrefix( f1 ) ;
+                String f2Prefix = getFilePrefix( f2 ) ;
+                if( f1Prefix.equals( f2Prefix ) ) {
+                    return getFileSequence( f1 ) - getFileSequence( f2 ) ;
+                }
+                else {
+                    return f1Prefix.compareTo( f2Prefix ) ;
+                }
             }
         } ) ;
+        
+        for( File file : retVal ) {
+            log.debug( "    " + file.getName() ) ;
+        }
+        
         return retVal ;
     }
     
-    private int getFileId( File file ) {
+    private String getFilePrefix( File file ) {
+        
+        String fileName = file.getName() ;
+        fileName = fileName.substring( 0, fileName.length()-4 ) ;
+        
+        String[] parts = fileName.split( "_" ) ;
+        return parts[0] ;
+    }
+    
+    private int getFileSequence( File file ) {
         
         String fileName = file.getName() ;
         fileName = fileName.substring( 0, fileName.length()-4 ) ;

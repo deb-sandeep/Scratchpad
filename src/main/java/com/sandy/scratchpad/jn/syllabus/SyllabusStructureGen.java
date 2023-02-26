@@ -15,9 +15,9 @@ public class SyllabusStructureGen {
     
     private static final Logger log = Logger.getLogger( SyllabusStructureGen.class ) ;
 
-    private File baseDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-8" ) ;
-    private File jnRoot = new File( baseDir, "Class-8" ) ;
-    private File inputFile = new File( baseDir, "Syllabus.xlsx" ) ;
+    private File baseDir = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-9/" ) ;
+    private File jnRoot = new File( baseDir, "Class-9" ) ;
+    private File inputFile = new File( baseDir, "Documents/Syllabus.xlsx" ) ;
 
     private Map<String, Subject> subjectMap = new LinkedHashMap<>() ;
     
