@@ -16,11 +16,9 @@ public class Exercise {
 
     private String name = null ;
     private String bookName = null ;
-    private String chapterName = null ;
     
-    public Exercise( String bookName, String chapterName, String eId ) {
+    public Exercise( String bookName, String eId ) {
         this.bookName = bookName ;
-        this.chapterName = chapterName ;
         this.name = eId ;
     }
     
@@ -30,10 +28,6 @@ public class Exercise {
     
     public String getBookName() {
         return this.bookName ;
-    }
-    
-    public String getChapterName() {
-        return this.chapterName ;
     }
     
     public void buildQuestion( ImgMeta meta ) {

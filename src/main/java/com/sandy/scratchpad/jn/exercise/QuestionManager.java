@@ -20,11 +20,9 @@ public class QuestionManager {
     private Map<String, Exercise> exerciseMap = new LinkedHashMap<String, Exercise>() ;
     
     private String bookName = null ;
-    private String chapterName = null ;
     
-    public QuestionManager( String bookName, String chapterName ) {
+    public QuestionManager( String bookName ) {
         this.bookName = bookName ;
-        this.chapterName = chapterName ;
     }
     
     public void buildImageMeta( String imageName ) {
@@ -54,7 +52,7 @@ public class QuestionManager {
         
         Exercise ex = exerciseMap.get( eId ) ;
         if( ex == null ) {
-            ex = new Exercise( bookName, chapterName, eId ) ;
+            ex = new Exercise( bookName, eId ) ;
             exerciseMap.put( eId, ex ) ;
         }
         return ex ;

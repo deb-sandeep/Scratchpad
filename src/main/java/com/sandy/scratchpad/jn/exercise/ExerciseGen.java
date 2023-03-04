@@ -10,6 +10,8 @@ import java.util.Map.Entry ;
 import org.apache.commons.io.FileUtils ;
 import org.apache.log4j.Logger ;
 
+import com.sandy.common.util.StringUtil ;
+
 public class ExerciseGen {
     
     private static final Logger log = Logger.getLogger( ExerciseGen.class ) ;
@@ -60,7 +62,7 @@ public class ExerciseGen {
                                            JN_BASE_CHP_NAME, 
                                            JN_CHAPTER_NUM, 
                                            JN_SUB_CHP_START ) ;
-        gen.generateExercises( null, null, exerciseNames ) ;
+        gen.generateExercises( null, exerciseNames ) ;
         gen.generateExercisesForBooks() ;
     }
 
@@ -146,29 +148,10 @@ public class ExerciseGen {
         throws Exception {
         
         String bookName = bookFolder.getName() ;
-        File[] potentialChapters = bookFolder.listFiles() ;
-        
-        if( potentialChapters == null || 
-            potentialChapters.length == 0 ) {
-            return ;
-        }
-        
-        for( File potentialChapter : potentialChapters ) {
-            if( potentialChapter.isDirectory() ) {
-                processPotentialBookChapter( bookName, potentialChapter ) ;
-            }
-        }
+        generateExercises( bookName, null ) ;
     }
     
-    private void processPotentialBookChapter( String bookName, File chapterFolder )
-        throws Exception {
-        
-        String chapterName = chapterFolder.getName() ;
-        generateExercises( bookName, chapterName, null ) ;
-    }
-    
-    public void generateExercises( String bookName, String chapterName, 
-                                   List<String> exerciseNames ) 
+    public void generateExercises( String bookName, List<String> exerciseNames ) 
         throws Exception {
         
         
@@ -182,7 +165,7 @@ public class ExerciseGen {
         }
         
         File[] relevantFiles = getRelevantImageFiles( imgFolder ) ;
-        QuestionManager qMgr = new QuestionManager( bookName, chapterName ) ;
+        QuestionManager qMgr = new QuestionManager( bookName ) ;
         
         for( File file : relevantFiles ) {
             String fileName = file.getName() ;
@@ -326,10 +309,20 @@ public class ExerciseGen {
         buffer.append( "answer\n\"" ) ;
         
         if( q.getAnswerParts().size() == 0 ) {
-            buffer.append( "Check answer chapter " + 
-                           this.chapterNumber + "-" + 
-                           q.getExerciseName() + "-" + 
-                           q.getId() ) ;
+            
+            String bookStr = ex.getBookName() ;
+            if( StringUtil.isEmptyOrNull( bookStr ) ) {
+                bookStr = "" ;
+            }
+            else {
+                bookStr = "[Book: " + bookStr + "] " ;
+            }
+            
+            buffer.append( "Check answer " + 
+                           bookStr + 
+                           "Chapter: " + this.chapterNumber + ", " + 
+                           "Problem: " + 
+                           q.getExerciseName() + "-" + q.getId() ) ;
         }
         else {
             for( int i=0; i<q.getAnswerParts().size(); i++ ) {
@@ -381,10 +374,7 @@ public class ExerciseGen {
     
     private String getJNFileHeader( Exercise ex ) {
         
-        String exName = ex.getExId() ;
-        if( exName.equals( "ex_" ) ) {
-            exName = "Examples" ;
-        }
+        String exName = "Ex" + ex.getExId() ;
         
         String chapterName = baseChpName ;
         
