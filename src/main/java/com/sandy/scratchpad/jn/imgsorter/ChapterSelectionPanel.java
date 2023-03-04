@@ -140,7 +140,7 @@ public class ChapterSelectionPanel extends JPanel
             String pagesFolderPath = "img/pages" ;
             
             if( StringUtil.isNotEmptyOrNull( JNImageSorter.BOOK_NAME ) ) {
-                pagesFolderPath = "img/" + JNImageSorter.BOOK_NAME + "/pages" ;
+                pagesFolderPath = "img/books/" + JNImageSorter.BOOK_NAME + "/pages" ;
             }
             
             File pageFolder  = new File( chapterFolder, pagesFolderPath ) ;
@@ -182,7 +182,7 @@ public class ChapterSelectionPanel extends JPanel
         }
     }
     
-    private int getNextFileNumber( File destFolder ) {
+    private String getNextFileNumber( File destFolder ) {
         
         File[] files = destFolder.listFiles( new FileFilter() {
             @Override
@@ -191,7 +191,9 @@ public class ChapterSelectionPanel extends JPanel
             }
         } ) ;
         
-        return files == null ? 1 : files.length+1 ;
+        int fileNum = files == null ? 1 : files.length+1 ; 
+        
+        return String.format( "%03d", fileNum ) ;
     }
     
     private void createJNFileForPages( String selectedChapter ) 

@@ -14,6 +14,75 @@ public class ExerciseGen {
     
     private static final Logger log = Logger.getLogger( ExerciseGen.class ) ;
     
+    public static void main( String[] args ) throws Exception {
+
+        String[] chapterNames = {
+            "01 - Rational and Irrational Numbers"
+        } ;
+
+        for( String name : chapterNames ) {
+            generateExercises( name ) ;
+        }
+    }
+    
+    public static void generateExercises( String chapterName ) 
+        throws Exception {
+        
+        String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/" ;
+        String JN_CLS_DIR       = "Class-9" ;
+        String JN_SUBJECT       = "Mathematics" ;
+        String JN_CHAPTER       = chapterName ;
+        String JN_BASE_CHP_NAME = null ;
+        int    JN_CHAPTER_NUM   = -1 ;
+        int    JN_SUB_CHP_START = 2 ;
+        String includedExercises[]  = {} ;
+        
+        if( JN_BASE_CHP_NAME == null ) {
+            JN_BASE_CHP_NAME = getBaseChapterName( JN_CHAPTER ) ;
+        }
+        
+        if( JN_CHAPTER_NUM == -1 ) {
+            JN_CHAPTER_NUM = getBaseChapterNum( JN_CHAPTER ) ;
+        }
+        
+        File rootJNDir = new File( JN_ROOT_DIR ) ;
+        File clsJNDir  = new File( rootJNDir, JN_CLS_DIR ) ;
+        File subJNDir  = new File( clsJNDir,  JN_SUBJECT ) ;
+        File chpJNDir  = new File( subJNDir,  JN_CHAPTER ) ;
+        
+        List<String> exerciseNames = new ArrayList<>() ;
+        for( String arg : includedExercises ) {
+            exerciseNames.add( arg ) ;
+        }
+        
+        ExerciseGen gen = new ExerciseGen( chpJNDir, 
+                                           JN_SUBJECT, 
+                                           JN_BASE_CHP_NAME, 
+                                           JN_CHAPTER_NUM, 
+                                           JN_SUB_CHP_START ) ;
+        gen.generateExercises( null, null, exerciseNames ) ;
+        gen.generateExercisesForBooks() ;
+    }
+
+    private static String getBaseChapterName( String chapterName ) {
+        int index = chapterName.indexOf( '-' ) ;
+        if( index == -1 ) {
+            throw new IllegalArgumentException( "Chapter name invalid. - not found" ) ;
+        }
+        return chapterName.substring( index + 2 ).trim() ;
+    }
+    
+    private static int getBaseChapterNum( String chapterName ) {
+        int index = chapterName.indexOf( '-' ) ;
+        if( index == -1 ) {
+            throw new IllegalArgumentException( "Chapter name invalid. - not found" ) ;
+        }
+        String str = chapterName.substring( 0, index ).trim() ;
+        return Integer.parseInt( str ) ;
+    } 
+    
+    // =========================================================================
+    
     // jnFolder is the path till the chapter - not the root JN folder!
     private File   chpFolder             = null ;
     private String baseChpName           = null ;
@@ -98,17 +167,18 @@ public class ExerciseGen {
         generateExercises( bookName, chapterName, null ) ;
     }
     
-    public void generateExercises( String bookName, String chapterName, List<String> exerciseNames ) 
+    public void generateExercises( String bookName, String chapterName, 
+                                   List<String> exerciseNames ) 
         throws Exception {
         
         
         File imgFolder = null ;
         if( bookName == null ) {
-            imgFolder = new File( this.chpFolder, "img" ) ;
+            imgFolder = new File( this.chpFolder, "img/exercise" ) ;
         }
         else {
             imgFolder = new File( this.chpFolder, 
-                                  "img/books/" + bookName + "/" + chapterName ) ;
+                                  "img/books/" + bookName + "/exercise" ) ;
         }
         
         File[] relevantFiles = getRelevantImageFiles( imgFolder ) ;
@@ -136,7 +206,7 @@ public class ExerciseGen {
             }
             
             if( ex.getBookName() != null ) {
-                id += " (" + ex.getBookName() + ":" + ex.getChapterName() + ")" ;
+                id += " (" + ex.getBookName() + ")" ;
             }
             
             log.debug( "Generating JN for exercise " + id );
@@ -278,11 +348,10 @@ public class ExerciseGen {
     private String getTaggedImage( Exercise ex, ImgMeta imgMeta ) {
         
         if( ex.getBookName() == null ) {
-            return "{{@img " + imgMeta + "}}" ;
+            return "{{@img exercise/" + imgMeta + "}}" ;
         }
         else {
-            return "{{@img books/" + ex.getBookName() + "/" + 
-                                     ex.getChapterName() + "/" + 
+            return "{{@img books/" + ex.getBookName() + "/exercise/" + 
                                      imgMeta + "}}" ;
         }
     }
@@ -300,7 +369,7 @@ public class ExerciseGen {
               .append( this.baseChpName ) ;
         
         if( ex.getBookName() != null ) {
-            buffer.append( " [" + ex.getBookName() + "_" + ex.getChapterName() + "]" ) ;
+            buffer.append( " [" + ex.getBookName() + "]" ) ;
         }
               
         buffer.append( " (" )
@@ -320,9 +389,7 @@ public class ExerciseGen {
         String chapterName = baseChpName ;
         
         if( ex.getBookName() != null ) {
-            chapterName += " [" + 
-                           ex.getBookName() + "_" + ex.getChapterName() + 
-                           "]" ;
+            chapterName += " [" + ex.getBookName() + "]" ;
         }
         
         StringBuilder buffer = new StringBuilder() ;
@@ -334,81 +401,4 @@ public class ExerciseGen {
               
         return buffer.toString() ;
     }
-    
-    public static void generateExercises( String chapterName ) 
-        throws Exception {
-        
-        String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-8/" ;
-        String JN_CLS_DIR       = "Class-8" ;
-        String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = chapterName ;
-        String JN_BASE_CHP_NAME = null ;
-        int    JN_CHAPTER_NUM   = -1 ;
-        int    JN_SUB_CHP_START = 2 ;
-        String includedExercises[]  = {} ;
-        
-        if( JN_BASE_CHP_NAME == null ) {
-            JN_BASE_CHP_NAME = getBaseChapterName( JN_CHAPTER ) ;
-        }
-        
-        if( JN_CHAPTER_NUM == -1 ) {
-            JN_CHAPTER_NUM = getBaseChapterNum( JN_CHAPTER ) ;
-        }
-        
-        File rootJNDir = new File( JN_ROOT_DIR ) ;
-        File clsJNDir  = new File( rootJNDir, JN_CLS_DIR ) ;
-        File subJNDir  = new File( clsJNDir,  JN_SUBJECT ) ;
-        File chpJNDir  = new File( subJNDir,  JN_CHAPTER ) ;
-        
-        
-        List<String> exerciseNames = new ArrayList<>() ;
-        for( String arg : includedExercises ) {
-            exerciseNames.add( arg ) ;
-        }
-        
-        ExerciseGen gen = new ExerciseGen( chpJNDir, 
-                                           JN_SUBJECT, 
-                                           JN_BASE_CHP_NAME, 
-                                           JN_CHAPTER_NUM, 
-                                           JN_SUB_CHP_START ) ;
-        gen.generateExercises( null, null, exerciseNames ) ;
-        gen.generateExercisesForBooks() ;
-    }
-
-    public static void main( String[] args ) throws Exception {
-
-        String[] chapterNames = {
-            "14 - Linear Equation in one Variable",
-            "15 - Linear Inequations",
-            "16 - Understanding Shapes",
-            "17 - Quadrilaterals",
-            "18 - Constructions",
-            "19 - 3D in 2D",
-            "20 - Area of Trapezium and Polygon",
-            "21 - Surface Area, Volume and Capacity",
-            "22 - Data Handling",
-            "23 - Probability"
-        } ;
-
-        for( String name : chapterNames ) {
-            generateExercises( name ) ;
-        }
-    }
-    
-    private static String getBaseChapterName( String chapterName ) {
-        int index = chapterName.indexOf( '-' ) ;
-        if( index == -1 ) {
-            throw new IllegalArgumentException( "Chapter name invalid. - not found" ) ;
-        }
-        return chapterName.substring( index + 2 ).trim() ;
-    }
-    
-    private static int getBaseChapterNum( String chapterName ) {
-        int index = chapterName.indexOf( '-' ) ;
-        if( index == -1 ) {
-            throw new IllegalArgumentException( "Chapter name invalid. - not found" ) ;
-        }
-        String str = chapterName.substring( 0, index ).trim() ;
-        return Integer.parseInt( str ) ;
-    }    
 }
