@@ -1,18 +1,33 @@
 package com.sandy.scratchpad.jn.imgsorter;
 
-import java.awt.BorderLayout ;
-import java.awt.event.* ;
-import java.io.File ;
-import java.io.FileFilter ;
-import java.util.* ;
+import static java.awt.event.InputEvent.SHIFT_DOWN_MASK ;
 
-import javax.swing.* ;
+import java.awt.BorderLayout ;
+import java.awt.event.ActionEvent ;
+import java.awt.event.ActionListener ;
+import java.awt.event.KeyAdapter ;
+import java.awt.event.KeyEvent ;
+import java.awt.image.BufferedImage ;
+import java.io.File ;
+import java.io.IOException ;
+import java.util.ArrayList ;
+import java.util.Arrays ;
+import java.util.Comparator ;
+import java.util.List ;
+
+import javax.imageio.ImageIO ;
+import javax.swing.DefaultListModel ;
+import javax.swing.JButton ;
+import javax.swing.JFileChooser ;
+import javax.swing.JList ;
+import javax.swing.JOptionPane ;
+import javax.swing.JPanel ;
+import javax.swing.JScrollPane ;
 import javax.swing.event.ListSelectionEvent ;
 import javax.swing.event.ListSelectionListener ;
 
+import org.apache.commons.lang.math.NumberUtils ;
 import org.apache.log4j.Logger ;
-
-import static java.awt.event.InputEvent.SHIFT_DOWN_MASK ;
 
 @SuppressWarnings( "serial" )
 public class ImageSelectionPanel extends JPanel 
@@ -20,20 +35,22 @@ public class ImageSelectionPanel extends JPanel
     
     static final Logger log = Logger.getLogger( ImageSelectionPanel.class ) ;
     
-    private JNImageSorter   parent          = null ;
-    private JButton         imgFolderSelBtn = new JButton( "Select image folder" ) ;
+    private JNImageSorter parent          = null ;
+    private JButton       imgFolderSelBtn = new JButton( "Select image folder" ) ;
     // A move action removes the target folder from the list, while a file 
     // image stores the images in the target folder without removing the folder
     // from the list.
-    private JButton         moveImgsBtn     = new JButton( ">" ) ;
-    private JButton         fileImgsBtn     = new JButton( ">>" ) ;
-    private JButton         removeChapterBtn= new JButton( "X" ) ;
-    private JFileChooser    fileChooser     = new JFileChooser() ;
+    private JButton      moveImgsBtn      = new JButton( ">" ) ;
+    private JButton      fileImgsBtn      = new JButton( ">>" ) ;
+    private JButton      removeChapterBtn = new JButton( "X" ) ;
+    private JFileChooser fileChooser      = new JFileChooser() ;
     
-    private DefaultListModel<String> listModel = new DefaultListModel<>() ;
-    private JList<String>            imageList = new JList<>( listModel ) ;
+    private DefaultListModel<File> listModel = new DefaultListModel<>() ;
+    private JList<File>            imageList = new JList<>( listModel ) ;
     
     private File imgFolder = null ;
+    
+    private int numDots = 0 ;
     
     public ImageSelectionPanel( JNImageSorter parent ) {
         this.parent = parent ;
@@ -63,6 +80,8 @@ public class ImageSelectionPanel extends JPanel
         JPanel transferPanel = new JPanel( new BorderLayout() ) ;
         transferPanel.add( moveImgsBtn, BorderLayout.CENTER ) ;
         transferPanel.add( fileImgsBtn, BorderLayout.NORTH ) ;
+        
+        imageList.setCellRenderer( new ImageListRenderer() ) ;
         
         JScrollPane sp = new JScrollPane( imageList ) ;
         add( sp, BorderLayout.CENTER ) ;
@@ -124,59 +143,75 @@ public class ImageSelectionPanel extends JPanel
         }
     }
     
-    private void imageFolderChanged( File newFolder ) {
+    private List<File> collectPageImageFiles( File root, List<File> collectedFiles ) {
         
-        this.imgFolder = newFolder ;
-        imageList.removeAll() ;
-        
-        File[] files = this.imgFolder.listFiles( new FileFilter() {
-            public boolean accept( File file ) {
-                if( file.getName().endsWith( ".png" ) ) {
-                    return true ;
-                }
-                return false ;
+        File[] files = root.listFiles() ;
+        Arrays.sort( files, new Comparator<File>() {
+            public int compare( File f1, File f2 ) {
+                return f1.getAbsolutePath().compareTo( f2.getAbsolutePath() ) ;
             }
         } ) ;
         
-        if( files != null && files.length > 0 ) {
-            DefaultListModel<String> model = ( DefaultListModel<String> )imageList.getModel() ;
-            Arrays.sort( files, new Comparator<File>() {
-                public int compare( File f1, File f2 ) {
-                    int pgNum1 = getPageNum( f1 ) ;
-                    int pgNum2 = getPageNum( f2 ) ;
-                    
-                    return pgNum1 - pgNum2 ;
-                }
-            } ) ;
-            for( File file : files ) {
-                model.addElement( file.getName() ) ;
+        for( File f : files ) {
+            if( f.isDirectory() && !f.getName().equals( "hi-res" ) )  {
+                collectPageImageFiles( f, collectedFiles ) ;
             }
         }
+        
+        for( File f : files ) {
+            if( !f.isDirectory() )  {
+                String fName = f.getName() ;
+                if( fName.endsWith( ".png" ) ) {
+                    fName = fName.substring( 0, fName.length()-4 ) ;
+                    if( fName.contains( "_" ) ) {
+                        
+                        String fNameParts[] = fName.split( "_" ) ;
+                        
+                        if( NumberUtils.isDigits( fNameParts[fNameParts.length-1] ) ) {
+                            
+                            if( possiblePageImage( f ) ) {
+                                collectedFiles.add( f ) ;
+                                System.out.print( "." ) ;
+
+                                this.numDots++ ;
+                                if( this.numDots % 50 == 0 ) {
+                                    System.out.println() ;
+                                }
+                            }
+                            
+                        }
+                    }
+                }
+            }
+        }
+        
+        return collectedFiles ;
     }
     
-    private int getPageNum( File f ) {
-        String fName = f.getName() ;
-        String pageNum = fName.substring( 0, fName.length()-4 )
-                              .substring( fName.lastIndexOf( '_' ) + 1 ) ;
+    private void imageFolderChanged( File newFolder ){
         
-        return Integer.parseInt( pageNum ) ;
+        this.imgFolder = newFolder ;
+        this.listModel.clear() ;
+        this.numDots = 0 ;
+        
+        List<File> collectedFiles = collectPageImageFiles( this.imgFolder, new ArrayList<File>() ) ;
+        
+        if( collectedFiles != null && !collectedFiles.isEmpty() ) {
+            for( File file : collectedFiles ) {
+                this.listModel.addElement( file ) ;
+            }
+        }
     }
     
     private void moveSelectedImages( boolean removeTargetFolderAfterMove ) {
         
-        List<String> selectedFiles = imageList.getSelectedValuesList() ;
-        List<File> imgFiles = new ArrayList<>() ;
-        
-        for( String name : selectedFiles ) {
-            imgFiles.add( new File( this.imgFolder, name ) ) ;
-        }
-        
-        String moveResult = this.parent.moveFiles( imgFiles, 
+        List<File> selectedFiles = imageList.getSelectedValuesList() ;
+        String moveResult = this.parent.moveFiles( selectedFiles, 
                                                    removeTargetFolderAfterMove ) ;
         
         if( moveResult == null ) {
-            for( String name : selectedFiles ) {
-                listModel.removeElement( name ) ;
+            for( File file : selectedFiles ) {
+                listModel.removeElement( file ) ;
             }
             
             if( !listModel.isEmpty() ) {
@@ -194,11 +229,22 @@ public class ImageSelectionPanel extends JPanel
         
         File imgFile = null ;
         
-        List<String> files = imageList.getSelectedValuesList() ;
+        List<File> files = imageList.getSelectedValuesList() ;
         if( files != null && !files.isEmpty() ) {
-            imgFile = new File( this.imgFolder, files.get( files.size()-1 ) ) ;
+            imgFile = files.get( files.size()-1 ) ;
         }
-        
         this.parent.showThumbnail( imgFile ) ;
+    }
+    
+    private boolean possiblePageImage( File file ) {
+        
+        try {
+            BufferedImage img = ImageIO.read( file ) ;
+            return img.getHeight() > 1000 && img.getWidth() > 800 ;
+        }
+        catch( IOException e ) {
+            log.debug( "Possibly not an image. " + file.getAbsolutePath() ) ;
+        }
+        return false ;
     }
 }

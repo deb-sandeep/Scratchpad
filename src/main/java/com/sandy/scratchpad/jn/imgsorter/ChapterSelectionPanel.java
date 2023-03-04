@@ -21,6 +21,7 @@ import javax.swing.ListSelectionModel ;
 import org.apache.commons.io.FileUtils ;
 import org.apache.log4j.Logger ;
 
+import com.sandy.common.util.StringUtil ;
 import com.sandy.scratchpad.jn.chpage.ChPageCreator ;
 
 @SuppressWarnings( "serial" )
@@ -135,8 +136,14 @@ public class ChapterSelectionPanel extends JPanel
         
         if( selectedChapter != null ) {
             
-            File pageFolder  = new File( this.subjectFolder, 
-                                         selectedChapter + JNImageSorter.DEST_IMG_SUBFOLDER ) ;
+            File chapterFolder = new File( this.subjectFolder, selectedChapter ) ;
+            String pagesFolderPath = "img/pages" ;
+            
+            if( StringUtil.isNotEmptyOrNull( JNImageSorter.BOOK_NAME ) ) {
+                pagesFolderPath = "img/" + JNImageSorter.BOOK_NAME + "/pages" ;
+            }
+            
+            File pageFolder  = new File( chapterFolder, pagesFolderPath ) ;
             
             moveFiles( largeFiles, pageFolder ) ;
             
@@ -162,17 +169,29 @@ public class ChapterSelectionPanel extends JPanel
         
         for( File srcFile : files ) {
             
-            String destFileName = srcFile.getName() ;
-            destFileName = "Page" + destFileName.substring( destFileName.lastIndexOf( '_' ) ) ;
+            String destFileName = "Page_" + getNextFileNumber( destFolder ) + ".png";
             File destFile = new File( destFolder, destFileName ) ;
+            
             //FileUtils.moveFile( srcFile, destFile ) ;
             FileUtils.copyFile( srcFile, destFile ) ;
             
-            File dummyFile = new File( destFolder, "dummuy.txt" ) ;
+            File dummyFile = new File( destFolder, "dummy.txt" ) ;
             if( dummyFile.exists() ) {
                 dummyFile.delete() ;
             }
         }
+    }
+    
+    private int getNextFileNumber( File destFolder ) {
+        
+        File[] files = destFolder.listFiles( new FileFilter() {
+            @Override
+            public boolean accept( File file ) {
+                return !file.isDirectory() && file.getName().endsWith( ".png" ) ;
+            }
+        } ) ;
+        
+        return files == null ? 1 : files.length+1 ;
     }
     
     private void createJNFileForPages( String selectedChapter ) 
