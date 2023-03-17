@@ -19,7 +19,7 @@ public class ExerciseGen {
     public static void main( String[] args ) throws Exception {
 
         String[] chapterNames = {
-            "01 - Rational and Irrational Numbers"
+            "03 - Compound Interest - II"
         } ;
 
         for( String name : chapterNames ) {
