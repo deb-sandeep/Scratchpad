@@ -3,6 +3,7 @@ package com.sandy.scratchpad.jn.textextract;
 import java.io.File ;
 import java.io.FilenameFilter ;
 import java.util.ArrayList ;
+import java.util.Arrays ;
 import java.util.Comparator ;
 import java.util.List ;
 
@@ -19,6 +20,9 @@ public class JNTextExtractor {
     public static File JN_DIR = new File( 
             "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Class-9" ) ;
     
+    public static String[] ELIGIBLE_SUBJECTS = { "Geography" } ;
+    public static String BOOK_NAME = null ;
+    
     public static void main( String[] args ) throws Exception {
         new JNTextExtractor().process() ;
     }
@@ -31,12 +35,11 @@ public class JNTextExtractor {
                 
                 String dirName = dir.getName() ;
                 
-                //if( dirName.equals( "Hindi" ) ) continue ;
-                if( dirName.equals( "English Grammar" ) || 
-                    dirName.equals( "Computers" ) ) {
-                    
-                    log.debug( "Processing subject - " + dirName ) ;
-                    processSubjectDir( dir ) ;
+                for( String eligibleSub : ELIGIBLE_SUBJECTS ) {
+                    if( dirName.equals( eligibleSub ) ) {
+                        log.debug( "Processing subject - " + dirName ) ;
+                        processSubjectDir( dir ) ;
+                    }
                 }
             }
         }
@@ -50,8 +53,21 @@ public class JNTextExtractor {
             lang = "hin" ;
         }
         
-        File[] chaptersDirs = subDir.listFiles() ;
-        for( File dir : chaptersDirs ) {
+        File[] chapterDirs = subDir.listFiles() ;
+        Arrays.sort( chapterDirs, new Comparator<File>() {
+            public int compare( File f1, File f2 ) {
+                String f1Prefix = getChapterDirPrefix( f1 ) ;
+                String f2Prefix = getChapterDirPrefix( f2 ) ;
+                if( f1Prefix.equals( f2Prefix ) ) {
+                    return getFileSequence( f1 ) - getFileSequence( f2 ) ;
+                }
+                else {
+                    return f1Prefix.compareTo( f2Prefix ) ;
+                }
+            }
+        } );
+        
+        for( File dir : chapterDirs ) {
             if( dir.isDirectory() ) {
                 log.debug( "  Processing chapter " + dir.getName() ) ;
                 processChapterDir( dir, lang ) ;
@@ -73,17 +89,36 @@ public class JNTextExtractor {
             collectImgText( file, lang, sb ) ;
         }
         
-        File ocrFile = new File( dir, "doc/ocr.txt" ) ;
+        File ocrFile = new File( dir, getOCRTextRelFilePath() ) ;
         FileUtils.write( ocrFile, sb.toString(), "UTF-8", true ) ;
     }
     
+    private String getPageImagesRelPath() {
+        
+        String pagesDir = "img/pages" ;
+        if( BOOK_NAME != null ) {
+            pagesDir = "img/books/" + BOOK_NAME + "/pages" ;
+        }
+        return pagesDir ;
+    }
+    
+    private String getOCRTextRelFilePath() {
+        
+        String ocrFileName = "doc/ocr.txt" ;
+        if( BOOK_NAME != null ) {
+            ocrFileName = "doc/ocr-" + BOOK_NAME + ".txt" ;
+        }
+        return ocrFileName ;
+    }
+    
     private boolean isValidChapterDir( File dir ) {
-        File hiResImgFolder = new File( dir, "img/pages" ) ;
+        
+        File hiResImgFolder = new File( dir, getPageImagesRelPath() ) ;
         return hiResImgFolder.exists() ;
     }
     
     private List<File> getImgFiles( File chapterDir ) {
-        File imgDir = new File( chapterDir, "img/pages" ) ;
+        File imgDir = new File( chapterDir, getPageImagesRelPath() ) ;
         File[] imgFiles = imgDir.listFiles( new FilenameFilter() {
             public boolean accept( File dir, String name ) {
                 return name.endsWith( ".png" ) ;
@@ -118,6 +153,15 @@ public class JNTextExtractor {
         
         String[] parts = fileName.split( "_" ) ;
         return parts[0] ;
+    }
+    
+    private String getChapterDirPrefix( File file ) {
+        
+        String fileName = file.getName() ;
+        fileName = fileName.substring( 0, fileName.length()-4 ) ;
+        
+        String[] parts = fileName.split( "-" ) ;
+        return parts[0].trim() ;
     }
     
     private int getFileSequence( File file ) {

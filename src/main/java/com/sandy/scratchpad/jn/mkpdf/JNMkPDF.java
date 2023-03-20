@@ -29,7 +29,7 @@ public class JNMkPDF {
                 
                 String dirName = dir.getName() ;
                 
-                if( dirName.equals( "English Grammar" ) ) {
+                if( dirName.equals( "Geography" ) ) {
                     log.debug( "Processing subject - " + dirName ) ;
                     processSubjectDir( dir ) ;
                 }

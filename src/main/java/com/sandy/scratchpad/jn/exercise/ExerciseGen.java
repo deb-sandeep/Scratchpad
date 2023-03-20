@@ -19,7 +19,7 @@ public class ExerciseGen {
     public static void main( String[] args ) throws Exception {
 
         String[] chapterNames = {
-            "03 - Compound Interest - II"
+            "01 - Language of Chemistry"
         } ;
 
         for( String name : chapterNames ) {
@@ -32,11 +32,11 @@ public class ExerciseGen {
         
         String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/" ;
         String JN_CLS_DIR       = "Class-9" ;
-        String JN_SUBJECT       = "Mathematics" ;
+        String JN_SUBJECT       = "Chemistry" ;
         String JN_CHAPTER       = chapterName ;
         String JN_BASE_CHP_NAME = null ;
         int    JN_CHAPTER_NUM   = -1 ;
-        int    JN_SUB_CHP_START = 2 ;
+        int    JN_SUB_CHP_START = 4 ;
         String includedExercises[]  = {} ;
         
         if( JN_BASE_CHP_NAME == null ) {
