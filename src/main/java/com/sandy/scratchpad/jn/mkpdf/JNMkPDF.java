@@ -29,7 +29,7 @@ public class JNMkPDF {
                 
                 String dirName = dir.getName() ;
                 
-                if( dirName.equals( "Geography" ) ) {
+                if( dirName.equals( "Hindi" ) ) {
                     log.debug( "Processing subject - " + dirName ) ;
                     processSubjectDir( dir ) ;
                 }
@@ -55,16 +55,18 @@ public class JNMkPDF {
             return ;
         }
         List<File> imgFiles = getImgFiles( dir ) ;
-        generatePDF( imgFiles, dir.getName() ) ;
+        File docDir = new File( dir, "doc" ) ;
+        log.debug( "   Generating PDF" ) ;
+        generatePDF( docDir, imgFiles, dir.getName() + "-wb" ) ;
     }
     
     private boolean isValidChapterDir( File dir ) {
-        File pgScanDir = new File( dir, "img/pages" ) ;
+        File pgScanDir = new File( dir, "img/books/Workbook/pages" ) ;
         return pgScanDir.exists() ;
     }
     
     private List<File> getImgFiles( File chapterDir ) {
-        File imgDir = new File( chapterDir, "img/pages" ) ;
+        File imgDir = new File( chapterDir, "img/books/Workbook/pages" ) ;
         File[] imgFiles = imgDir.listFiles( new FilenameFilter() {
             public boolean accept( File dir, String name ) {
                 return name.endsWith( ".png" ) ;
@@ -116,10 +118,10 @@ public class JNMkPDF {
         return retVal ;
     }
     
-    private void generatePDF( List<File> imgFiles, String pdfName ) 
+    private void generatePDF( File docDir, List<File> imgFiles, String pdfName ) 
         throws Exception {
         
-        String[] cmdArgs = generateCmdArgs( imgFiles, pdfName ) ;
+        String[] cmdArgs = generateCmdArgs( docDir, imgFiles, pdfName ) ;
         List<String> text = new ArrayList<>() ;
         
         CommandLineExec.executeCommand( cmdArgs, text ) ;
@@ -128,7 +130,7 @@ public class JNMkPDF {
         }
     }
         
-    private String[] generateCmdArgs( List<File> imgFiles, String pdfName ) {
+    private String[] generateCmdArgs( File docDir, List<File> imgFiles, String pdfName ) {
         
         List<String> args = new ArrayList<>() ;
         args.add( "/usr/local/bin/convert" ) ;
@@ -137,12 +139,7 @@ public class JNMkPDF {
             args.add( imgFile.getAbsolutePath() ) ;
         }
         
-        File outDir = imgFiles.get( 0 ).getParentFile() ; // img
-        outDir = outDir.getParentFile() ; // pages
-        outDir = outDir.getParentFile() ; // chapter
-        outDir = new File( outDir, "doc" ) ;
-        
-        File outFile = new File( outDir, pdfName + ".pdf" ) ;
+        File outFile = new File( docDir, pdfName + ".pdf" ) ;
         args.add( outFile.getAbsolutePath() ) ;
         
         return args.toArray( new String[args.size()] ) ;
