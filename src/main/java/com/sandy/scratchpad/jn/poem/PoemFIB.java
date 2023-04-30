@@ -1,31 +1,35 @@
 package com.sandy.scratchpad.jn.poem;
 
 import java.io.File ;
+import java.text.DecimalFormat ;
 import java.util.ArrayList ;
 import java.util.Iterator ;
+import java.util.LinkedHashMap ;
 import java.util.List ;
+import java.util.Map ;
 
 import org.apache.commons.io.FileUtils ;
 import org.apache.commons.lang.StringUtils ;
 
 public class PoemFIB {
-    
-    public static final int MIN_BLANK_LINE_HALF_WIDTH = 2 ;  
-    public static final int MIN_BLANK_LINE_WIDTH_RND_WIDTH = 2 ;
-    public static final float PCT_SINGLE_BLANK_LINE_GROUPS = 1 ; 
-    
+
     private File file = null ;
-    private ArrayList<LineGroup> groups = new ArrayList<LineGroup>() ;
     
-    public PoemFIB( File file ) throws Exception {
+    private Map<Integer, List<String>> paragraphs = new LinkedHashMap<>() ;
+    private List<PoemParagraphFIB> paraFIBs = new ArrayList<>() ;
+
+    public PoemFIB( File file ) {
         this.file = file ;
     }
-    
+
     private void initialize() throws Exception {
+        
         if( !file.exists() ) {
             throw new Exception( "File " + file.getAbsolutePath() + 
                                  "  does not exist." ) ;
         }
+        
+        int currentPara = 0 ;
         
         List<String> lines = FileUtils.readLines( file ) ;
         
@@ -34,94 +38,42 @@ public class PoemFIB {
             if( StringUtils.isEmpty( line.trim() ) ) {
                 iter.remove() ;
             }
-        }
-        
-        createLineGroups( lines ) ;
-        createBlankLineGroups( lines ) ;
-    }
-    
-    private void createLineGroups( List<String> lines ) throws Exception {
-        
-        int maxGroups = (int)( lines.size()*PCT_SINGLE_BLANK_LINE_GROUPS ) ;
-        int numCycles = 0 ;
-
-        while( groups.size() < maxGroups ) {
-            
-            numCycles++ ;
-            
-            int randomStartLine = 0 ;
-            int randomGroupLen  = (MIN_BLANK_LINE_HALF_WIDTH*2) + 
-                                  (int)( Math.random()*MIN_BLANK_LINE_WIDTH_RND_WIDTH ) ;
-            
-            if( numCycles >= lines.size() ) {
-                randomStartLine = (int)(Math.random()*lines.size()) ;
+            else if( line.trim().equals( "@Para" ) ) {
+                currentPara++ ;
             }
             else {
-                randomStartLine = numCycles-1 ;
+                List<String> paraLines = getParaLines( currentPara ) ;
+                paraLines.add( line ) ;
             }
-            
-            if( randomStartLine + randomGroupLen >= lines.size() ) {
-                randomGroupLen = lines.size() - randomStartLine ;
-            }
-            
-            boolean skipGroup = false ;
-            for( LineGroup group : groups ) {
-                if( group.startLine == randomStartLine && 
-                    group.numLines  == randomGroupLen ) {
-                    skipGroup = true ;
-                    break ;
-                }
-            }
-            
-            if( !skipGroup ) {
-                LineGroup group = new LineGroup( randomStartLine, randomGroupLen ) ;
-                for( int lineNum = randomStartLine; 
-                         lineNum < randomStartLine + randomGroupLen; 
-                         lineNum++ ) {
-                    group.lines.add( lines.get( lineNum ) ) ;
-                }
-                group.extractBlanks() ;
-                if( group.isValid() ) {
-                    groups.add( group ) ;
-                }
-            }
-            
-            if( (numCycles - groups.size()) > 500 ) break ;
         }
+        
+        DecimalFormat df = new DecimalFormat( "00" ) ;
+        
+        for( Integer paraNum : paragraphs.keySet() ) {
+            lines = paragraphs.get( paraNum ) ;
+            paraFIBs.add( new PoemParagraphFIB( df.format( paraNum ) , lines ) ) ;
+        }
+        
     }
     
-    private void createBlankLineGroups( List<String> lines ) throws Exception {
-        
-        for( int i=0; i<lines.size(); i+=(MIN_BLANK_LINE_HALF_WIDTH*2) ) {
-            
-            int randPrevLines = (int)( MIN_BLANK_LINE_HALF_WIDTH + 
-                                       Math.random() * MIN_BLANK_LINE_WIDTH_RND_WIDTH ) ;
-            int randNextLines = (int)( MIN_BLANK_LINE_HALF_WIDTH + 
-                                       Math.random() * MIN_BLANK_LINE_WIDTH_RND_WIDTH ) ;
-            
-            int fromLine = i - randPrevLines ;
-            int toLine   = i + randNextLines ;
-            
-            fromLine = ( fromLine < 0 ) ? 0 : fromLine ;
-            toLine   = ( toLine >= lines.size() ) ? lines.size()-1 : toLine ;
-            
-            LineGroup group = new LineGroup( fromLine, toLine-fromLine, (i-fromLine) ) ;
-            for( int lineIndex=fromLine; lineIndex<=toLine; lineIndex++ ) {
-                group.lines.add( lines.get( lineIndex ) ) ;
-            }
-            group.extractBlanks() ;
-            groups.add( group ) ;
+    private List<String> getParaLines( int paraNum ) {
+        List<String> lines = paragraphs.get( paraNum ) ;
+        if( lines == null ) {
+            lines = new ArrayList<>() ;
+            paragraphs.put( paraNum, lines ) ;
         }
+        return lines ;
     }
     
     public void createFIBs() {
-        for( LineGroup group : groups ) {
-            group.generateFIB() ;
-            System.out.println() ;
+        for( PoemParagraphFIB fibs : paraFIBs ) {
+            fibs.createFIBs();
         }
-        System.out.println( "// Num FIB = " + groups.size() ) ;
+        for( PoemParagraphFIB fibs : paraFIBs ) {
+            fibs.createBlankLineFIBs();
+        }
     }
-
+    
     public static void main( String[] args ) throws Exception {
         File poemFile = getPoemFile() ;
         PoemFIB driver = new PoemFIB( poemFile ) ;

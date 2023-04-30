@@ -31,7 +31,7 @@ public class LineGroup {
     
     void initIneligibleWordList() throws Exception {
         ineligibleWords = IOUtils.readLines(
-                PoemFIB.class.getResourceAsStream( "/ineligibleWords.txt" )  
+                PoemParagraphFIB.class.getResourceAsStream( "/ineligibleWords.txt" )  
         );
     }
     
