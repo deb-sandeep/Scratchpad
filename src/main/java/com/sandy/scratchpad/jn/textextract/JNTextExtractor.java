@@ -20,8 +20,8 @@ public class JNTextExtractor {
     public static File JN_DIR = new File( 
             "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Class-9" ) ;
     
-    public static String[] ELIGIBLE_SUBJECTS = { "Geography" } ;
-    public static String BOOK_NAME = null ;
+    public static String[] ELIGIBLE_SUBJECTS = { "English" } ;
+    public static String BOOK_NAME = "Workbook" ;
     
     public static void main( String[] args ) throws Exception {
         new JNTextExtractor().process() ;
@@ -83,6 +83,11 @@ public class JNTextExtractor {
         }
         
         List<File> imgFiles = getImgFiles( dir ) ;
+        if( imgFiles == null || imgFiles.size() == 0 ) {
+            log.debug( "   Workbook pages don't exist. Skipping" ) ;
+            return ;
+        }
+
         StringBuilder sb = new StringBuilder() ;
         for( File file : imgFiles ) {
             log.debug( "    " + file.getName() ) ;

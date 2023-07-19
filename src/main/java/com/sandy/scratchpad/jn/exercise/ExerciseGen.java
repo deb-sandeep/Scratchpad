@@ -19,7 +19,7 @@ public class ExerciseGen {
     public static void main( String[] args ) throws Exception {
 
         String[] chapterNames = {
-            "04 - Expansions"
+            "08 - Sound"
         } ;
 
         for( String name : chapterNames ) {
@@ -32,7 +32,7 @@ public class ExerciseGen {
         
         String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/" ;
         String JN_CLS_DIR       = "Class-9" ;
-        String JN_SUBJECT       = "Mathematics" ;
+        String JN_SUBJECT       = "Physics" ;
         String JN_CHAPTER       = chapterName ;
         String JN_BASE_CHP_NAME = null ;
         int    JN_CHAPTER_NUM   = -1 ;
@@ -154,6 +154,7 @@ public class ExerciseGen {
     public void generateExercises( String bookName, List<String> exerciseNames ) 
         throws Exception {
         
+        log.debug( "Generating exercises for book " + bookName );
         
         File imgFolder = null ;
         if( bookName == null ) {
@@ -165,6 +166,11 @@ public class ExerciseGen {
         }
         
         File[] relevantFiles = getRelevantImageFiles( imgFolder ) ;
+        if( relevantFiles == null ) {
+            log.debug( "  No exercise images found." ) ;
+            return ;
+        }
+        
         QuestionManager qMgr = new QuestionManager( bookName ) ;
         
         for( File file : relevantFiles ) {
@@ -199,6 +205,10 @@ public class ExerciseGen {
     }
     
     private File[] getRelevantImageFiles( File imgDir ) {
+        
+        if( !imgDir.exists() ) {
+            return null ;
+        }
         
         File[] relevantFiles = imgDir.listFiles( new FilenameFilter() {
             
