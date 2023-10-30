@@ -2,12 +2,27 @@ package com.sandy.scratchpad;
 
 import java.io.File ;
 
+class Boy {
+    public static String getGender() {
+        return "Male" ;
+    }
+}
+
+class Girl {
+    public String getGender() {
+        return "Female" ;
+    }
+}
+
+class Cat {
+    public String getSpecies() {
+        return "Felix" ;
+    }
+}
+
 public class Scratch {
 
     public static void main( String[] args ) {
-        File file1 = new File( "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-8/Class-8/Chemistry/" ) ;
-        File file2 = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-8/Class-8/Chemistry/" ) ;
-        
-        System.out.println( file1.equals( file2 ) ) ;
+        System.out.println( Boy.getGender() ) ;
     }
 }

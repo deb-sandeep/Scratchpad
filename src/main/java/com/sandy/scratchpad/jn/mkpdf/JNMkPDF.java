@@ -29,7 +29,7 @@ public class JNMkPDF {
                 
                 String dirName = dir.getName() ;
                 
-                if( dirName.equals( "Hindi" ) ) {
+                if( dirName.equals( "English" ) ) {
                     log.debug( "Processing subject - " + dirName ) ;
                     processSubjectDir( dir ) ;
                 }
@@ -55,6 +55,11 @@ public class JNMkPDF {
             return ;
         }
         List<File> imgFiles = getImgFiles( dir ) ;
+        if( imgFiles == null || imgFiles.size() == 0 ) {
+            log.debug( "   Workbook pages don't exist. Skipping" ) ;
+            return ;
+        }
+        
         File docDir = new File( dir, "doc" ) ;
         log.debug( "   Generating PDF" ) ;
         generatePDF( docDir, imgFiles, dir.getName() + "-wb" ) ;
