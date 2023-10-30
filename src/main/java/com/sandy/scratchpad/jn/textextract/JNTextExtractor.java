@@ -18,10 +18,10 @@ public class JNTextExtractor {
     private static final Logger log = Logger.getLogger( JNTextExtractor.class ) ;
     
     public static File JN_DIR = new File( 
-            "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Class-9" ) ;
+            "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Class-9" ) ;
     
-    public static String[] ELIGIBLE_SUBJECTS = { "Geography" } ;
-    public static String BOOK_NAME = null ;
+    public static String[] ELIGIBLE_SUBJECTS = { "Julius Caesar" } ;
+    public static String BOOK_NAME = "Workbook" ;
     
     public static void main( String[] args ) throws Exception {
         new JNTextExtractor().process() ;
@@ -202,7 +202,7 @@ public class JNTextExtractor {
     
     private String[] generateCmdArgs( File imgFile, String lang ) {
         List<String> args = new ArrayList<>() ;
-        args.add( "/usr/local/bin/tesseract" ) ;
+        args.add( "/opt/homebrew/bin/tesseract" ) ;
         args.add( imgFile.getAbsolutePath() ) ;
         args.add( "stdout" ) ;
         args.add( "-l" ) ;

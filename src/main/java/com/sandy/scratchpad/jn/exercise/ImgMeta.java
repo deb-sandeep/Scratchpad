@@ -9,6 +9,7 @@ public class ImgMeta implements Comparable<ImgMeta>{
     private String  exerciseName   = null ;
     private int     questionNum    = 0 ;
     private int     subQuestionNum = -1 ;
+    private int     subSubQuestionNum = -1 ;
     private boolean header         = false ;
     private boolean answer         = false ;
     private int     partNum        = -1 ;
@@ -61,6 +62,9 @@ public class ImgMeta implements Comparable<ImgMeta>{
             parts = fName.split( "\\." ) ;
             questionNum = Integer.parseInt( parts[0] ) ;
             subQuestionNum = Integer.parseInt( parts[1] ) ;
+            if( parts.length > 2 ) {
+                subSubQuestionNum = Integer.parseInt( parts[2] ) ;
+            }
         }
         else {
             questionNum = Integer.parseInt( fName ) ;
@@ -75,8 +79,12 @@ public class ImgMeta implements Comparable<ImgMeta>{
         buffer.append( exerciseName ).append( "_" ) ;
         buffer.append( questionNum ) ;
         
-        if( subQuestionNum != - 1 ) {
+        if( subQuestionNum != -1 ) {
             buffer.append( "." ).append( subQuestionNum ) ;
+        }
+
+        if( subSubQuestionNum != -1 ) {
+            buffer.append( "." ).append( subSubQuestionNum ) ;
         }
         
         if( header ) {
@@ -117,11 +125,15 @@ public class ImgMeta implements Comparable<ImgMeta>{
         if( header ) {
             return -1 ;
         }
-        
+
         if( subQuestionNum != m.subQuestionNum ) {
             return subQuestionNum - m.subQuestionNum ;
         }
-        
+
+        if( subSubQuestionNum != m.subSubQuestionNum ) {
+            return subSubQuestionNum - m.subSubQuestionNum ;
+        }
+
         if( partNum != m.partNum ) {
             return partNum - m.partNum ;
         }
@@ -135,6 +147,9 @@ public class ImgMeta implements Comparable<ImgMeta>{
         if( getSubQuestionNum() > -1 ) {
             sb.append( "." ).append( getSubQuestionNum() ) ;
         }
+        if( getSubSubQuestionNum() > -1 ) {
+            sb.append( "." ).append( getSubSubQuestionNum() ) ;
+        }
         return sb.toString() ;
     }
     
@@ -145,5 +160,3 @@ public class ImgMeta implements Comparable<ImgMeta>{
         return null ;
     }
 }
-
-

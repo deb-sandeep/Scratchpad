@@ -3,6 +3,7 @@ package com.sandy.scratchpad.jn.exercise;
 import java.io.File ;
 import java.io.FilenameFilter ;
 import java.util.ArrayList ;
+import java.util.Collections;
 import java.util.List ;
 import java.util.Map ;
 import java.util.Map.Entry ;
@@ -15,14 +16,22 @@ import com.sandy.common.util.StringUtil ;
 public class ExerciseGen {
     
     private static final Logger log = Logger.getLogger( ExerciseGen.class ) ;
-    
+
+    private static String   JN_SUBJECT       = "Mathematics" ;
+    private static int      JN_SUB_CHP_START = 2 ;
+    private static String[] CHAPTER_NAMES    = {
+            //"26 - Coordinate Geometry"
+            //"27 - Graphical Solutions"
+            //"28 - Distance Formulae"
+    } ;
+
+    private static String   JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/" ;
+    private static String   JN_CLS_DIR       = "Class-9" ;
+    private static String   JN_BASE_CHP_NAME = null ; // If null, base chapter name will be deduced from the chapterName
+    private static int      JN_CHAPTER_NUM   = -1 ;   // If -1, chapter number will be deduced from chapterName
+
     public static void main( String[] args ) throws Exception {
-
-        String[] chapterNames = {
-            "04 - Expansions"
-        } ;
-
-        for( String name : chapterNames ) {
+        for( String name : CHAPTER_NAMES ) {
             generateExercises( name ) ;
         }
     }
@@ -30,32 +39,23 @@ public class ExerciseGen {
     public static void generateExercises( String chapterName ) 
         throws Exception {
         
-        String JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/" ;
-        String JN_CLS_DIR       = "Class-9" ;
-        String JN_SUBJECT       = "Mathematics" ;
-        String JN_CHAPTER       = chapterName ;
-        String JN_BASE_CHP_NAME = null ;
-        int    JN_CHAPTER_NUM   = -1 ;
-        int    JN_SUB_CHP_START = 2 ;
-        String includedExercises[]  = {} ;
-        
+        String[] includedExercises  = {} ;
+
         if( JN_BASE_CHP_NAME == null ) {
-            JN_BASE_CHP_NAME = getBaseChapterName( JN_CHAPTER ) ;
+            JN_BASE_CHP_NAME = getBaseChapterName(chapterName) ;
         }
-        
+
         if( JN_CHAPTER_NUM == -1 ) {
-            JN_CHAPTER_NUM = getBaseChapterNum( JN_CHAPTER ) ;
+            JN_CHAPTER_NUM = getBaseChapterNum(chapterName) ;
         }
         
         File rootJNDir = new File( JN_ROOT_DIR ) ;
         File clsJNDir  = new File( rootJNDir, JN_CLS_DIR ) ;
         File subJNDir  = new File( clsJNDir,  JN_SUBJECT ) ;
-        File chpJNDir  = new File( subJNDir,  JN_CHAPTER ) ;
+        File chpJNDir  = new File( subJNDir, chapterName) ;
         
         List<String> exerciseNames = new ArrayList<>() ;
-        for( String arg : includedExercises ) {
-            exerciseNames.add( arg ) ;
-        }
+        Collections.addAll( exerciseNames, includedExercises ) ;
         
         ExerciseGen gen = new ExerciseGen( chpJNDir, 
                                            JN_SUBJECT, 
@@ -85,11 +85,9 @@ public class ExerciseGen {
     
     // =========================================================================
     
-    // jnFolder is the path till the chapter - not the root JN folder!
     private File   chpFolder             = null ;
     private String baseChpName           = null ;
     private int    chapterNumber         = 0 ;
-    private int    subChapterStartNumber = 0 ;
     private String subjectName           = null ;
     private int    nextSubChapterNumber  = 0 ;
     
@@ -105,8 +103,7 @@ public class ExerciseGen {
         this.subjectName = subjectName ;
         this.baseChpName = baseChpName ;
         this.chapterNumber = chapterNumber ;
-        this.subChapterStartNumber = subChapterStartNumber ;
-        this.nextSubChapterNumber = this.subChapterStartNumber ;
+        this.nextSubChapterNumber = subChapterStartNumber;
     }
     
     private void validateInputFolder( File dir ) {
@@ -154,7 +151,13 @@ public class ExerciseGen {
     public void generateExercises( String bookName, List<String> exerciseNames ) 
         throws Exception {
         
-        
+        if( bookName == null ) {
+            log.debug( "Generating exercises for default book." ) ;
+        }
+        else {
+            log.debug( "Generating exercises for book " + bookName ) ;
+        }
+
         File imgFolder = null ;
         if( bookName == null ) {
             imgFolder = new File( this.chpFolder, "img/exercise" ) ;
@@ -165,6 +168,11 @@ public class ExerciseGen {
         }
         
         File[] relevantFiles = getRelevantImageFiles( imgFolder ) ;
+        if( relevantFiles == null || relevantFiles.length == 0 ) {
+            log.info( "Specified book does not have exercise images." ) ;
+            return ;
+        }
+
         QuestionManager qMgr = new QuestionManager( bookName ) ;
         
         for( File file : relevantFiles ) {
@@ -199,14 +207,14 @@ public class ExerciseGen {
     }
     
     private File[] getRelevantImageFiles( File imgDir ) {
-        
-        File[] relevantFiles = imgDir.listFiles( new FilenameFilter() {
-            
+
+        return imgDir.listFiles(new FilenameFilter() {
+
             public boolean accept( File dir, String name ) {
-                
+
                 File file = new File( dir, name ) ;
                 if( !file.isDirectory() ) {
-                    
+
                     if( name.startsWith( "Ch" ) ) {
                         return true ;
                     }
@@ -216,9 +224,7 @@ public class ExerciseGen {
                 }
                 return false ;
             }
-        } ) ; 
-        
-        return relevantFiles ;
+        } );
     }
     
     void printExercises( Map<String, Exercise> exMap ) {
@@ -375,20 +381,16 @@ public class ExerciseGen {
     private String getJNFileHeader( Exercise ex ) {
         
         String exName = "Ex" + ex.getExId() ;
-        
         String chapterName = baseChpName ;
         
         if( ex.getBookName() != null ) {
             chapterName += " [" + ex.getBookName() + "]" ;
         }
-        
-        StringBuilder buffer = new StringBuilder() ;
-        buffer.append( "@exercise_bank\n\n" )
-              .append( "subject \"").append( subjectName ).append( "\"\n" )
-              .append( "chapterNumber " + chapterNumber + "." + nextSubChapterNumber + "\n" )
-              .append( "chapterName \"" + chapterName +  " (" + exName + ")\"\n" )
-              .append( "\n" ) ;
-              
-        return buffer.toString() ;
+
+        return "@exercise_bank\n\n" +
+               "subject \"" + subjectName + "\"\n" +
+               "chapterNumber " + chapterNumber + "." + nextSubChapterNumber + "\n" +
+               "chapterName \"" + chapterName + " (" + exName + ")\"\n" +
+               "\n";
     }
 }

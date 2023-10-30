@@ -43,7 +43,14 @@ public class QuestionManager {
             log.debug( "Building question - " + meta ) ;
             String exerciseName = meta.getExerciseName() ;
             Exercise exercise = getExercise( exerciseName ) ;
-            exercise.buildQuestion( meta ) ; 
+            try {
+                exercise.buildQuestion( meta ) ;
+            }
+            catch( Exception e ) {
+                log.error( "Unanticipated exception.", e ) ;
+                log.error( meta ) ;
+                throw new RuntimeException(e);
+            }
         }
         return this.exerciseMap ;
     }
