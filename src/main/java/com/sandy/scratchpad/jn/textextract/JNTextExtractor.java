@@ -21,7 +21,7 @@ public class JNTextExtractor {
             "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Class-9" ) ;
     
     public static String[] ELIGIBLE_SUBJECTS = { "Julius Caesar" } ;
-    public static String BOOK_NAME = "Workbook" ;
+    public static String BOOK_NAME = "Almond" ;
     
     public static void main( String[] args ) throws Exception {
         new JNTextExtractor().process() ;

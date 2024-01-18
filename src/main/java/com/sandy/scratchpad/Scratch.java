@@ -23,6 +23,9 @@ class Cat {
 public class Scratch {
 
     public static void main( String[] args ) {
-        System.out.println( Boy.getGender() ) ;
+        int i=0, j=0;
+        for( i=1,j=2; i<10; j++, i+=2 ) {
+
+        }
     }
 }

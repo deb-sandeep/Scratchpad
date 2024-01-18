@@ -17,12 +17,10 @@ public class ExerciseGen {
     
     private static final Logger log = Logger.getLogger( ExerciseGen.class ) ;
 
-    private static String   JN_SUBJECT       = "Mathematics" ;
+    private static String   JN_SUBJECT       = "Physics" ;
     private static int      JN_SUB_CHP_START = 2 ;
     private static String[] CHAPTER_NAMES    = {
-            //"26 - Coordinate Geometry"
-            //"27 - Graphical Solutions"
-            //"28 - Distance Formulae"
+            "01 - Measurement",
     } ;
 
     private static String   JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/" ;
@@ -41,12 +39,14 @@ public class ExerciseGen {
         
         String[] includedExercises  = {} ;
 
-        if( JN_BASE_CHP_NAME == null ) {
-            JN_BASE_CHP_NAME = getBaseChapterName(chapterName) ;
+        String jnBaseChpName = JN_BASE_CHP_NAME ;
+        if( jnBaseChpName == null ) {
+            jnBaseChpName = getBaseChapterName(chapterName) ;
         }
 
-        if( JN_CHAPTER_NUM == -1 ) {
-            JN_CHAPTER_NUM = getBaseChapterNum(chapterName) ;
+        int jnChapterNum = JN_CHAPTER_NUM ;
+        if( jnChapterNum == -1 ) {
+            jnChapterNum = getBaseChapterNum(chapterName) ;
         }
         
         File rootJNDir = new File( JN_ROOT_DIR ) ;
@@ -58,9 +58,9 @@ public class ExerciseGen {
         Collections.addAll( exerciseNames, includedExercises ) ;
         
         ExerciseGen gen = new ExerciseGen( chpJNDir, 
-                                           JN_SUBJECT, 
-                                           JN_BASE_CHP_NAME, 
-                                           JN_CHAPTER_NUM, 
+                                           JN_SUBJECT,
+                                           jnBaseChpName,
+                                           jnChapterNum,
                                            JN_SUB_CHP_START ) ;
         gen.generateExercises( null, exerciseNames ) ;
         gen.generateExercisesForBooks() ;

@@ -5,6 +5,7 @@ import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
@@ -184,7 +185,7 @@ public class Chapter {
 
         PdfWriter pdfWriter = new PdfWriter( outputFile ) ;
         PdfDocument pdf = new PdfDocument( pdfWriter ) ;
-        Document doc = new Document( pdf ) ;
+        Document doc = new Document( pdf, PageSize.A4 ) ;
 
         addPDFContent( pdf, doc ) ;
         doc.close() ;
