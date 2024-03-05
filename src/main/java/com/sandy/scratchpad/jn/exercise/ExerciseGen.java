@@ -17,14 +17,27 @@ public class ExerciseGen {
     
     private static final Logger log = Logger.getLogger( ExerciseGen.class ) ;
 
-    private static String   JN_SUBJECT       = "Physics" ;
+    private static String   JN_SUBJECT       = "Mathematics" ;
     private static int      JN_SUB_CHP_START = 2 ;
     private static String[] CHAPTER_NAMES    = {
-            "01 - Measurement",
+        "01 - GST",
+        "02 - Banking",
+        "03 - Shares and Dividends",
+        "04 - Linear Inequations",
+        "05 - Quadratic Equations - 1",
+        "06 - Quadratic Equations - 2",
+        "07 - Ratio and Proportion",
+        "08 - Remainder and Factor Theorems",
+        "09 - Matrics",
+        "10 - AP",
+        "11 - GP",
+        "12 - Reflection",
+        "13 - Section and Mid-point Formulae",
+        "14 - Equation of Line",
     } ;
 
-    private static String   JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/" ;
-    private static String   JN_CLS_DIR       = "Class-9" ;
+    private static String   JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-X/" ;
+    private static String   JN_CLS_DIR       = "Class-X" ;
     private static String   JN_BASE_CHP_NAME = null ; // If null, base chapter name will be deduced from the chapterName
     private static int      JN_CHAPTER_NUM   = -1 ;   // If -1, chapter number will be deduced from chapterName
 
@@ -129,8 +142,7 @@ public class ExerciseGen {
         }
         
         File[] potentialBookFolders = booksFolder.listFiles() ;
-        if( potentialBookFolders == null ||
-            potentialBookFolders.length == 0 ) {
+        if( potentialBookFolders == null ) {
             return ;
         }
         

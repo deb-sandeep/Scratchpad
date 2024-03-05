@@ -1,11 +1,7 @@
 package com.sandy.scratchpad.jn.textextract;
 
 import java.io.File ;
-import java.io.FilenameFilter ;
-import java.util.ArrayList ;
-import java.util.Arrays ;
-import java.util.Comparator ;
-import java.util.List ;
+import java.util.*;
 
 import org.apache.commons.io.FileUtils ;
 import org.apache.log4j.Logger ;
@@ -20,8 +16,9 @@ public class JNTextExtractor {
     public static File JN_DIR = new File( 
             "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Class-9" ) ;
     
-    public static String[] ELIGIBLE_SUBJECTS = { "Julius Caesar" } ;
-    public static String BOOK_NAME = "Almond" ;
+    //TODO: Do the english workbook for 9th - new chapters for 10th
+    public static String[] ELIGIBLE_SUBJECTS = { "English" } ;
+    public static String BOOK_NAME = "Workbook" ;
     
     public static void main( String[] args ) throws Exception {
         new JNTextExtractor().process() ;
@@ -30,6 +27,7 @@ public class JNTextExtractor {
     private void process() throws Exception {
         
         File[] subjectDirs = JN_DIR.listFiles() ;
+        assert subjectDirs != null;
         for( File dir : subjectDirs ) {
             if( dir.isDirectory() ) {
                 
@@ -54,16 +52,15 @@ public class JNTextExtractor {
         }
         
         File[] chapterDirs = subDir.listFiles() ;
-        Arrays.sort( chapterDirs, new Comparator<File>() {
-            public int compare( File f1, File f2 ) {
-                String f1Prefix = getChapterDirPrefix( f1 ) ;
-                String f2Prefix = getChapterDirPrefix( f2 ) ;
-                if( f1Prefix.equals( f2Prefix ) ) {
-                    return getFileSequence( f1 ) - getFileSequence( f2 ) ;
-                }
-                else {
-                    return f1Prefix.compareTo( f2Prefix ) ;
-                }
+        assert chapterDirs != null;
+        Arrays.sort( chapterDirs, ( f1, f2 ) -> {
+            String f1Prefix = getChapterDirPrefix( f1 ) ;
+            String f2Prefix = getChapterDirPrefix( f2 ) ;
+            if( f1Prefix.equals( f2Prefix ) ) {
+                return getFileSequence( f1 ) - getFileSequence( f2 ) ;
+            }
+            else {
+                return f1Prefix.compareTo( f2Prefix ) ;
             }
         } );
         
@@ -82,6 +79,12 @@ public class JNTextExtractor {
             return ;
         }
         
+        File ocrFile = new File( dir, getOCRTextRelFilePath() ) ;
+        if( ocrFile.exists() ) {
+            log.debug( "   OCR already exists. Skipping" ) ;
+            return ;
+        }
+
         List<File> imgFiles = getImgFiles( dir ) ;
         StringBuilder sb = new StringBuilder() ;
         for( File file : imgFiles ) {
@@ -89,7 +92,6 @@ public class JNTextExtractor {
             collectImgText( file, lang, sb ) ;
         }
         
-        File ocrFile = new File( dir, getOCRTextRelFilePath() ) ;
         FileUtils.write( ocrFile, sb.toString(), "UTF-8", true ) ;
     }
     
@@ -119,27 +121,20 @@ public class JNTextExtractor {
     
     private List<File> getImgFiles( File chapterDir ) {
         File imgDir = new File( chapterDir, getPageImagesRelPath() ) ;
-        File[] imgFiles = imgDir.listFiles( new FilenameFilter() {
-            public boolean accept( File dir, String name ) {
-                return name.endsWith( ".png" ) ;
-            }
-        } ) ;
+        File[] imgFiles = imgDir.listFiles( ( dir, name ) -> name.endsWith( ".png" ) ) ;
         
         List<File> retVal = new ArrayList<>() ;
-        for( File file : imgFiles ) {
-            retVal.add( file ) ;
-        }
+        assert imgFiles != null;
+        Collections.addAll( retVal, imgFiles );
         
-        retVal.sort( new Comparator<File>() {
-            public int compare( File f1, File f2 ) {
-                String f1Prefix = getFilePrefix( f1 ) ;
-                String f2Prefix = getFilePrefix( f2 ) ;
-                if( f1Prefix.equals( f2Prefix ) ) {
-                    return getFileSequence( f1 ) - getFileSequence( f2 ) ;
-                }
-                else {
-                    return f1Prefix.compareTo( f2Prefix ) ;
-                }
+        retVal.sort( ( f1, f2 ) -> {
+            String f1Prefix = getFilePrefix( f1 ) ;
+            String f2Prefix = getFilePrefix( f2 ) ;
+            if( f1Prefix.equals( f2Prefix ) ) {
+                return getFileSequence( f1 ) - getFileSequence( f2 ) ;
+            }
+            else {
+                return f1Prefix.compareTo( f2Prefix ) ;
             }
         } ) ;
         
@@ -170,13 +165,11 @@ public class JNTextExtractor {
         fileName = fileName.substring( 0, fileName.length()-4 ) ;
         
         String[] parts = fileName.split( "_" ) ;
-        int retVal = Integer.parseInt( parts[1] ) ;
         
-        return retVal ;
+        return Integer.parseInt( parts[1] );
     }
     
-    private void collectImgText( File imgFile, String lang, StringBuilder sb ) 
-        throws Exception {
+    private void collectImgText( File imgFile, String lang, StringBuilder sb ) {
         
         String[] cmdArgs = generateCmdArgs( imgFile, lang ) ;
         List<String> text = new ArrayList<>() ;
@@ -185,10 +178,10 @@ public class JNTextExtractor {
         
         boolean paragraphAdded = false ;
         
-        sb.append( "\n\n------- " + imgFile.getName() + "\n\n" ) ;
+        sb.append( "\n\n------- " ).append( imgFile.getName() ).append( "\n\n" );
         for( String line : text ) {
             if( !StringUtil.isEmptyOrNull( line ) ) {
-                sb.append( line.trim() + " " ) ;
+                sb.append( line.trim() ).append( " " );
                 paragraphAdded = false ;
             }
             else {
@@ -207,6 +200,6 @@ public class JNTextExtractor {
         args.add( "stdout" ) ;
         args.add( "-l" ) ;
         args.add( lang ) ;
-        return args.toArray( new String[args.size()] ) ;
+        return args.toArray( new String[0] ) ;
     }
 }
