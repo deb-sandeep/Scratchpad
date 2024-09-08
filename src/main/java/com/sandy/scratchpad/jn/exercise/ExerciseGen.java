@@ -17,23 +17,10 @@ public class ExerciseGen {
     
     private static final Logger log = Logger.getLogger( ExerciseGen.class ) ;
 
-    private static String   JN_SUBJECT       = "Mathematics" ;
+    private static String   JN_SUBJECT       = "Computers" ;
     private static int      JN_SUB_CHP_START = 2 ;
     private static String[] CHAPTER_NAMES    = {
-        "01 - GST",
-        "02 - Banking",
-        "03 - Shares and Dividends",
-        "04 - Linear Inequations",
-        "05 - Quadratic Equations - 1",
-        "06 - Quadratic Equations - 2",
-        "07 - Ratio and Proportion",
-        "08 - Remainder and Factor Theorems",
-        "09 - Matrics",
-        "10 - AP",
-        "11 - GP",
-        "12 - Reflection",
-        "13 - Section and Mid-point Formulae",
-        "14 - Equation of Line",
+            "01 - Library Classes"
     } ;
 
     private static String   JN_ROOT_DIR      = "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-X/" ;

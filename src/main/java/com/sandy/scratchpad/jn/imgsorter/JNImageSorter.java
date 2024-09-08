@@ -16,7 +16,7 @@ public class JNImageSorter extends JFrame {
     
     public static boolean CREATE_JN_FILE = false ;
     public static String  DEST_IMG_SUBFOLDER = "/img/pages" ;
-    public static String  BOOK_NAME = "Workbook" ;
+    public static String  BOOK_NAME = "Selena" ;
     
     public static void main( String[] args ) {
         

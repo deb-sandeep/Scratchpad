@@ -15,8 +15,8 @@ public class RefresherFolderStructureGen {
     
     private static final Logger log = Logger.getLogger( RefresherFolderStructureGen.class ) ;
 
-    private File targetDir = new File( "/home/sandeep/Documents/StudyNotes/Refreshers/Class-9" ) ;
-    private File inputFile = new File( "/home/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Documents/Syllabus.xlsx" ) ;
+    private File targetDir = new File( "/Users/sandeep/Documents/StudyNotes/Refreshers/Class-X" ) ;
+    private File inputFile = new File( "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-X/Documents/Syllabus.xlsx" ) ;
 
     private Map<String, Subject> subjectMap = new LinkedHashMap<>() ;
     

@@ -14,7 +14,7 @@ public class JNMkPDF {
     private static final Logger log = Logger.getLogger( JNMkPDF.class ) ;
     
     public static File JN_DIR = new File( 
-            "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-X/Class-X" ) ;
+            "/Users/sandeep/Documents/StudyNotes/JoveNotes-IX/Class-9" ) ;
     
     public static void main( String[] args ) throws Exception {
         new JNMkPDF().process() ;
@@ -26,13 +26,11 @@ public class JNMkPDF {
         assert subjectDirs != null;
         for( File dir : subjectDirs ) {
             if( dir.isDirectory() ) {
-                
                 String dirName = dir.getName() ;
-                
-                log.debug( "Processing subject - " + dirName ) ;
-                processSubjectDir( dir ) ;
-//                if( dirName.equals( "English" ) ) {
-//                }
+                if( dirName.equals( "Chemistry" ) ) {
+                    log.debug( "Processing subject - " + dirName ) ;
+                    processSubjectDir( dir ) ;
+                }
             }
         }
     }
@@ -63,16 +61,16 @@ public class JNMkPDF {
         
         File docDir = new File( dir, "doc" ) ;
         log.debug( "   Generating PDF" ) ;
-        generatePDF( docDir, imgFiles, dir.getName() ) ;
+        generatePDF( docDir, imgFiles, dir.getName() + "_Selena" ) ;
     }
     
     private boolean isValidChapterDir( File dir ) {
-        File pgScanDir = new File( dir, "img/pages" ) ;
+        File pgScanDir = new File( dir, "img/books/Selena/pages" ) ;
         return pgScanDir.exists() ;
     }
     
     private List<File> getImgFiles( File chapterDir ) {
-        File imgDir = new File( chapterDir, "img/pages" ) ;
+        File imgDir = new File( chapterDir, "img/books/Selena/pages" ) ;
         File[] imgFiles = imgDir.listFiles( ( dir, name ) -> name.endsWith( ".png" ) ) ;
         
         assert imgFiles != null;

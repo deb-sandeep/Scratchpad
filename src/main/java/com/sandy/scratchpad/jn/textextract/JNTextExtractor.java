@@ -14,11 +14,11 @@ public class JNTextExtractor {
     private static final Logger log = Logger.getLogger( JNTextExtractor.class ) ;
     
     public static File JN_DIR = new File( 
-            "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-9/Class-9" ) ;
+            "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-X/Class-X" ) ;
     
     //TODO: Do the english workbook for 9th - new chapters for 10th
-    public static String[] ELIGIBLE_SUBJECTS = { "English" } ;
-    public static String BOOK_NAME = "Workbook" ;
+    public static String[] ELIGIBLE_SUBJECTS = { "Chemistry" } ;
+    public static String BOOK_NAME = "Selena" ;
     
     public static void main( String[] args ) throws Exception {
         new JNTextExtractor().process() ;
