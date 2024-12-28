@@ -17,8 +17,8 @@ public class JNTextExtractor {
             "/Users/sandeep/Documents/StudyNotes/JoveNotes-Std-X/Class-X" ) ;
     
     //TODO: Do the english workbook for 9th - new chapters for 10th
-    public static String[] ELIGIBLE_SUBJECTS = { "Chemistry" } ;
-    public static String BOOK_NAME = "Selena" ;
+    public static String[] ELIGIBLE_SUBJECTS = { "English Grammar" } ;
+    public static String BOOK_NAME = null ;
     
     public static void main( String[] args ) throws Exception {
         new JNTextExtractor().process() ;
@@ -80,7 +80,7 @@ public class JNTextExtractor {
         }
         
         File ocrFile = new File( dir, getOCRTextRelFilePath() ) ;
-        if( ocrFile.exists() ) {
+        if( ocrFile.exists() && ocrFile.length() > 500 ) {
             log.debug( "   OCR already exists. Skipping" ) ;
             return ;
         }
