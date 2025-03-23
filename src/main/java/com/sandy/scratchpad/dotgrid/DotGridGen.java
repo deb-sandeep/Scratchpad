@@ -12,8 +12,8 @@ public class DotGridGen {
     public void generateDotGrid( int width, int height, int cellWidth ) 
         throws Exception {
         
-        BufferedImage bufferedImage = null ;
-        Graphics2D g2d = null ;
+        BufferedImage bufferedImage ;
+        Graphics2D g2d ;
         
         bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         g2d = bufferedImage.createGraphics();
@@ -25,30 +25,33 @@ public class DotGridGen {
     
     private void drawGrid( int width, int height, int cellWidth, Graphics2D g2d ) {
         
-        g2d.setColor( Color.BLACK ) ;
+        g2d.setColor( new Color( 30, 31, 34 ) ) ;
         g2d.fillRect( 0, 0, width, height ) ;
 
-        g2d.setColor( Color.DARK_GRAY.darker() ) ;
+        g2d.setColor( Color.LIGHT_GRAY ) ;
+        int numRows = 0 ;
         for( int pixX=0; pixX < width; pixX+=cellWidth ) {
             for( int pixY=0; pixY < height; pixY+=cellWidth ) {
-                g2d.drawOval( pixX, pixY, 1, 1 ) ;
+                g2d.drawOval( pixX, pixY, 2, 2 ) ;
             }
+            numRows++ ;
         }
+        System.out.println( numRows ) ;
     }
     
     private void writeImage( BufferedImage image ) 
         throws Exception {
         
-        File file = new File( "c:\\temp\\dotgrid.png" ) ;
+        File file = new File( "/Users/sandeep/temp/dotgrid.png" ) ;
         ImageIO.write( image, "png", file ) ;
         System.out.println( "File generated." ) ;
     }
 
     public static void main(String[] args) throws Exception {
         
-        int width = 1200 ;
-        int height = 631 ;
-        int cellWidth = 20 ;
+        int width = 2486 ;
+        int height = 3480 ;
+        int cellWidth = 100 ;
  
         new DotGridGen().generateDotGrid( width, height, cellWidth ) ;
     }

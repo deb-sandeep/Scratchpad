@@ -13,9 +13,11 @@ import com.itextpdf.kernel.pdf.canvas.draw.DottedLine;
 import com.itextpdf.layout.element.AreaBreak;
 import com.itextpdf.layout.element.LineSeparator;
 import lombok.Data;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,25 +30,27 @@ import com.itextpdf.layout.properties.VerticalAlignment;
 import org.apache.log4j.Logger;
 
 @Data
-public class Chapter {
+public class Topic {
+    
+    private static final String JEE_BASE_DIR = "/Users/sandeep/Documents/StudyNotes/JEE/" ;
 
-    private static final Logger log = Logger.getLogger( Chapter.class ) ;
+    private static final Logger log = Logger.getLogger( Topic.class ) ;
 
-    private static PdfFont CHAPTER_FONT ;
+    private static PdfFont TOPIC_FONT;
     private static PdfFont SEC_TITLE_FONT ;
     private static PdfFont HDR_FONT ;
     private static PdfFont INDEX_FONT ;
 
     static {
         try {
-            CHAPTER_FONT = PdfFontFactory.createFont( StandardFonts.COURIER ) ;
+            TOPIC_FONT = PdfFontFactory.createFont( StandardFonts.COURIER ) ;
             SEC_TITLE_FONT = PdfFontFactory.createFont( StandardFonts.COURIER ) ;
             HDR_FONT = PdfFontFactory.createFont( StandardFonts.HELVETICA_OBLIQUE ) ;
             INDEX_FONT = PdfFontFactory.createFont( StandardFonts.TIMES_ROMAN ) ;
         }
         catch( Exception ignore ) {}
     }
-
+    
     @Data
     public class Section {
 
@@ -58,19 +62,28 @@ public class Chapter {
             this.sectionId = sectionId ;
             this.sectionName = sectionName ;
         }
+        
+        public Section addSection( Section childSection ) {
+            this.subSections.add( childSection ) ;
+            return this ;
+        }
 
         public Section addSection( String sectionName ) {
             String subSectionId = sectionId + "." + (subSections.size()+1) ;
             Section subSection = new Section( subSectionId, sectionName ) ;
             subSections.add( subSection ) ;
-            return subSection ;
+            return this ;
         }
 
         public String toString( String indent ) {
             StringBuilder sb = new StringBuilder() ;
-            sb.append( indent + sectionId + " - " + sectionName ) ;
+            sb.append( indent )
+              .append( sectionId )
+              .append( " - " )
+              .append( sectionName ) ;
+            
             for( Section subSec : subSections ) {
-                sb.append( "\n" + subSec.toString( indent + "  " ) ) ;
+                sb.append( "\n" ).append( subSec.toString( indent + "  " ) );
             }
             return sb.toString() ;
         }
@@ -79,7 +92,7 @@ public class Chapter {
             return this.getSectionId() + " - " + this.getSectionName() ;
         }
 
-        public void addIndex( int depth, PdfDocument pdf, Document doc ) throws Exception {
+        public void addIndex( int depth, PdfDocument pdf, Document doc ) {
 
             int fontSize = depth == 1 ? 12 : ( depth == 2 ? 10 : 8 ) ;
             int indent = 10 * depth ;
@@ -104,7 +117,7 @@ public class Chapter {
             int fontSize = depth == 1 ? 20 : ( depth == 2 ? 16 : 12 ) ;
 
             if( createNewPage ) {
-                Chapter.this.createNewPDFPage( pdf, doc ) ;
+                Topic.this.createNewPDFPage( pdf, doc ) ;
                 doc.add( new AreaBreak() ) ;
             }
 
@@ -123,21 +136,85 @@ public class Chapter {
     }
 
     private String subject ;
-    private String topic ;
-    private String chapterName ;
-    private int chapterNumber ;
+    private String topicGroup;
+    private String topicName;
+    private int    topicNumber;
+    
     private List<Section> sections = new ArrayList<>() ;
 
-    public Chapter( String subject, String topic,
-                    int chapterNumber, String chapterName ) {
+    public Topic( String subject, String topicGroup,
+                  int topicNumber, String topicName ) {
         this.subject = subject ;
-        this.topic = topic ;
-        this.chapterNumber = chapterNumber ;
-        this.chapterName = chapterName ;
+        this.topicGroup = topicGroup;
+        this.topicNumber = topicNumber;
+        this.topicName = topicName;
     }
-
+    
+    public File getTopicConfigDir() {
+        return new File( JEE_BASE_DIR,
+                         subject + "/" +
+                         StringUtils.leftPad( ""+topicNumber, 2, "0" ) + " - " + topicName +
+                         "/config") ;
+    }
+    
+    public void loadConfig() throws IOException {
+        List<String> lines = FileUtils.readLines( new File( getTopicConfigDir(), "topic-map.cfg" ) ) ;
+        for( String line : lines ) {
+            log.debug( line + " - " + getIndentLevel( line ) ) ;
+        }
+    }
+    
+    private int getIndentLevel( String line ) {
+        int numSpaces=0 ;
+        for( int i=0; i<line.length(); i++ ) {
+            char ch = line.charAt( i ) ;
+            if( ch == ' ' ) {
+                numSpaces++ ;
+            }
+            else { break ; }
+        }
+        if( numSpaces>=0 ) {
+            return (numSpaces-2)/2 ;
+        }
+        return -1 ;
+    }
+    
+    private void loadStaticConfig() {
+        this.addSections( new String[]{
+                "Definitions",
+                "Remainder Theorem",
+                "Factor Theorem",
+                "Standard Identities",
+                "Zeroes of Expression",
+                "Roots of f(x) = g(x)",
+                "Domain of Equation",
+                "Extraneous Roots",
+                "Loss of Root",
+                "Graphs of polynomial fns",
+                "Equations reducible to quadratic"
+        } ) ;
+        
+        this.addSection( "Quadratic Equation", new String[]{
+                "Quadratic with real coeffs",
+                "Quadratic with non-real coeffs",
+                "Range of quadratic",
+                "Quadratic in two variables",
+                "Relation between roots and coeffs of Quadratic"
+        }) ;
+        
+        this.addSections( new String[]{
+                "Symmetric Functions of Roots",
+                "Common Roots",
+                "Relation between root and coeffs of higher degree equations",
+                "Quadratic function",
+                "Rolle's Theorem",
+                "Inequalities using location of roots"
+        } ) ;
+    }
+    
     public Section addSection( String sectionName, String[] subSectionNames ) {
-        String sectionId = chapterNumber + "." + ( sections.size() + 1 ) ;
+        
+        String sectionId = topicNumber + "." + ( sections.size() + 1 ) ;
         Section section = new Section( sectionId, sectionName ) ;
         sections.add( section ) ;
 
@@ -160,27 +237,27 @@ public class Chapter {
     }
 
     public String getChapterTitle() {
-        return this.topic + " - " +
-                StringUtils.leftPad( Integer.toString( this.chapterNumber ), 2, '0' )  +
-                " - " + this.chapterName ;
+        return this.topicGroup + " - " +
+                StringUtils.leftPad( Integer.toString( this.topicNumber ), 2, '0' )  +
+                " - " + this.topicName;
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder() ;
-        sb.append( "Topic : " + topic + "\n" ) ;
-        sb.append( "Subject : " + subject + "\n" ) ;
-        sb.append( "Chapter : " + chapterNumber + " - " + chapterName + "\n" ) ;
+        sb.append( "Topic : " ).append( topicGroup ).append( "\n" );
+        sb.append( "Subject : " ).append( subject ).append( "\n" );
+        sb.append( "Chapter : " ).append( topicNumber ).append( " - " ).append( topicName ).append( "\n" );
         for( Section section : sections ) {
-            sb.append( section.toString( "  " ) + "\n" ) ;
+            sb.append( section.toString( "  " ) ).append( "\n" );
         }
         return sb.toString() ;
     }
 
-    public void generatePDF( File dir ) throws Exception {
+    public void generatePDF() throws Exception {
 
-        String relPath = this.subject + "/" + this.topic + "/" +
-                         getChapterTitle() + ".pdf" ;
-        File outputFile = new File( dir, relPath ) ;
+        String relPath = StringUtils.leftPad( ""+topicNumber, 2, "0" ) + " - " + topicName + ".pdf" ;
+        File outputFile = new File( getTopicConfigDir(), relPath ) ;
+        log.debug( outputFile.getAbsolutePath() ) ;
         outputFile.getParentFile().mkdirs() ;
 
         PdfWriter pdfWriter = new PdfWriter( outputFile ) ;
@@ -200,10 +277,10 @@ public class Chapter {
         }
     }
 
-    private void createTitlePage( PdfDocument pdf, Document doc ) throws Exception {
+    private void createTitlePage( PdfDocument pdf, Document doc ) {
 
         Paragraph chapterTitle = new Paragraph( getChapterTitle() ) ;
-        chapterTitle.setFont( CHAPTER_FONT ) ;
+        chapterTitle.setFont( TOPIC_FONT ) ;
         chapterTitle.setFontSize( 22 ) ;
         chapterTitle.setFontColor( ColorConstants.BLUE ) ;
         chapterTitle.setTextAlignment( TextAlignment.CENTER ) ;
@@ -217,7 +294,7 @@ public class Chapter {
         }
     }
 
-    private void createNewPDFPage( PdfDocument pdf, Document doc ) throws Exception {
+    private void createNewPDFPage( PdfDocument pdf, Document doc ) {
 
         PdfPage page = pdf.addNewPage() ;
 
