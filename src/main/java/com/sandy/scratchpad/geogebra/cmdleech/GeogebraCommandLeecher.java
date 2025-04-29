@@ -20,7 +20,7 @@ public class GeogebraCommandLeecher {
     
     private static final Logger log = Logger.getLogger( GeogebraCommandLeecher.class ) ;
     
-    private static final String[] COMMAND_GROUDPS = {
+    private static final String[] COMMAND_GROUPS = {
         "3D_Commands/:3D Commands",
         "Algebra_Commands/:Algebra Commands",
         "Chart_Commands/:Chart Commands",
@@ -45,17 +45,15 @@ public class GeogebraCommandLeecher {
     
     private static final String BASE_URL = "https://geogebra.github.io/docs/manual/en/commands/" ;
     
-    public static final File BASE_DIR = new File( "/Users/sandeep/Documents/StudyNotes/JEE/res/docs/Geogebra/content/" ) ;
+    public static final File BASE_DIR = new File( "/Users/sandeep/projects/workspace/geogebra/raw-content/" ) ;
     
     public static void main( String[] args ) throws Exception {
         
         GeogebraCommandLeecher app = new GeogebraCommandLeecher() ;
         
-        for( int i=0; i<COMMAND_GROUDPS.length; i++ ) {
-            String command = COMMAND_GROUDPS[i] ;
-            String[] cmdParts = command.split( ":" ) ;
-            
-            app.leechCommandGroup( cmdParts[1], cmdParts[0] ) ;
+        for( String command : COMMAND_GROUPS ) {
+            String[] cmdParts = command.split( ":" );
+            app.leechCommandGroup( cmdParts[1], cmdParts[0] );
         }
     }
     
@@ -73,17 +71,12 @@ public class GeogebraCommandLeecher {
         File dir = new File( BASE_DIR, groupName ) ;
         dir.mkdirs() ;
         
-        File bodyDir = new File( dir, "body/" ) ;
-        bodyDir.mkdirs() ;
-        
-        Elements cmds = body.select( "[class=\"ulist\"] li>p>a" ) ;
-        for ( Element cmd : cmds ) {
+        Elements commands = body.select( "[class=\"ulist\"] li>p>a" ) ;
+        for ( Element cmd : commands ) {
             String cmdUrlSuffix = cmd.attr( "href" ).substring( 3 ) ;
             String cmdName = cmd.text() ;
             leechCommand( cmdName, cmdUrlSuffix, dir ) ;
         }
-        
-        Thread.sleep( (long)(150 + Math.random()*50) ) ;
     }
     
     private void leechCommand( String cmdName, String urlSuffix, File cmdGroupDir )

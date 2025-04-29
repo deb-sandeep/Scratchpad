@@ -2,170 +2,11 @@ package com.sandy.scratchpad.geogebra.cmdleech;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-class Cmd {
-    
-    private static final Logger log = Logger.getLogger( CmdGroup.class ) ;
-
-    private final File file ;
-    final String cmdName ;
-    final String groupName ;
-    
-    Cmd( String groupName, File cmdFile ) throws Exception {
-        
-        String fileName = cmdFile.getName() ;
-        
-        this.file = cmdFile ;
-        this.groupName = groupName ;
-        this.cmdName = fileName.substring( 0, fileName.lastIndexOf(".") ) ;
-        log.debug( "   Parsing cmd : " + this.cmdName ) ;
-    }
-    
-    String getAnchorTag( boolean includeGroupName ) {
-        String groupPart = includeGroupName ? groupName + "/" : "" ;
-        String groupSuffix = includeGroupName ? "<span class=\"sm-grp-name\">[" + groupName.substring( 0, groupName.lastIndexOf( ' ' ) ) + "]</span>" : "" ;
-        return "<a href=\"" + groupPart + file.getName() + "\" target=\"cmd-detail-frame\">" + cmdName + "</a>" + " " + groupSuffix ;
-    }
-    
-    void transformContents() {
-        try {
-            String contents = FileUtils.readFileToString( file ) ;
-            if( contents.contains( "site.css" ) ) return ;
-            String newContents = """
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                      <meta charset="UTF-8">
-                      <title>3D Commands</title>
-                      <link rel="stylesheet" href="../site.css">
-                    </head>
-                    <body>
-                    """ + contents + """
-                    </body>
-                    </html>
-                    """;
-            
-            FileUtils.writeStringToFile( file, newContents ) ;
-        }
-        catch( IOException e ) {
-            throw new RuntimeException( e );
-        }
-    }
-    
-    boolean relinkCommandReferences() throws IOException {
-        
-        log.debug( "Find linked commands in " + file.getName() ) ;
-        Pattern pattern = Pattern.compile( "<a href=\"([^\"]+?)\" class=\"xref page\">" ) ;
-        String  contents = FileUtils.readFileToString( file ) ;
-        Matcher matcher = pattern.matcher( contents ) ;
-        boolean cmdFound = false ;
-        
-        int           lastEnd    = 0 ;
-        StringBuilder newContent = new StringBuilder();
-        
-        while( matcher.find() ) {
-            String href = matcher.group(1) ;
-            int start = matcher.start(1) ;
-            int end = matcher.end(1) ;
-            
-            if( href.endsWith( "/" ) ) {
-                String cmdName = href.substring( 0, href.length() - 1 ) ;
-                cmdName = cmdName.substring( cmdName.lastIndexOf( '/' ) + 1 ) ;
-                
-                if( GeogebraMkSite.CMD_MAP.containsKey( cmdName ) ) {
-                    cmdFound = true ;
-                    log.debug( "   Found linked command : " + cmdName ) ;
-                    Cmd cmd = GeogebraMkSite.CMD_MAP.get( cmdName ) ;
-                    newContent.append( contents, lastEnd, start ) ;
-                    newContent.append( "../" + cmd.groupName + "/" + cmdName + ".html" ) ;
-                    lastEnd = end ;
-                }
-            }
-        }
-        
-        if( lastEnd < contents.length() ) {
-            newContent.append( contents, lastEnd, contents.length() ) ;
-        }
-        
-        if( cmdFound ) {
-            FileUtils.writeStringToFile( file, newContent.toString() ) ;
-        }
-        return cmdFound ;
-    }
-}
-
-class CmdGroup {
-    
-    private static final Logger log = Logger.getLogger( CmdGroup.class );
-    
-    private final File           dir;
-    private final String         groupName;
-    private final ArrayList<Cmd> cmds = new ArrayList<Cmd>();
-    
-    CmdGroup( File dir ) throws Exception {
-        this.dir = dir;
-        this.groupName = dir.getName();
-        init();
-    }
-    
-    private void init() throws Exception {
-        File[] files = dir.listFiles();
-        for( File file : files ) {
-            if( !file.isDirectory() && !file.getName().equals( "_index.html" ) ) {
-                Cmd cmd = new Cmd( groupName, file ) ;
-                GeogebraMkSite.CMD_MAP.put( cmd.cmdName, cmd ) ;
-                cmds.add( cmd );
-            }
-        }
-    }
-    
-    List<Cmd> getCmds() {
-        return cmds;
-    }
-    
-    void generateIndexFile() {
-        cmds.sort( (c1, c2) -> c1.cmdName.compareTo( c2.cmdName ) ) ;
-        
-        File indexFile = new File( dir, "_index.html" );
-        StringBuilder content = new StringBuilder( """
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                  <meta charset="UTF-8">
-                  <title>3D Commands</title>
-                  <link rel="stylesheet" href="../style.css">
-                </head>
-                <body>
-                """ ) ;
-        content.append( "<h3>" + groupName + "</h3>" ) ;
-        content.append( "<ul>" ) ;
-        for( Cmd cmd : cmds ) {
-            content.append( "<li>" ).append( cmd.getAnchorTag( false ) ).append( "</li>\n" );
-        }
-        content.append( """
-                </ul>
-                </body>
-                </html>
-                """ );
-        
-        try {
-            log.debug( "Writing index file : " + indexFile.getAbsolutePath() ) ;
-            FileUtils.writeStringToFile( indexFile, content.toString(), "UTF-8" ) ;
-        }
-        catch( IOException e ) {
-            throw new RuntimeException( e ) ;
-        }
-    }
-}
+import java.util.*;
 
 public class GeogebraMkSite {
     
@@ -176,65 +17,174 @@ public class GeogebraMkSite {
         app.generateSite() ;
     }
     
-    private final ArrayList<CmdGroup> cmdGroups = new ArrayList<>() ;
-    private final ArrayList<Cmd> allCmds = new ArrayList<>() ;
+    public static Map<String, Command> CMD_MAP = new HashMap<>() ;
     
-    public static Map<String, Cmd> CMD_MAP = new HashMap<>() ;
+    private final TemplateEngine te ;
+    private final ArrayList<CommandGroup> commandGroups = new ArrayList<>() ;
+    private final ArrayList<Command> allCommands = new ArrayList<>() ;
+    
+    private final Map<String, Command> cmdMap = new HashMap<>() ;
+    private final Map<String, CommandGroup> commandGroupMap = new HashMap<>() ;
+    
+    public GeogebraMkSite() {
+        this.te = new TemplateEngine() ;
+    }
     
     private void generateSite() throws Exception {
+        
         parseContent() ;
-        //generateAllCmdsIndex() ;
-        //cmdGroups.forEach( CmdGroup::generateIndexFile ) ;
-        //allCmds.forEach( Cmd::transformContents ) ;
-        for( Cmd cmd : allCmds ) {
-            cmd.relinkCommandReferences() ;
-        }
+        
+        copyStaticFiles() ;
+        generateAllCommandsIndex() ;
+        generateAllCommandGroupIndex() ;
+        generateAllCommands() ;
     }
     
     private void parseContent() throws Exception {
-        File[] files = GeogebraCommandLeecher.BASE_DIR.listFiles() ;
-        for ( File file : files ) {
-            if ( file.isDirectory() ) {
-                log.debug( "Parsing command group : " + file.getName() ) ;
-                CmdGroup cmdGroup = new CmdGroup( file ) ;
-                allCmds.addAll( cmdGroup.getCmds() ) ;
-                cmdGroups.add( cmdGroup ) ;
+        File[] directories = GeogebraCommandLeecher.BASE_DIR.listFiles() ;
+        assert directories != null;
+        for ( File dir : directories ) {
+            if ( dir.isDirectory() ) {
+                CommandGroup cmdGroup = new CommandGroup( dir ) ;
+                allCommands.addAll( cmdGroup.getCommands() ) ;
+                commandGroups.add( cmdGroup ) ;
+                commandGroupMap.put( cmdGroup.getGroupName(), cmdGroup ) ;
+            }
+        }
+        allCommands.sort( Comparator.comparing( c -> c.cmdName ) ) ;
+        allCommands.forEach( cmd -> cmdMap.put( cmd.cmdName, cmd ) ) ;
+    }
+    
+    private void copyStaticFiles() throws Exception{
+        log.debug( "Copying static files" ) ;
+        
+        te.copyDirectory( "images", "images" );
+        te.copyStatic( "templates/style.css", "style.css" ) ;
+        te.copyStatic( "templates/site.css", "site.css" ) ;
+        te.processTemplate( "templates/index.ftlh", "index.html" ) ;
+        te.processTemplate( "templates/cmd-group.ftlh", "cmd-group.html" ) ;
+    }
+    
+    private void generateAllCommandsIndex() throws Exception {
+        log.debug( "Generating all commands index" ) ;
+        
+        Map<String, Object> model = te.getBaseModel( "All Commands" ) ;
+        model.put( "allCommands", allCommands ) ;
+        
+        te.processTemplate( "templates/all-commands.ftlh", "commands/all-commands.html", model ) ;
+    }
+    
+    private void generateAllCommandGroupIndex() throws Exception {
+        log.debug( "Generating all command groups index" ) ;
+        
+        Map<String, Object> model ;
+        
+        for( CommandGroup cmdGroup : commandGroups ) {
+            log.debug( "  Generating command group index for : " + cmdGroup.getGroupName() ) ;
+            
+            List<Command> commands = cmdGroup.getCommands() ;
+            commands.sort( Comparator.comparing( c -> c.cmdName ) ) ;
+            
+            model = te.getBaseModel( cmdGroup.getGroupName() ) ;
+            model.put( "commands", commands ) ;
+            
+            te.processTemplate( "templates/cmd-group-index.ftlh",
+                                "commands/" + cmdGroup.getGroupName() + "/index.html", model ) ;
+        }
+    }
+    
+    private void generateAllCommands() throws Exception {
+        
+        log.debug( "Generating all command files" ) ;
+        
+        Map<String, Object> model ;
+        
+        for( CommandGroup cmdGroup : commandGroups ) {
+            log.debug( "  Generating command files for group : " + cmdGroup.getGroupName() ) ;
+            
+            for( Command command : cmdGroup.getCommands() ) {
+                log.debug( "    Generating command file for : " + command.getCmdName() ) ;
+                
+                model = te.getBaseModel( command.getCmdName() ) ;
+                model.put( "command", command ) ;
+                
+                String targetPath = "commands/" + cmdGroup.getGroupName() + "/" + command.getCmdName() + ".html" ;
+                
+                File targetFile = te.processTemplate( "templates/cmd.ftlh", targetPath, model ) ;
+                postProcessCommandFile( command, targetFile ) ;
             }
         }
     }
     
-    private void generateAllCmdsIndex() throws Exception {
+    private void postProcessCommandFile( Command command, File htmlFile ) throws Exception {
         
-        allCmds.sort( (c1, c2) -> c1.cmdName.compareTo( c2.cmdName ) ) ;
+        String fileContents = FileUtils.readFileToString( htmlFile, "UTF-8" ) ;
+        Document doc = Jsoup.parse( fileContents ) ;
         
-        File indexFile = new File( GeogebraCommandLeecher.BASE_DIR, "all-commands.html" );
-        StringBuilder content = new StringBuilder( """
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                  <meta charset="UTF-8">
-                  <title>3D Commands</title>
-                  <link rel="stylesheet" href="style.css">
-                </head>
-                <body>
-                """ ) ;
-        content.append( "<h3>All Commands</h3>" ) ;
-        content.append( "<ul>" ) ;
-        for( Cmd cmd : allCmds ) {
-            content.append( "<li>" ).append( cmd.getAnchorTag( true ) ).append( "</li>\n" );
-        }
-        content.append( """
-                </ul>
-                </body>
-                </html>
-                """ );
+        rewriteImgSources( doc ) ;
+        rewriteLinkRefs( command, doc ) ;
         
-        try {
-            log.debug( "Writing index file : " + indexFile.getAbsolutePath() ) ;
-            FileUtils.writeStringToFile( indexFile, content.toString(), "UTF-8" ) ;
-        }
-        catch( IOException e ) {
-            throw new RuntimeException( e ) ;
-        }
+        FileUtils.writeStringToFile( htmlFile, doc.outerHtml(), "UTF-8" ) ;
+    }
+    
+    private void rewriteImgSources( Document doc ) {
+        doc.select( "img[src]" ).forEach( img -> {
+            String imgSrc = img.attr( "src" ) ;
+            if( imgSrc.startsWith( "../../_images/" ) ) {
+                img.attr( "src", imgSrc.replace( "_images", "images" ) ) ;
+            }
+            else if( imgSrc.startsWith( "../_images/" ) ) {
+                img.attr( "src", imgSrc.replace( "_images", "../images" ) ) ;
+            }
+            else {
+                log.error( imgSrc ) ;
+            }
+        }) ;
+    }
+    
+    private void rewriteLinkRefs( Command currentCmd, Document doc ) {
+        
+        doc.select( "a[href]" ).forEach( a -> {
+            String href = a.attr( "href" ) ;
+            if( !href.startsWith( "https://" ) &&
+                !href.startsWith( "#" ) &&
+                !href.startsWith( "http://" ) ) {
+                
+                if( href.startsWith( "../../tools/" ) ) {
+                    a.attr( "href", href.replace( "../../tools", "https://geogebra.github.io/docs/manual/en/tools" ) ) ;
+                }
+                else if( href.startsWith( "../../" ) ) {
+                    a.attr( "href", href.replace( "../../", "https://geogebra.github.io/docs/manual/en/" ) ) ;
+                }
+                else if( href.startsWith( "../" ) && href.endsWith( "/" ) ) {
+                    
+                    String cmdName = href.substring( 3, href.length() - 1 ) ;
+                    Command cmd = cmdMap.get( cmdName ) ;
+                    if( cmd != null ) {
+                        if( cmd.groupName.equals( currentCmd.groupName ) ) {
+                            a.attr( "href", cmd.getFileName() ) ;
+                        }
+                        else {
+                            a.attr( "href", "../" + cmd.groupName + "/" + cmd.getFileName() ) ;
+                        }
+                    }
+                    else {
+                        // Check if it is a command group
+                        String groupName = cmdName.replaceAll( "_", " " ) ;
+                        if( commandGroupMap.containsKey( groupName ) ) {
+                            CommandGroup cmdGroup = commandGroupMap.get( groupName ) ;
+                            a.attr( "href", "../" + cmdGroup.getGroupName() + "/index.html" ) ;
+                            a.attr( "target", "group-cmds-frame" ) ;
+                        }
+                        else {
+                            a.attr( "href", "https://geogebra.github.io/docs/manual/en/" + cmdName + "/" ) ;
+                        }
+                    }
+                }
+                else {
+                    log.error( "ERROR: Unclassified link - " + href );
+                }
+            }
+        }) ;
     }
 }
