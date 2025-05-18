@@ -37,7 +37,7 @@ public class GeogebraMkSite {
         copyStaticFiles() ;
         generateAllCommandsIndex() ;
         generateAllCommandGroupIndex() ;
-        generateAllCommands() ;
+        generateAllCommandHelpFiles() ;
     }
     
     private void parseContent() throws Exception {
@@ -69,7 +69,7 @@ public class GeogebraMkSite {
         log.debug( "Generating all commands index" ) ;
         
         Map<String, Object> model = te.getBaseModel( "All Commands" ) ;
-        model.put( "allCommands", allCommands ) ;
+        model.put( "allCommands", new LinkedHashSet<>( allCommands ) ) ;
         
         te.processTemplate( "templates/all-commands.ftlh", "commands/all-commands.html", model ) ;
     }
@@ -93,7 +93,7 @@ public class GeogebraMkSite {
         }
     }
     
-    private void generateAllCommands() throws Exception {
+    private void generateAllCommandHelpFiles() throws Exception {
         
         log.debug( "Generating all command files" ) ;
         

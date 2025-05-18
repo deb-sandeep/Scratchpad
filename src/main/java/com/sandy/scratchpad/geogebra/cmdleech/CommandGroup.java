@@ -42,38 +42,4 @@ public class CommandGroup {
     List<Command> getCommands() {
         return commands;
     }
-    
-    void generateIndexFile() {
-        commands.sort( ( c1, c2) -> c1.cmdName.compareTo( c2.cmdName ) ) ;
-        
-        File indexFile = new File( dir, "_index.html" );
-        StringBuilder content = new StringBuilder( """
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                  <meta charset="UTF-8">
-                  <title>3D Commands</title>
-                  <link rel="stylesheet" href="../style.css">
-                </head>
-                <body>
-                """ ) ;
-        content.append( "<h3>" + groupName + "</h3>" ) ;
-        content.append( "<ul>" ) ;
-        for( Command cmd : commands ) {
-            content.append( "<li>" ).append( cmd.getAnchorTag( false ) ).append( "</li>\n" );
-        }
-        content.append( """
-                </ul>
-                </body>
-                </html>
-                """ );
-        
-        try {
-            log.debug( "Writing index file : " + indexFile.getAbsolutePath() ) ;
-            FileUtils.writeStringToFile( indexFile, content.toString(), "UTF-8" ) ;
-        }
-        catch( IOException e ) {
-            throw new RuntimeException( e ) ;
-        }
-    }
 }
