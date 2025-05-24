@@ -127,5 +127,11 @@
             <artifactId>javaparser-core</artifactId>
             <version>3.26.4</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.4.0-jre</version>
+        </dependency>
+
     </dependencies>
 </project>

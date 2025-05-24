@@ -19,4 +19,9 @@ public class Event {
     public Event( String eventName ) {
         this.eventName = eventName ;
     }
+    
+    public List<EventTarget> getPrioritizedEventTargets() {
+        this.eventTargets.sort( (t1, t2) -> t2.getPriority() - t1.getPriority() ) ;
+        return this.eventTargets ;
+    }
 }
