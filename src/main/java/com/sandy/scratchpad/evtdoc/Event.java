@@ -8,13 +8,13 @@ import java.util.List;
 public class Event {
 
     @Getter
-    private List<EventSource> eventSources = new ArrayList<>() ;
+    private final List<EventSource> eventSources = new ArrayList<>() ;
     
     @Getter
-    private List<EventTarget> eventTargets = new ArrayList<>() ;
+    private final List<EventTarget> eventTargets = new ArrayList<>() ;
     
     @Getter
-    private String eventName ;
+    private final String eventName ;
     
     public Event( String eventName ) {
         this.eventName = eventName ;

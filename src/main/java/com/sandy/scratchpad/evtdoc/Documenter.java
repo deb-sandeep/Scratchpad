@@ -54,9 +54,8 @@ public class Documenter {
         
         log.debug( evt.getEventName() ) ;
         log.debug( "\t" + "Event Sources:" ) ;
-        evt.getEventSources().forEach( src -> {
-            log.debug( "\t\t" + src.getClassName() + " :: " + src.getMethodName() ) ;
-        } ) ;
+        evt.getEventSources().forEach( src ->
+                log.debug( "\t\t" + src.getClassName() + " :: " + src.getMethodName() ) ) ;
         
         log.debug( "\t" + "Event Targets:" ) ;
         evt.getEventTargets().forEach( tgt -> {

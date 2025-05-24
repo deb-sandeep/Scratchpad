@@ -1,6 +1,5 @@
 package com.sandy.scratchpad.evtdoc.repo;
 
-import com.sandy.scratchpad.evtdoc.Event;
 import com.sandy.scratchpad.evtdoc.EventSource;
 import com.sandy.scratchpad.evtdoc.EventTarget;
 import lombok.Getter;
@@ -10,10 +9,10 @@ import java.util.*;
 public class EvtPointRepository {
 
     @Getter
-    private static EvtPointRepository instance = new EvtPointRepository() ;
+    private final static EvtPointRepository instance = new EvtPointRepository() ;
     
-    private Map<String, EventSource> srcMap = new LinkedHashMap<>() ;
-    private Map<String, EventTarget> tgtMap = new LinkedHashMap<>() ;
+    private final Map<String, EventSource> srcMap = new LinkedHashMap<>() ;
+    private final Map<String, EventTarget> tgtMap = new LinkedHashMap<>() ;
     
     private EvtPointRepository(){}
 
@@ -33,9 +32,5 @@ public class EvtPointRepository {
     
     public Collection<EventSource> getSources() {
         return srcMap.values() ;
-    }
-    
-    public Collection<EventTarget> getTargets() {
-        return tgtMap.values() ;
     }
 }

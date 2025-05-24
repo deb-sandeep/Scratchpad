@@ -24,10 +24,10 @@ public class EventDocApp {
         app.runDocumentor() ;
     }
     
-    private EventSrcCollector evtSrcCollector = new EventSrcCollector() ;
-    private EventTgtCollector evtTgtCollector = new EventTgtCollector() ;
+    private final EventSrcCollector evtSrcCollector = new EventSrcCollector() ;
+    private final EventTgtCollector evtTgtCollector = new EventTgtCollector() ;
     
-    public void parseSrcFileDir( File dir ) throws Exception {
+    public void parseSrcFileDir( File dir ) {
         for( File file : Objects.requireNonNull( dir.listFiles() ) ) {
             if( file.isDirectory() ) {
                 parseSrcFileDir( file ) ;
@@ -47,7 +47,7 @@ public class EventDocApp {
         return path.toString().toLowerCase().endsWith( ".java" );
     }
     
-    private void parseJavaFile( File file ) throws Exception {
+    private void parseJavaFile( File file ) {
         
         try {
             CompilationUnit cu = StaticJavaParser.parse( file ) ;
