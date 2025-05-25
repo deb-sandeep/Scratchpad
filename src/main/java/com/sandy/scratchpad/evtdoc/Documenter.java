@@ -15,6 +15,7 @@ public class Documenter {
     public Documenter() {}
     
     public void generateDocumentation() {
+        
         log.debug( "Generating documentation ..." ) ;
         this.eventSources = EvtPointRepository.getInstance().getSources() ;
         for( EventSource evtSrc : this.eventSources ) {
@@ -71,7 +72,8 @@ public class Documenter {
     
     private String srcTgtPreamble( boolean isSync, boolean isRoot, int priority ) {
         if( !isRoot ) {
-            return (isSync ? "(*) " : "(~) " ) + ( priority > 0 ? "[" + priority + "] " : "" ) ;
+            return ( isSync ? "(*) " : "(~) " ) +
+                   ( priority > 0 ? "[" + priority + "] " : "" ) ;
         }
         return "" ;
     }

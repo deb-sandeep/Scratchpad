@@ -7,14 +7,11 @@ import java.util.List;
 
 public class Event {
 
-    @Getter
-    private final List<EventSource> eventSources = new ArrayList<>() ;
+    @Getter private final List<EventSource> eventSources = new ArrayList<>() ;
     
-    @Getter
-    private final List<EventTarget> eventTargets = new ArrayList<>() ;
+    @Getter private final List<EventTarget> eventTargets = new ArrayList<>() ;
     
-    @Getter
-    private final String eventName ;
+    @Getter private final String eventName ;
     
     public Event( String eventName ) {
         this.eventName = eventName ;

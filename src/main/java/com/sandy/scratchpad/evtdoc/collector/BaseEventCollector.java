@@ -4,13 +4,10 @@ import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import org.apache.log4j.Logger;
 
 public abstract class BaseEventCollector extends VoidVisitorAdapter<Void> {
     
-    private static final Logger log = Logger.getLogger( BaseEventCollector.class ) ;
-    
-    protected String curPkgName        = null ;
+    protected String curPkgName = null ;
     protected String curClsName = null ;
     protected String curMthName = null ;
     

@@ -24,9 +24,6 @@ public class EventDocApp {
         app.runDocumentor() ;
     }
     
-    private final EventSrcCollector evtSrcCollector = new EventSrcCollector() ;
-    private final EventTgtCollector evtTgtCollector = new EventTgtCollector() ;
-    
     public void parseSrcFileDir( File dir ) {
         for( File file : Objects.requireNonNull( dir.listFiles() ) ) {
             if( file.isDirectory() ) {
@@ -38,11 +35,6 @@ public class EventDocApp {
         }
     }
     
-    public void runDocumentor() {
-        Documenter doc = new Documenter() ;
-        doc.generateDocumentation() ;
-    }
-    
     private boolean isJavaFile( Path path ) {
         return path.toString().toLowerCase().endsWith( ".java" );
     }
@@ -50,6 +42,9 @@ public class EventDocApp {
     private void parseJavaFile( File file ) {
         
         try {
+            EventSrcCollector evtSrcCollector = new EventSrcCollector() ;
+            EventTgtCollector evtTgtCollector = new EventTgtCollector() ;
+            
             CompilationUnit cu = StaticJavaParser.parse( file ) ;
             
             evtSrcCollector.visit( cu, null ) ;
@@ -59,5 +54,10 @@ public class EventDocApp {
         catch( Exception e ) {
             log.error( "Parse failure : " + e.getMessage() ) ;
         }
+    }
+    
+    public void runDocumentor() {
+        Documenter doc = new Documenter() ;
+        doc.generateDocumentation() ;
     }
 }
