@@ -8,6 +8,7 @@ import com.sandy.scratchpad.evtdoc.collector.EventTgtCollector;
 import org.apache.log4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -56,7 +57,7 @@ public class EventDocApp {
         }
     }
     
-    public void runDocumentor() {
+    public void runDocumentor() throws IOException {
         Documenter doc = new Documenter() ;
         doc.generateDocumentation() ;
     }
