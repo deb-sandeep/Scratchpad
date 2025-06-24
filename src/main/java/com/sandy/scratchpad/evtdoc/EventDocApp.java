@@ -54,6 +54,7 @@ public class EventDocApp {
         }
         catch( Exception e ) {
             log.error( "Parse failure : " + e.getMessage() ) ;
+            System.exit( -1 ) ;
         }
     }
     
