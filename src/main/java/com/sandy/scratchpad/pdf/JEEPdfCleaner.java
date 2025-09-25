@@ -15,11 +15,11 @@ public class JEEPdfCleaner {
     
     public static void main( String[] args ) throws IOException {
         
-        File srcDir = new File( "/Users/sandeep/Documents/StudyNotes/JEE/res/test-papers/Prev JEE Mains" ) ;
-        File destDir = new File( "/Users/sandeep/Documents/StudyNotes/JEE/res/test-papers/Prev JEE Mains/out" ) ;
+        File srcDir = new File( "/Users/sandeep/temp/akash/JEE-Archive" ) ;
+        File destDir = new File( "/Users/sandeep/temp/akash/JEE-Archive-Cleaned" ) ;
         
         JEEPdfCleaner cleaner = new JEEPdfCleaner( srcDir, destDir ) ;
-        cleaner.processSrcPdfs() ;
+        cleaner.processSrcPdfs( srcDir ) ;
     }
     
     private final File srcDir ;
@@ -30,65 +30,77 @@ public class JEEPdfCleaner {
         this.destDir = destDir ;
     }
     
-    public void processSrcPdfs() throws IOException {
+    public void processSrcPdfs( File dir ) throws IOException {
         
-        for( File file : Objects.requireNonNull( this.srcDir.listFiles() ) ) {
+        log.debug( "Processing " + dir.getAbsolutePath() ) ;
+        for( File file : Objects.requireNonNull( dir.listFiles() ) ) {
             if( !file.isDirectory() ) {
                 if( file.getName().endsWith(".pdf") ) {
                     String fileName = file.getName() ;
-                    File destFile = new File( destDir, fileName ) ;
+                    File destFile = getDestFile( file ) ;
                     processPdf( file, destFile ) ;
                     log.debug( "Processing " + fileName ) ;
                 }
             }
+            else {
+                processSrcPdfs( file ) ;
+            }
         }
+    }
+    
+    private File getDestFile( File srcFile ) {
+        String filePath = srcFile.getAbsolutePath() ;
+        String destPath = filePath.replace( this.srcDir.getAbsolutePath(), this.destDir.getAbsolutePath() ) ;
+        File destFile = new File( destPath ) ;
+        if( !destFile.getParentFile().exists() ) {
+            destFile.getParentFile().mkdirs() ;
+        }
+        return destFile ;
     }
     
     private static void processPdf( File srcFile, File destFile ) throws IOException {
         
-        PdfReader   reader = new PdfReader( srcFile ) ;
-        PdfWriter   writer = new PdfWriter( destFile ) ;
+        log.debug( "Processing " + srcFile.getName() ) ;
+        
+        PdfReader reader = new PdfReader( srcFile ) ;
+        PdfWriter writer = new PdfWriter( destFile ) ;
         
         PdfDocument pdf = new PdfDocument( reader, writer ) ;
 
-        log.debug( "Processing " + srcFile.getName() ) ;
-        
         for( int i=1; i<=pdf.getNumberOfPages(); i++ ) {
             log.debug( "  Processing page " + i ) ;
             PdfPage page = pdf.getPage( i ) ;
             
-            PdfDictionary resources = page.getResources().getPdfObject();
-            PdfDictionary patternDict = resources.getAsDictionary(PdfName.Pattern);
-            PdfObject contents = page.getPdfObject().get( PdfName.Contents ) ;
+            PdfDictionary resources   = page.getResources().getPdfObject();
+            PdfDictionary xobjects = resources.getAsDictionary(PdfName.XObject);
+            List<PdfName> keysToRemove = new ArrayList<>();
             
-            // Clear the background pattern.
-            if( patternDict != null && !patternDict.isEmpty() ) {
-                log.debug( "    Removing background" ) ;
-                patternDict.clear();
-            }
-            
-            if( contents instanceof PdfArray ) {
-                PdfArray pdfArray = (PdfArray) contents ;
-                List<Integer> idxToRemove = new ArrayList<>();
-                
-                for( int j=0; j<pdfArray.size(); j++ ) {
-                    PdfObject obj = pdfArray.get( j ) ;
-                    if( obj instanceof PdfStream ) {
-                        PdfStream stream = (PdfStream) obj;
-                        String streamContents = new String( stream.getBytes() ) ;
-                        
-                        if( streamContents.contains( "@JEEAdvanced_" ) ||
-                            streamContents.contains( "@FIITJEE" ) ) {
-                            idxToRemove.add( j ) ;
+            if (xobjects != null) {
+                for( PdfName name : xobjects.keySet() ) {
+                    if( name.toString().equals( "/Fm0" ) ) {
+                        PdfStream stream = xobjects.getAsStream( name ) ;
+                        if( stream.containsKey( new PdfName( "PieceInfo" ) ) ) {
+                            PdfDictionary pieceInfo = stream.getAsDictionary( new PdfName( "PieceInfo" ) ) ;
+                            if( pieceInfo.containsKey( new PdfName( "ADBE_CompoundType" ) ) ) {
+                                keysToRemove.add( name ) ;
+                            }
                         }
                     }
+                    /*
+                    PdfStream xobj = xobjects.getAsStream(name);
+                    if (xobj != null && PdfName.Image.equals(xobj.getAsName(PdfName.Subtype))) {
+                        // Heuristic: if image size/opacity suggests watermark, remove
+                        xobjects.remove(name);
+                        System.out.println("Removed XObject " + name + " on page " + i);
+                    }
+                     */
                 }
                 
-                if( !idxToRemove.isEmpty() ) {
-                    idxToRemove.forEach( objId -> {
-                        log.debug( "    Removing footer from page. Obj id = " + objId ) ;
-                        pdfArray.remove( objId ) ;
-                    } ) ;
+                if( !keysToRemove.isEmpty() ) {
+                    for( PdfName name : keysToRemove ) {
+                        log.debug( "       Removed watermark" ) ;
+                        xobjects.remove( name ) ;
+                    }
                 }
             }
         }
