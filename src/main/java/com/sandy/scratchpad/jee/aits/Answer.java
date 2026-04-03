@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.aits;
+package com.sandy.scratchpad.jee.aits;
 
 public class Answer {
     

@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.yg20;
+package com.sandy.scratchpad.jee.yg20;
 
 import org.apache.commons.lang.StringUtils ;
 

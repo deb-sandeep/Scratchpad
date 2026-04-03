@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.aits;
+package com.sandy.scratchpad.jee.aits;
 
 import java.util.HashMap ;
 import java.util.Map ;

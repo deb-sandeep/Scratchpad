@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.geogebra.cmdleech;
+package com.sandy.scratchpad.jee.cmdleech;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;

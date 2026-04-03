@@ -1,14 +1,9 @@
-package com.sandy.scratchpad.geogebra.cmdleech;
+package com.sandy.scratchpad.jee.cmdleech;
 
-import lombok.Data;
 import lombok.Getter;
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Getter
 public class Command {

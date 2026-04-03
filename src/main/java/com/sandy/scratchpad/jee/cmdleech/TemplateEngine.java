@@ -1,4 +1,4 @@
-package com.sandy.scratchpad.geogebra.cmdleech;
+package com.sandy.scratchpad.jee.cmdleech;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
