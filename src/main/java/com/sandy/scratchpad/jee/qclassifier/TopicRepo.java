@@ -11,14 +11,13 @@ import java.util.*;
 @Slf4j
 public class TopicRepo {
 
-    private static TopicRepo instance ;
+    private static class Holder {
+        private static final TopicRepo INSTANCE = new TopicRepo() ;
+        static { INSTANCE.init() ; }
+    }
 
     public static TopicRepo instance() {
-        if( instance == null ) {
-            instance = new TopicRepo() ;
-            instance.init() ;
-        }
-        return instance ;
+        return Holder.INSTANCE ;
     }
 
     private final Map<Integer, Topic> topicById = new HashMap<>();

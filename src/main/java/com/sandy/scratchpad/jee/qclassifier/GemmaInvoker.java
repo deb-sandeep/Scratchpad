@@ -1,5 +1,6 @@
 package com.sandy.scratchpad.jee.qclassifier;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -53,7 +54,13 @@ public class GemmaInvoker {
             HttpResponse<String> response = httpClient.send( request, HttpResponse.BodyHandlers.ofString() ) ;
             if( response.statusCode() == 200 ) {
                 String modelResponse = mapper.readTree( response.body() ).path( "response" ).asText() ;
-                return mapper.readValue( modelResponse, new com.fasterxml.jackson.core.type.TypeReference<List<Topic>>(){} ) ;
+                try {
+                    return mapper.readValue( modelResponse, new com.fasterxml.jackson.core.type.TypeReference<List<Topic>>(){} ) ;
+                }
+                catch( JsonProcessingException e ) {
+                    log.error( "Error parsing model response: {}", modelResponse, e ) ;
+                    return null ;
+                }
             }
             else {
                 log.error( "Error invoking Gemma server: {}", response.body() ) ;
