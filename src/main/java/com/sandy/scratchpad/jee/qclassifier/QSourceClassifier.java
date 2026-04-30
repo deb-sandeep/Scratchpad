@@ -39,6 +39,7 @@ public class QSourceClassifier implements Runnable {
     public void run() {
         log.debug( "Processing source - {}", srcDir.getName() ) ;
         log.debug( "----------------------------------------" ) ;
+        boolean successfullyProcessed = true ;
 
         File[] qImgFiles = getQuestionImgFiles( srcDir, qIdHint ) ;
         if( qImgFiles == null ) {
@@ -64,8 +65,14 @@ public class QSourceClassifier implements Runnable {
 //                }
                 updateWorkspaceMapFile( srcDir, existingMap, questionId, matchedTopics ) ;
             }
+            else {
+                successfullyProcessed = false ;
+            }
         }
-        markProcessed( srcDir.getName() ) ;
+        
+        if( successfullyProcessed ) {
+            markProcessed( srcDir.getName() ) ;
+        }
     }
 
     private void markProcessed( String srcName ) {
