@@ -25,7 +25,7 @@ public class QImgClassifier {
             new File( System.getProperty( "user.home" ), ".qclassifier.processed.list" ) ;
     public static final String SOURCES_RESOURCE = "/qclassifier.sources.txt" ;
 
-    public static void main( String[] args ) {
+    public static void main( String[] args ) throws Exception {
         QImgClassifier app = new QImgClassifier() ;
         app.runClassification() ;
     }
@@ -36,7 +36,7 @@ public class QImgClassifier {
     public QImgClassifier() {
     }
 
-    private void runClassification() {
+    private void runClassification() throws Exception{
         Set<String> processed = loadProcessedList() ;
         List<String> sources = loadSourceList() ;
 
@@ -54,6 +54,7 @@ public class QImgClassifier {
             }
             executor.submit( new QSourceClassifier( srcDir, Q_ID, gemmaInvoker,
                                                     PROCESSED_LIST_FILE ) ) ;
+            Thread.sleep( 500 ) ;
         }
         executor.shutdown() ;
         try {

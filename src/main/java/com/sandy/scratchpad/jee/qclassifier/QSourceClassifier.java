@@ -49,6 +49,12 @@ public class QSourceClassifier implements Runnable {
 
         ObjectNode existingMap = loadWorkspaceMapFile( srcDir ) ;
         int total = qImgFiles.length ;
+        int remaining = 0 ;
+        for( File f : qImgFiles ) {
+            if( !existingMap.has( extractQuestionId( f ) ) ) remaining++ ;
+        }
+        log.debug( "Source {} - {} of {} images remaining to process", srcDir.getName(), remaining, total ) ;
+
         for( int i = 0 ; i < total ; i++ ) {
             File qImgFile = qImgFiles[i] ;
             String questionId = extractQuestionId( qImgFile ) ;
