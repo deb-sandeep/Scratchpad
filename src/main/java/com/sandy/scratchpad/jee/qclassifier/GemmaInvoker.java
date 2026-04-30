@@ -24,19 +24,23 @@ public class GemmaInvoker {
     private final ObjectMapper mapper = new ObjectMapper()
             .setPropertyNamingStrategy( com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE ) ;
     
-    private String gemmaPrompt = null ;
-    
+    private final String gemmaPrompt ;
+
     public GemmaInvoker() {
+        String prompt = null ;
         try( InputStream is = getClass().getResourceAsStream( "/qclassifier.prompt" ) ) {
-            gemmaPrompt = new String( is.readAllBytes(), StandardCharsets.UTF_8 ) ;
+            assert is != null;
+            prompt = new String( is.readAllBytes(), StandardCharsets.UTF_8 ) ;
         }
         catch( Exception e ) {
             log.error( "Error loading qclassifier.prompt", e ) ;
         }
+        this.gemmaPrompt = prompt ;
     }
 
-    public synchronized List<Topic> invoke( File imgFile ) {
-        log.debug( "    Invoking Gemma server" ) ;
+    public List<Topic> invoke( File imgFile ) {
+        //log.debug( "    Invoking Gemma server" ) ;
+        long startTime = System.currentTimeMillis() ;
         try {
             ObjectNode payload = mapper.createObjectNode() ;
             payload.put( "model", GEMMA_MODEL ) ;
@@ -55,6 +59,9 @@ public class GemmaInvoker {
             if( response.statusCode() == 200 ) {
                 String modelResponse = mapper.readTree( response.body() ).path( "response" ).asText() ;
                 try {
+                    if( modelResponse.startsWith( "{" ) && modelResponse.endsWith( "}" ) ) {
+                        modelResponse = "[" + modelResponse + "]" ;
+                    }
                     return mapper.readValue( modelResponse, new com.fasterxml.jackson.core.type.TypeReference<List<Topic>>(){} ) ;
                 }
                 catch( JsonProcessingException e ) {
@@ -68,6 +75,10 @@ public class GemmaInvoker {
         }
         catch( Exception e ) {
             log.error( "Error invoking Gemma server", e ) ;
+        }
+        finally {
+            long elapsed = System.currentTimeMillis() - startTime ;
+            log.debug( "\t  Classification took {}.{}s", elapsed / 1000, elapsed % 1000 ) ;
         }
         return null ;
     }
@@ -88,8 +99,7 @@ public class GemmaInvoker {
     }
     
     private String createPrompt( File imgFile ) {
-        String prompt = gemmaPrompt.replace( "{{TOPIC_LIST_JSON}}", getTopicList( imgFile ) ) ;
-        return prompt ;
+        return gemmaPrompt.replace( "{{TOPIC_LIST_JSON}}", getTopicList( imgFile ) ) ;
     }
     
     private String getTopicList( File imgFile ) {
