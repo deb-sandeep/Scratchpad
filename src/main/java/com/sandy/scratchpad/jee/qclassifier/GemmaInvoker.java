@@ -38,8 +38,21 @@ public class GemmaInvoker {
         this.gemmaPrompt = prompt ;
     }
 
+    private static final int MAX_ATTEMPTS = 2 ;
+
     public List<Topic> invoke( File imgFile ) {
-        //log.debug( "    Invoking Gemma server" ) ;
+        for( int attempt = 1 ; attempt <= MAX_ATTEMPTS ; attempt++ ) {
+            List<Topic> result = attemptInvoke( imgFile, attempt ) ;
+            if( result != null ) return result ;
+            if( attempt < MAX_ATTEMPTS ) {
+                log.warn( "Retrying Gemma invocation for {} (attempt {} of {})",
+                        imgFile.getName(), attempt + 1, MAX_ATTEMPTS ) ;
+            }
+        }
+        return null ;
+    }
+
+    private List<Topic> attemptInvoke( File imgFile, int attempt ) {
         long startTime = System.currentTimeMillis() ;
         try {
             ObjectNode payload = mapper.createObjectNode() ;
@@ -65,20 +78,21 @@ public class GemmaInvoker {
                     return mapper.readValue( modelResponse, new com.fasterxml.jackson.core.type.TypeReference<List<Topic>>(){} ) ;
                 }
                 catch( JsonProcessingException e ) {
-                    log.error( "Error parsing model response: {}", modelResponse, e ) ;
+                    log.error( "Error parsing model response (attempt {}): {}", attempt, modelResponse, e ) ;
                     return null ;
                 }
             }
             else {
-                log.error( "Error invoking Gemma server: {}", response.body() ) ;
+                log.error( "Error invoking Gemma server (attempt {}, status {}): {}",
+                        attempt, response.statusCode(), response.body() ) ;
             }
         }
         catch( Exception e ) {
-            log.error( "Error invoking Gemma server", e ) ;
+            log.error( "Error invoking Gemma server (attempt {})", attempt, e ) ;
         }
         finally {
             long elapsed = System.currentTimeMillis() - startTime ;
-            log.debug( "\t  Classification took {}.{}s", elapsed / 1000, elapsed % 1000 ) ;
+            log.debug( "\t  Classification attempt {} took {}.{}s", attempt, elapsed / 1000, elapsed % 1000 ) ;
         }
         return null ;
     }
