@@ -25,44 +25,48 @@ public class QImgClassifier {
             new File( System.getProperty( "user.home" ), ".qclassifier.processed.list" ) ;
     public static final String SOURCES_RESOURCE = "/qclassifier.sources.txt" ;
 
-    public static void main( String[] args ) throws Exception {
+    public static void main( String[] args ) {
         QImgClassifier app = new QImgClassifier() ;
         app.runClassification() ;
     }
 
-    private static final int MAX_PARALLEL_THREADS = 4 ;
+    private static final int MAX_PARALLEL_THREADS = 5 ;
     private static final String Q_ID = "" ;
 
     public QImgClassifier() {
     }
 
-    private void runClassification() throws Exception{
+    private void runClassification() {
         Set<String> processed = loadProcessedList() ;
         List<String> sources = loadSourceList() ;
 
         ExecutorService executor = Executors.newFixedThreadPool( MAX_PARALLEL_THREADS ) ;
         GemmaInvoker gemmaInvoker = new GemmaInvoker() ;
-        for( String srcName : sources ) {
-            if( processed.contains( srcName ) ) {
-                log.debug( "Skipping already processed source - {}", srcName ) ;
-                continue ;
-            }
-            File srcDir = FileHelper.findDir( Q_BANK_DIR, srcName ) ;
-            if( srcDir == null ) {
-                log.error( "Source directory {} not found", srcName ) ;
-                continue ;
-            }
-            executor.submit( new QSourceClassifier( srcDir, Q_ID, gemmaInvoker,
-                                                    PROCESSED_LIST_FILE ) ) ;
-            Thread.sleep( 500 ) ;
-        }
-        executor.shutdown() ;
         try {
-            executor.awaitTermination( Long.MAX_VALUE, TimeUnit.SECONDS ) ;
+            for( String srcName : sources ) {
+                if( processed.contains( srcName ) ) {
+                    log.debug( "Skipping already processed source - {}", srcName ) ;
+                    continue ;
+                }
+                File srcDir = FileHelper.findDir( Q_BANK_DIR, srcName ) ;
+                if( srcDir == null ) {
+                    log.error( "Source directory {} not found", srcName ) ;
+                    continue ;
+                }
+                new QSourceClassifier( srcDir, Q_ID, gemmaInvoker,
+                                       executor, PROCESSED_LIST_FILE )
+                        .process() ;
+            }
         }
-        catch( InterruptedException e ) {
-        log.error( "Classification interrupted", e ) ;
-            Thread.currentThread().interrupt() ;
+        finally {
+            executor.shutdown() ;
+            try {
+                executor.awaitTermination( Long.MAX_VALUE, TimeUnit.SECONDS ) ;
+            }
+            catch( InterruptedException e ) {
+                log.error( "Classification interrupted", e ) ;
+                Thread.currentThread().interrupt() ;
+            }
         }
     }
 

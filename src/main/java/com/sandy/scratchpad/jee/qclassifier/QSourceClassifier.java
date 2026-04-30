@@ -10,12 +10,16 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
 
 import static com.sandy.scratchpad.jee.qclassifier.FileHelper.*;
 
 @Slf4j
-public class QSourceClassifier implements Runnable {
+public class QSourceClassifier {
 
     private static final ObjectMapper MAPPER =
             new ObjectMapper().enable( SerializationFeature.INDENT_OUTPUT ) ;
@@ -25,21 +29,22 @@ public class QSourceClassifier implements Runnable {
     private final File srcDir ;
     private final String qIdHint ;
     private final GemmaInvoker gemmaInvoker ;
+    private final ExecutorService executor ;
     private final File processedListFile ;
     private final TopicRepo topicRepo = TopicRepo.instance() ;
 
-    public QSourceClassifier( File srcDir, String qIdHint, GemmaInvoker gemmaInvoker, File processedListFile ) {
+    public QSourceClassifier( File srcDir, String qIdHint, GemmaInvoker gemmaInvoker,
+                              ExecutorService executor, File processedListFile ) {
         this.srcDir = srcDir ;
         this.qIdHint = qIdHint ;
         this.gemmaInvoker = gemmaInvoker ;
+        this.executor = executor ;
         this.processedListFile = processedListFile ;
     }
 
-    @Override
-    public void run() {
+    public void process() {
         log.debug( "Processing source - {}", srcDir.getName() ) ;
         log.debug( "----------------------------------------" ) ;
-        boolean successfullyProcessed = true ;
 
         File[] qImgFiles = getQuestionImgFiles( srcDir, qIdHint ) ;
         if( qImgFiles == null ) {
@@ -49,33 +54,58 @@ public class QSourceClassifier implements Runnable {
 
         ObjectNode existingMap = loadWorkspaceMapFile( srcDir ) ;
         int total = qImgFiles.length ;
-        int remaining = 0 ;
+
+        List<File> toProcess = new ArrayList<>() ;
         for( File f : qImgFiles ) {
-            if( !existingMap.has( extractQuestionId( f ) ) ) remaining++ ;
+            if( !existingMap.has( extractQuestionId( f ) ) ) toProcess.add( f ) ;
         }
-        log.debug( "Source {} - {} of {} images remaining to process", srcDir.getName(), remaining, total ) ;
+        log.debug( "Source {} - {} of {} images remaining to process",
+                srcDir.getName(), toProcess.size(), total ) ;
 
-        for( int i = 0 ; i < total ; i++ ) {
-            File qImgFile = qImgFiles[i] ;
-            String questionId = extractQuestionId( qImgFile ) ;
-            if( existingMap.has( questionId ) ) {
-                continue ;
+        boolean successfullyProcessed = true ;
+        if( !toProcess.isEmpty() ) {
+            ExecutorCompletionService<ImgResult> completion =
+                    new ExecutorCompletionService<>( executor ) ;
+            for( File f : toProcess ) {
+                final String questionId = extractQuestionId( f ) ;
+                Callable<ImgResult> task = () -> {
+                    try {
+                        List<Topic> topics = gemmaInvoker.invoke( f ) ;
+                        return new ImgResult( questionId, topics ) ;
+                    }
+                    catch( Exception e ) {
+                        log.error( "[{}] Error classifying image {} : {}",
+                                Thread.currentThread().getName(), srcDir.getName(), questionId, e ) ;
+                        return new ImgResult( questionId, null ) ;
+                    }
+                } ;
+                completion.submit( task ) ;
             }
 
-            log.debug( "Question image ({} of {}) - {} : {}", i + 1, total, srcDir.getName(), questionId ) ;
-            List<Topic> matchedTopics = gemmaInvoker.invoke( qImgFile ) ;
-            if( matchedTopics != null ) {
-//                for( Topic t : matchedTopics ) {
-//                    log.debug( "\t  Match - {} ({}) - {}",
-//                    t.getTopicName(), t.getId(), t.getMatchProbability() ) ;
-//                }
-                updateWorkspaceMapFile( srcDir, existingMap, questionId, matchedTopics ) ;
-            }
-            else {
-                successfullyProcessed = false ;
+            int totalToProcess = toProcess.size() ;
+            for( int done = 1 ; done <= totalToProcess ; done++ ) {
+                try {
+                    ImgResult result = completion.take().get() ;
+                    log.debug( "Question image ({} of {}) - {} : {}",
+                            done, totalToProcess, srcDir.getName(), result.questionId ) ;
+                    if( result.matchedTopics != null ) {
+                        updateWorkspaceMapFile( srcDir, existingMap, result.questionId, result.matchedTopics ) ;
+                    }
+                    else {
+                        successfullyProcessed = false ;
+                    }
+                }
+                catch( Exception e ) {
+                    log.error( "Error awaiting image result for source {}", srcDir.getName(), e ) ;
+                    successfullyProcessed = false ;
+                    if( e instanceof InterruptedException ) {
+                        Thread.currentThread().interrupt() ;
+                        break ;
+                    }
+                }
             }
         }
-        
+
         if( successfullyProcessed ) {
             markProcessed( srcDir.getName() ) ;
         }
@@ -135,6 +165,15 @@ public class QSourceClassifier implements Runnable {
         }
         catch( Exception e ) {
             log.error( "Error updating workspace map file", e ) ;
+        }
+    }
+
+    private static final class ImgResult {
+        final String questionId ;
+        final List<Topic> matchedTopics ;
+        ImgResult( String questionId, List<Topic> matchedTopics ) {
+            this.questionId = questionId ;
+            this.matchedTopics = matchedTopics ;
         }
     }
 }
