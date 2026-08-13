@@ -1,0 +1,46 @@
+package com.sandy.scratchpad.jee.imgsorter;
+
+import javax.imageio.ImageIO ;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage ;
+import java.io.File ;
+import java.io.IOException ;
+
+@SuppressWarnings( "serial" )
+public class ThumbnailViewer extends JLabel {
+
+    public ThumbnailViewer() {
+        setPreferredSize( new Dimension( 400, 1 ) ) ;
+    }
+    
+    public void showImage( File imgFile ) {
+        
+        if( imgFile == null || !imgFile.exists() ) {
+            setIcon( null ) ;
+            return ;
+        }
+        
+        BufferedImage bufferedImg = null ;
+        Image scaledImg = null ;
+        
+        try {
+            bufferedImg = ImageIO.read( imgFile ) ;
+            
+            scaledImg = bufferedImg.getScaledInstance( getWidth(), -1,
+                        Image.SCALE_SMOOTH ) ;
+            
+            if( scaledImg.getHeight( null ) > getHeight() ) {
+                scaledImg = bufferedImg.getScaledInstance( getWidth(), getHeight(),
+                        Image.SCALE_SMOOTH ) ;
+            
+            }
+            
+            setIcon( new ImageIcon( scaledImg ) ) ;
+        } 
+        catch( IOException e ) {
+            e.printStackTrace() ;
+        }
+    }
+    
+}
