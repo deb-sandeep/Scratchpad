@@ -10,6 +10,7 @@ import java.awt.event.KeyAdapter ;
 import java.awt.event.KeyEvent ;
 import java.io.File ;
 import java.io.FileFilter ;
+import java.util.ArrayList ;
 import java.util.Arrays ;
 import java.util.Comparator ;
 import java.util.List ;
@@ -145,8 +146,18 @@ public class ImageSelectionPanel extends JPanel
     private void moveSelectedImages() {
 
         List<File> selectedFiles = imageList.getSelectedValuesList() ;
-        String moveResult = this.parent.moveFiles( selectedFiles ) ;
 
+        if( selectedFiles.size() == 1 ) {
+            int selectedIndex = imageList.getSelectedIndex() ;
+            if( selectedIndex > 0 ) {
+                selectedFiles = new ArrayList<>() ;
+                for( int i = 0 ; i <= selectedIndex ; i++ ) {
+                    selectedFiles.add( listModel.getElementAt( i ) ) ;
+                }
+            }
+        }
+
+        String moveResult = this.parent.moveFiles( selectedFiles ) ;
 
         if( moveResult == null ) {
             for( File file : selectedFiles ) {

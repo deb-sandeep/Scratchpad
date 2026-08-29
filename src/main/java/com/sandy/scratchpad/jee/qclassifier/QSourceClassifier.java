@@ -147,9 +147,15 @@ public class QSourceClassifier {
                 for( Topic t : matchedTopics ) {
                     Topic cachedTopic = topicRepo.getTopicById( t.getId() );
 
+                    if( cachedTopic == null ) {
+                        log.warn( "[{}] Model returned unknown topicId {} ({}) - skipping",
+                                questionId, t.getId(), t.getTopicName() ) ;
+                        continue ;
+                    }
+
                     if( !cachedTopic.getTopicName().equals( t.getTopicName() ) ) {
-                        log.error( "Topic name mismatch for topicId {} - expected {}, found {}", t.getId(), cachedTopic.getTopicName(), t.getTopicName() ) ;
-                        throw new RuntimeException( "Topic name mismatch" ) ;
+                        log.warn( "[{}] Topic name mismatch for topicId {} - master {}, model {}; using master name",
+                                questionId, t.getId(), cachedTopic.getTopicName(), t.getTopicName() ) ;
                     }
 
                     topicMappings.addObject()
