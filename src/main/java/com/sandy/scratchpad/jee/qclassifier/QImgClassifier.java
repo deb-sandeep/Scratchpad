@@ -2,10 +2,12 @@ package com.sandy.scratchpad.jee.qclassifier;
 
 import lombok.extern.slf4j.Slf4j;
 
+import javax.swing.SwingUtilities;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class QImgClassifier {
+public class QImgClassifier implements QClassifierFrame.Controller {
 
     public static final File Q_BANK_DIR = new File( "/Users/sandeep/Documents/StudyNotes/question-bank" ) ;
     public static final String GEMMA_SERVER_URL = "http://192.168.0.149:11434/api/generate" ;
@@ -25,50 +27,91 @@ public class QImgClassifier {
             new File( System.getProperty( "user.home" ), ".qclassifier.processed.list" ) ;
     public static final String SOURCES_RESOURCE = "/qclassifier.sources.txt" ;
 
-    public static void main( String[] args ) {
-        QImgClassifier app = new QImgClassifier() ;
-        app.runClassification() ;
-    }
-
     private static final int MAX_PARALLEL_THREADS = 5 ;
     private static final String Q_ID = "" ;
 
-    public QImgClassifier() {
+    private final ExecutorService executor =
+            Executors.newFixedThreadPool( MAX_PARALLEL_THREADS ) ;
+    private final GemmaInvoker gemmaInvoker = new GemmaInvoker() ;
+    private final ClassificationListener listener ;
+
+    public QImgClassifier( ClassificationListener listener ) {
+        this.listener = listener != null ? listener : ClassificationListener.NOOP ;
     }
 
-    private void runClassification() {
+    public static void main( String[] args ) {
+        boolean headless = Arrays.asList( args ).contains( "--headless" ) ;
+
+        if( headless ) {
+            QImgClassifier app = new QImgClassifier( ClassificationListener.NOOP ) ;
+            app.runBatch() ;
+            app.shutdown() ;
+            return ;
+        }
+
+        QImgClassifier[] holder = new QImgClassifier[1] ;
+        try {
+            SwingUtilities.invokeAndWait( () -> {
+                QClassifierFrame frame = new QClassifierFrame() ;
+                QImgClassifier app = new QImgClassifier( frame ) ;
+                frame.setController( app ) ;
+                frame.setVisible( true ) ;
+                holder[0] = app ;
+            } ) ;
+        }
+        catch( Exception e ) {
+            log.error( "Could not start UI", e ) ;
+            return ;
+        }
+
+        new Thread( holder[0]::runBatch, "qclassifier-batch" ).start() ;
+    }
+
+    /** Initial pass over every configured source. Does not shut the executor down. */
+    public void runBatch() {
         Set<String> processed = loadProcessedList() ;
         List<String> sources = loadSourceList() ;
 
-        ExecutorService executor = Executors.newFixedThreadPool( MAX_PARALLEL_THREADS ) ;
-        GemmaInvoker gemmaInvoker = new GemmaInvoker() ;
-        try {
-            for( String srcName : sources ) {
-                if( processed.contains( srcName ) ) {
-                    log.debug( "Skipping already processed source - {}", srcName ) ;
-                    continue ;
-                }
-                File srcDir = FileHelper.findDir( Q_BANK_DIR, srcName ) ;
-                if( srcDir == null ) {
-                    log.error( "Source directory {} not found", srcName ) ;
-                    continue ;
-                }
-                new QSourceClassifier( srcDir, Q_ID, gemmaInvoker,
-                                       executor, PROCESSED_LIST_FILE )
-                        .process() ;
+        for( int i = 0 ; i < sources.size() ; i++ ) {
+            String srcName = sources.get( i ) ;
+            listener.batchProgress( i + 1, sources.size(), srcName ) ;
+
+            if( processed.contains( srcName ) ) {
+                log.debug( "Skipping already processed source - {}", srcName ) ;
+                continue ;
             }
+            File srcDir = FileHelper.findDir( Q_BANK_DIR, srcName ) ;
+            if( srcDir == null ) {
+                log.error( "Source directory {} not found", srcName ) ;
+                continue ;
+            }
+            new QSourceClassifier( srcDir, Q_ID, gemmaInvoker, executor,
+                                   PROCESSED_LIST_FILE, listener ).process() ;
         }
-        finally {
-            executor.shutdown() ;
-            try {
-                executor.awaitTermination( Long.MAX_VALUE, TimeUnit.SECONDS ) ;
-            }
-            catch( InterruptedException e ) {
-                log.error( "Classification interrupted", e ) ;
-                Thread.currentThread().interrupt() ;
-            }
+        log.debug( "Batch pass complete" ) ;
+    }
+
+    // ---- QClassifierFrame.Controller ----------------------------------
+
+    @Override
+    public void reprocess( QTask task ) {
+        log.debug( "Re-queueing {}", task ) ;
+        executor.submit( QSourceClassifier.classifyCallable( task, gemmaInvoker, listener ) ) ;
+    }
+
+    @Override
+    public void shutdown() {
+        log.debug( "Shutting down classifier executor" ) ;
+        executor.shutdownNow() ;
+        try {
+            executor.awaitTermination( 10, TimeUnit.SECONDS ) ;
+        }
+        catch( InterruptedException e ) {
+            Thread.currentThread().interrupt() ;
         }
     }
+
+    // ---- config loading ----------------------------------------------
 
     private Set<String> loadProcessedList() {
         Set<String> processed = new HashSet<>() ;

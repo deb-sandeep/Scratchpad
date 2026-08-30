@@ -1,9 +1,5 @@
 package com.sandy.scratchpad.jee.qclassifier;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -12,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -21,9 +18,6 @@ import static com.sandy.scratchpad.jee.qclassifier.FileHelper.*;
 @Slf4j
 public class QSourceClassifier {
 
-    private static final ObjectMapper MAPPER =
-            new ObjectMapper().enable( SerializationFeature.INDENT_OUTPUT ) ;
-
     private static final Object PROCESSED_LIST_LOCK = new Object() ;
 
     private final File srcDir ;
@@ -31,15 +25,17 @@ public class QSourceClassifier {
     private final GemmaInvoker gemmaInvoker ;
     private final ExecutorService executor ;
     private final File processedListFile ;
-    private final TopicRepo topicRepo = TopicRepo.instance() ;
+    private final ClassificationListener listener ;
 
     public QSourceClassifier( File srcDir, String qIdHint, GemmaInvoker gemmaInvoker,
-                              ExecutorService executor, File processedListFile ) {
+                              ExecutorService executor, File processedListFile,
+                              ClassificationListener listener ) {
         this.srcDir = srcDir ;
         this.qIdHint = qIdHint ;
         this.gemmaInvoker = gemmaInvoker ;
         this.executor = executor ;
         this.processedListFile = processedListFile ;
+        this.listener = listener != null ? listener : ClassificationListener.NOOP ;
     }
 
     public void process() {
@@ -52,48 +48,33 @@ public class QSourceClassifier {
             return ;
         }
 
-        ObjectNode existingMap = loadWorkspaceMapFile( srcDir ) ;
+        Set<String> alreadyClassified = WorkspaceTopicMap.classifiedQuestionIds( srcDir ) ;
         int total = qImgFiles.length ;
 
-        List<File> toProcess = new ArrayList<>() ;
+        List<QTask> toProcess = new ArrayList<>() ;
         for( File f : qImgFiles ) {
-            if( !existingMap.has( extractQuestionId( f ) ) ) toProcess.add( f ) ;
+            String questionId = extractQuestionId( f ) ;
+            QTask task = newTask( f, questionId ) ;
+            boolean done = alreadyClassified.contains( questionId ) ;
+            listener.taskDiscovered( task, done ) ;
+            if( !done ) toProcess.add( task ) ;
         }
         log.debug( "Source {} - {} of {} images remaining to process",
                 srcDir.getName(), toProcess.size(), total ) ;
 
         boolean successfullyProcessed = true ;
         if( !toProcess.isEmpty() ) {
-            ExecutorCompletionService<ImgResult> completion =
+            ExecutorCompletionService<Boolean> completion =
                     new ExecutorCompletionService<>( executor ) ;
-            for( File f : toProcess ) {
-                final String questionId = extractQuestionId( f ) ;
-                Callable<ImgResult> task = () -> {
-                    try {
-                        List<Topic> topics = gemmaInvoker.invoke( f ) ;
-                        return new ImgResult( questionId, topics ) ;
-                    }
-                    catch( Exception e ) {
-                        log.error( "[{}] Error classifying image {} : {}",
-                                Thread.currentThread().getName(), srcDir.getName(), questionId, e ) ;
-                        return new ImgResult( questionId, null ) ;
-                    }
-                } ;
-                completion.submit( task ) ;
+            for( QTask task : toProcess ) {
+                completion.submit( classifyCallable( task, gemmaInvoker, listener ) ) ;
             }
 
             int totalToProcess = toProcess.size() ;
             for( int done = 1 ; done <= totalToProcess ; done++ ) {
                 try {
-                    ImgResult result = completion.take().get() ;
-                    log.debug( "Question image ({} of {}) - {} : {}",
-                            done, totalToProcess, srcDir.getName(), result.questionId ) ;
-                    if( result.matchedTopics != null ) {
-                        updateWorkspaceMapFile( srcDir, existingMap, result.questionId, result.matchedTopics ) ;
-                    }
-                    else {
-                        successfullyProcessed = false ;
-                    }
+                    boolean ok = completion.take().get() ;
+                    if( !ok ) successfullyProcessed = false ;
                 }
                 catch( Exception e ) {
                     log.error( "Error awaiting image result for source {}", srcDir.getName(), e ) ;
@@ -111,6 +92,46 @@ public class QSourceClassifier {
         }
     }
 
+    /**
+     * Callable that classifies one image, persists the result into the task's
+     * source workspace map, and fires listener events. Used by both the batch
+     * pass and the UI re-queue action.
+     */
+    static Callable<Boolean> classifyCallable( QTask task, GemmaInvoker gemmaInvoker,
+                                               ClassificationListener listener ) {
+        return () -> {
+            listener.taskStarted( task ) ;
+            try {
+                GemmaInvoker.InvocationResult r = gemmaInvoker.invoke( task.getImgFile() ) ;
+                if( r.topics != null ) {
+                    WorkspaceTopicMap.write( task.getSrcDir(), task.getQuestionId(), r.topics ) ;
+                    listener.taskFinished( task, TaskStatus.DONE, r.attempts, summarise( r.topics ) ) ;
+                    return true ;
+                }
+                listener.taskFinished( task, TaskStatus.FAILED, r.attempts, r.failureReason ) ;
+                return false ;
+            }
+            catch( Exception e ) {
+                log.error( "[{}] Error classifying {}",
+                        Thread.currentThread().getName(), task, e ) ;
+                listener.taskFinished( task, TaskStatus.FAILED, 0, e.getClass().getSimpleName() ) ;
+                return false ;
+            }
+        } ;
+    }
+
+    private QTask newTask( File imgFile, String questionId ) {
+        return new QTask( srcDir.getName(), srcDir, questionId,
+                QTask.subjectOf( questionId ), imgFile ) ;
+    }
+
+    static String summarise( List<Topic> topics ) {
+        if( topics == null || topics.isEmpty() ) return "" ;
+        Topic top = topics.get( 0 ) ;
+        return String.format( "%s (%d%%)", top.getTopicName(),
+                Math.round( top.getMatchProbability() * 100 ) ) ;
+    }
+
     private void markProcessed( String srcName ) {
         synchronized( PROCESSED_LIST_LOCK ) {
             try {
@@ -121,65 +142,6 @@ public class QSourceClassifier {
             catch( Exception e ) {
                 log.error( "Error appending to processed list file {}", processedListFile, e ) ;
             }
-        }
-    }
-
-    private ObjectNode loadWorkspaceMapFile( File srcDir ) {
-        File mapFile = new File( srcDir, ".workspace/ai-topic-map.json" ) ;
-        if( mapFile.exists() ) {
-            try {
-                return (ObjectNode) MAPPER.readTree( mapFile ) ;
-            }
-            catch( Exception e ) {
-                log.error( "Error reading workspace map file, starting fresh", e ) ;
-            }
-        }
-        return MAPPER.createObjectNode() ;
-    }
-
-    private void updateWorkspaceMapFile( File srcDir, ObjectNode root, String questionId, List<Topic> matchedTopics ) {
-        try {
-            File mapFile = new File( srcDir, ".workspace/ai-topic-map.json" ) ;
-            mapFile.getParentFile().mkdirs() ;
-
-            ArrayNode topicMappings = MAPPER.createArrayNode() ;
-            if( matchedTopics != null ) {
-                for( Topic t : matchedTopics ) {
-                    Topic cachedTopic = topicRepo.getTopicById( t.getId() );
-
-                    if( cachedTopic == null ) {
-                        log.warn( "[{}] Model returned unknown topicId {} ({}) - skipping",
-                                questionId, t.getId(), t.getTopicName() ) ;
-                        continue ;
-                    }
-
-                    if( !cachedTopic.getTopicName().equals( t.getTopicName() ) ) {
-                        log.warn( "[{}] Topic name mismatch for topicId {} - master {}, model {}; using master name",
-                                questionId, t.getId(), cachedTopic.getTopicName(), t.getTopicName() ) ;
-                    }
-
-                    topicMappings.addObject()
-                            .put( "topicId",       t.getId() )
-                            .put( "topicName",     cachedTopic.getTopicName() )
-                            .put( "syllabusName",  cachedTopic.getSyllabusName() )
-                            .put( "confidenceLevel", Math.round( t.getMatchProbability() * 100 ) ) ;
-                }
-            }
-
-            root.putObject( questionId ).set( "topicMappings", topicMappings ) ;
-            MAPPER.writeValue( mapFile, root ) ;
-        }
-        catch( Exception e ) {
-            log.error( "Error updating workspace map file", e ) ;
-        }
-    }
-
-    private static final class ImgResult {
-        final String questionId ;
-        final List<Topic> matchedTopics ;
-        ImgResult( String questionId, List<Topic> matchedTopics ) {
-            this.questionId = questionId ;
-            this.matchedTopics = matchedTopics ;
         }
     }
 }

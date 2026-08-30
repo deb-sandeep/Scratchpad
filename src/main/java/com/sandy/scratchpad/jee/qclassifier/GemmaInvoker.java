@@ -62,20 +62,36 @@ public class GemmaInvoker {
      */
     private static final int NUM_CTX = 12288 ;
 
-    public List<Topic> invoke( File imgFile ) {
+    /** Outcome of an {@link #invoke} call. {@code topics} is null on failure. */
+    public static final class InvocationResult {
+        public final List<Topic> topics ;
+        public final int         attempts ;
+        public final String      failureReason ;   // null on success
+
+        InvocationResult( List<Topic> topics, int attempts, String failureReason ) {
+            this.topics        = topics ;
+            this.attempts      = attempts ;
+            this.failureReason = failureReason ;
+        }
+    }
+
+    public InvocationResult invoke( File imgFile ) {
+        String lastFailure = "unknown error" ;
         for( int attempt = 1 ; attempt <= MAX_ATTEMPTS ; attempt++ ) {
-            List<Topic> result = attemptInvoke( imgFile, attempt ) ;
-            if( result != null ) return result ;
+            InvocationResult outcome = attemptInvoke( imgFile, attempt ) ;
+            if( outcome.topics != null ) return outcome ;
+            lastFailure = outcome.failureReason ;
             if( attempt < MAX_ATTEMPTS ) {
                 log.warn( "Retrying Gemma invocation for {} (attempt {} of {})",
                         imgFile.getName(), attempt + 1, MAX_ATTEMPTS ) ;
             }
         }
-        return null ;
+        return new InvocationResult( null, MAX_ATTEMPTS, lastFailure ) ;
     }
 
-    private List<Topic> attemptInvoke( File imgFile, int attempt ) {
+    private InvocationResult attemptInvoke( File imgFile, int attempt ) {
         long startTime = System.currentTimeMillis() ;
+        String failureReason = "unknown error" ;
         try {
             ObjectNode payload = mapper.createObjectNode() ;
             payload.put( "model", GEMMA_MODEL ) ;
@@ -107,26 +123,31 @@ public class GemmaInvoker {
                     if( modelResponse.startsWith( "{" ) && modelResponse.endsWith( "}" ) ) {
                         modelResponse = "[" + modelResponse + "]" ;
                     }
-                    return mapper.readValue( modelResponse, new com.fasterxml.jackson.core.type.TypeReference<List<Topic>>(){} ) ;
+                    List<Topic> topics = mapper.readValue( modelResponse,
+                            new com.fasterxml.jackson.core.type.TypeReference<List<Topic>>(){} ) ;
+                    return new InvocationResult( topics, attempt, null ) ;
                 }
                 catch( JsonProcessingException e ) {
                     log.error( "Error parsing model response (attempt {}): {}", attempt, modelResponse, e ) ;
-                    return null ;
+                    failureReason = "unparseable model response" ;
                 }
             }
             else {
                 log.error( "Error invoking Gemma server (attempt {}, status {}): {}",
                         attempt, response.statusCode(), response.body() ) ;
+                failureReason = "HTTP " + response.statusCode() ;
             }
         }
         catch( Exception e ) {
             log.error( "Error invoking Gemma server (attempt {})", attempt, e ) ;
+            failureReason = e.getClass().getSimpleName() +
+                    ( e.getMessage() != null ? ": " + e.getMessage() : "" ) ;
         }
         finally {
             long elapsed = System.currentTimeMillis() - startTime ;
             log.debug( "\t  Classification attempt {} took {}.{}s", attempt, elapsed / 1000, elapsed % 1000 ) ;
         }
-        return null ;
+        return new InvocationResult( null, attempt, failureReason ) ;
     }
     
     private String[] getBase64EncodedImage( File... imgFiles ) {
