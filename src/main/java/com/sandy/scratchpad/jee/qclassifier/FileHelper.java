@@ -32,22 +32,47 @@ public class FileHelper {
                 .filter( f -> {
                     if( qImgHint == null || qImgHint.isBlank() )
                         return true ;
-                    
+
                     String questionId = extractQuestionId( f ) ;
                     if( qImgHint.length() == 1 )
                         return questionId.startsWith( qImgHint ) ;
-                    
+
                     return questionId.equals( qImgHint ) ;
                 } )
-                .sorted( Comparator.comparing( ( File f ) -> extractQuestionId( f ).split( "_" )[0] )
-                        .thenComparing( f -> extractQuestionId( f ).split( "_" )[1] )
-                        .thenComparingInt( f -> Integer.parseInt( extractQuestionId( f ).split( "_" )[2] ) ) )
+                .sorted( Comparator.comparing( FileHelper::extractQuestionId, FileHelper::naturalCompare ) )
                 .toArray( File[]::new ) ;
     }
-    
+
     public static String extractQuestionId( File f ) {
         String nameWithoutExt = f.getName().replaceAll( "\\.[^.]+$", "" ) ;
         String[] parts = nameWithoutExt.split( "\\." ) ;
         return parts[ parts.length - 1 ] ;
+    }
+
+    /**
+     * Natural-order comparison: runs of digits compare numerically, everything
+     * else lexically. Tolerates ids like {@code C_SCA_43(1)} or {@code C_9} that
+     * the old {@code split("_")[2]} / {@code parseInt} sort choked on.
+     */
+    static int naturalCompare( String a, String b ) {
+        int i = 0, j = 0 ;
+        while( i < a.length() && j < b.length() ) {
+            char ca = a.charAt( i ), cb = b.charAt( j ) ;
+            if( Character.isDigit( ca ) && Character.isDigit( cb ) ) {
+                int si = i, sj = j ;
+                while( i < a.length() && Character.isDigit( a.charAt( i ) ) ) i++ ;
+                while( j < b.length() && Character.isDigit( b.charAt( j ) ) ) j++ ;
+                String na = a.substring( si, i ).replaceFirst( "^0+(?=\\d)", "" ) ;
+                String nb = b.substring( sj, j ).replaceFirst( "^0+(?=\\d)", "" ) ;
+                if( na.length() != nb.length() ) return na.length() - nb.length() ;
+                int cmp = na.compareTo( nb ) ;
+                if( cmp != 0 ) return cmp ;
+            }
+            else {
+                if( ca != cb ) return ca - cb ;
+                i++ ; j++ ;
+            }
+        }
+        return ( a.length() - i ) - ( b.length() - j ) ;
     }
 }

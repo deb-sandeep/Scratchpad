@@ -19,6 +19,9 @@ public interface ClassificationListener {
     /** Optional progress hint: the batch moved on to a new source. */
     default void batchProgress( int sourceIndex, int sourceCount, String sourceName ) {}
 
+    /** The batch pass moved between STOPPED / RUNNING / STOPPING. */
+    default void processingStateChanged( ProcessingState state ) {}
+
     ClassificationListener NOOP = new ClassificationListener() {
         public void taskDiscovered( QTask task, boolean alreadyClassified ) {}
         public void taskStarted( QTask task ) {}

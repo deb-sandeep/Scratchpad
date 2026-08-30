@@ -12,9 +12,11 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 
 import static com.sandy.scratchpad.jee.qclassifier.QImgClassifier.GEMMA_MODEL;
 import static com.sandy.scratchpad.jee.qclassifier.QImgClassifier.GEMMA_SERVER_URL;
@@ -22,7 +24,12 @@ import static com.sandy.scratchpad.jee.qclassifier.QImgClassifier.GEMMA_SERVER_U
 @Slf4j
 public class GemmaInvoker {
 
-    private final HttpClient httpClient = HttpClient.newHttpClient() ;
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds( 10 ) ;
+    private static final Duration REQUEST_TIMEOUT = Duration.ofMinutes( 5 ) ;
+
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout( CONNECT_TIMEOUT )
+            .build() ;
     private final ObjectMapper mapper = new ObjectMapper()
             .setPropertyNamingStrategy( com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE ) ;
 
@@ -76,12 +83,20 @@ public class GemmaInvoker {
     }
 
     public InvocationResult invoke( File imgFile ) {
+        return invoke( imgFile, null ) ;
+    }
+
+    public InvocationResult invoke( File imgFile, BooleanSupplier keepGoing ) {
         String lastFailure = "unknown error" ;
         for( int attempt = 1 ; attempt <= MAX_ATTEMPTS ; attempt++ ) {
             InvocationResult outcome = attemptInvoke( imgFile, attempt ) ;
             if( outcome.topics != null ) return outcome ;
             lastFailure = outcome.failureReason ;
             if( attempt < MAX_ATTEMPTS ) {
+                if( keepGoing != null && !keepGoing.getAsBoolean() ) {
+                    log.debug( "Stop requested - not retrying {}", imgFile.getName() ) ;
+                    break ;
+                }
                 log.warn( "Retrying Gemma invocation for {} (attempt {} of {})",
                         imgFile.getName(), attempt + 1, MAX_ATTEMPTS ) ;
             }
@@ -107,6 +122,7 @@ public class GemmaInvoker {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri( URI.create( GEMMA_SERVER_URL ) )
                     .header( "Content-Type", "application/json" )
+                    .timeout( REQUEST_TIMEOUT )
                     .POST( HttpRequest.BodyPublishers.ofString( mapper.writeValueAsString( payload ) ) )
                     .build() ;
 
