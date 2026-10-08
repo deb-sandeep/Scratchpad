@@ -9,9 +9,7 @@ import java.awt.event.ActionListener ;
 import java.awt.event.KeyAdapter ;
 import java.awt.event.KeyEvent ;
 import java.io.File ;
-import java.io.FileFilter ;
 import java.util.ArrayList ;
-import java.util.Arrays ;
 import java.util.Comparator ;
 import java.util.List ;
 
@@ -122,25 +120,43 @@ public class ImageSelectionPanel extends JPanel
         this.imgFolder = newFolder ;
         this.listModel.clear() ;
 
-        File[] files = newFolder.listFiles( new FileFilter() {
-            public boolean accept( File file ) {
-                return !file.isDirectory() && isImageFile( file ) ;
+        List<File> files = new ArrayList<>() ;
+        collectImages( newFolder, newFolder, files ) ;
+
+        files.sort( new Comparator<File>() {
+            public int compare( File f1, File f2 ) {
+                return f1.getName().compareTo( f2.getName() ) ;
             }
         } ) ;
 
-        if( files != null && files.length > 0 ) {
-            Arrays.sort( files, new Comparator<File>() {
-                public int compare( File f1, File f2 ) {
-                    return f1.getName().compareTo( f2.getName() ) ;
-                }
-            } ) ;
-
-            for( File file : files ) {
-                this.listModel.addElement( file ) ;
-            }
+        for( File file : files ) {
+            this.listModel.addElement( file ) ;
         }
 
         this.parent.rootFolderChanged( newFolder ) ;
+    }
+
+    private void collectImages( File root, File dir, List<File> images ) {
+
+        File[] children = dir.listFiles() ;
+        if( children == null ) return ;
+
+        for( File child : children ) {
+            if( child.isDirectory() ) {
+                if( isSortedPagesDir( root, child ) ) continue ;
+                collectImages( root, child, images ) ;
+            }
+            else if( isImageFile( child ) ) {
+                images.add( child ) ;
+            }
+        }
+    }
+
+    // True for <root>/<sub>/pages, where already sorted images are kept.
+    private static boolean isSortedPagesDir( File root, File dir ) {
+        File parent = dir.getParentFile() ;
+        return dir.getName().equals( "pages" ) &&
+               parent != null && root.equals( parent.getParentFile() ) ;
     }
     
     private void moveSelectedImages() {
