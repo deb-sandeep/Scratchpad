@@ -3,33 +3,41 @@ package com.sandy.scratchpad.jee.qclassifier;
 import javax.swing.*;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableRowSorter;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.COL_STATUS;
+import static com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.COL_SUBJ;
+
 /**
- * Per-column row filtering driven from the table header. Left-click a header to
- * sort (default behaviour); right-click a header for a filter popup. Text columns
- * filter by "contains" (case-insensitive); {@code Subj} and {@code Status} filter
- * by a set of allowed values. A filtered column's header is shown in bold with a
- * trailing marker.
+ * Sorting and per-column filtering driven from the table header of the
+ * {@link QTaskTreeTableModel} tree table. Left-click a header to cycle its sort
+ * (ascending, descending, discovery order); right-click for a filter popup.
+ * Sorting and filtering apply to questions within each source; a source is
+ * hidden while none of its questions pass the filters.
+ * <p>
+ * Text columns filter by "contains" (case-insensitive; the name column matches
+ * the source name or question id); {@code Subj} and {@code Status} filter by a
+ * set of allowed values. A filtered column's header is shown in bold with a
+ * trailing {@code *}; the sorted column carries ▲ / ▼.
  */
 class HeaderFilterController {
 
-    private final JTable table ;
-    private final TableRowSorter<QTaskTableModel> sorter ;
+    private final JTable              table ;
+    private final QTaskTreeTableModel model ;
+    /** Invoked after the filter or sort changed, to rebuild the view. */
+    private final Runnable            onChange ;
 
     /** model column -> "contains" text. */
     private final Map<Integer,String> textFilters = new LinkedHashMap<>() ;
@@ -38,20 +46,24 @@ class HeaderFilterController {
     /** model column -> the full set of possible values, for enumerable columns. */
     private final Map<Integer,List<String>> enumerable = new LinkedHashMap<>() ;
 
-    @SuppressWarnings( "unchecked" )
-    HeaderFilterController( JTable table ) {
-        this.table  = table ;
-        this.sorter = (TableRowSorter<QTaskTableModel>) table.getRowSorter() ;
+    HeaderFilterController( JTable table, QTaskTreeTableModel model, Runnable onChange ) {
+        this.table    = table ;
+        this.model    = model ;
+        this.onChange = onChange ;
 
-        enumerable.put( 3, List.of( "C", "M", "P", "?" ) ) ;
-        enumerable.put( 4, Arrays.stream( TaskStatus.values() )
+        enumerable.put( COL_SUBJ, List.of( "C", "M", "P", "?" ) ) ;
+        enumerable.put( COL_STATUS, Arrays.stream( TaskStatus.values() )
                 .map( Enum::name ).collect( Collectors.toList() ) ) ;
 
         JTableHeader header = table.getTableHeader() ;
+        header.setReorderingAllowed( false ) ;
         header.setToolTipText( "Left-click to sort, right-click to filter" ) ;
         header.addMouseListener( new MouseAdapter() {
             @Override public void mousePressed( MouseEvent e )  { maybePopup( e ) ; }
             @Override public void mouseReleased( MouseEvent e ) { maybePopup( e ) ; }
+            @Override public void mouseClicked( MouseEvent e ) {
+                if( SwingUtilities.isLeftMouseButton( e ) && !e.isPopupTrigger() ) cycleSort( e ) ;
+            }
         } ) ;
 
         TableCellRenderer base = header.getDefaultRenderer() ;
@@ -61,7 +73,10 @@ class HeaderFilterController {
                 JLabel label = (JLabel) c ;
                 int modelCol = t.convertColumnIndexToModel( viewCol ) ;
                 boolean filtered = hasFilter( modelCol ) ;
-                label.setText( filtered ? value + "  ▼" : String.valueOf( value ) ) ;
+                String text = String.valueOf( value ) ;
+                if( model.getSortColumn() == modelCol ) text += model.isSortAscending() ? "  ▲" : "  ▼" ;
+                if( filtered ) text += "  *" ;
+                label.setText( text ) ;
                 label.setFont( label.getFont().deriveFont( filtered ? Font.BOLD : Font.PLAIN ) ) ;
             }
             return c ;
@@ -76,6 +91,23 @@ class HeaderFilterController {
         textFilters.clear() ;
         valueFilters.clear() ;
         apply() ;
+    }
+
+    // ---- sorting -----------------------------------------------------
+
+    private void cycleSort( MouseEvent e ) {
+        JTableHeader header = table.getTableHeader() ;
+        if( header.getCursor().getType() != java.awt.Cursor.DEFAULT_CURSOR ) return ;   // resizing
+        int viewCol = header.columnAtPoint( e.getPoint() ) ;
+        if( viewCol < 0 ) return ;
+        int modelCol = table.convertColumnIndexToModel( viewCol ) ;
+
+        if( model.getSortColumn() != modelCol ) model.setSort( modelCol, true ) ;
+        else if( model.isSortAscending() )      model.setSort( modelCol, false ) ;
+        else                                    model.setSort( -1, true ) ;
+
+        header.repaint() ;
+        onChange.run() ;
     }
 
     // ---- popup -------------------------------------------------------
@@ -171,18 +203,24 @@ class HeaderFilterController {
     }
 
     private void apply() {
-        List<RowFilter<Object,Object>> parts = new ArrayList<>() ;
+        Predicate<QTaskTreeTableModel.QuestionNode> filter = null ;
+        if( hasAnyFilter() ) {
+            Map<Integer,String> texts = new LinkedHashMap<>() ;
+            textFilters.forEach( ( col, text ) -> texts.put( col, text.toLowerCase() ) ) ;
+            Map<Integer,Set<String>> values = new LinkedHashMap<>( valueFilters ) ;
 
-        textFilters.forEach( ( col, text ) ->
-                parts.add( RowFilter.regexFilter( "(?i)" + Pattern.quote( text ), col ) ) ) ;
-
-        valueFilters.forEach( ( col, allowed ) -> parts.add( new RowFilter<>() {
-            @Override public boolean include( Entry<? extends Object, ? extends Object> entry ) {
-                return allowed.contains( String.valueOf( entry.getValue( col ) ) ) ;
-            }
-        } ) ) ;
-
-        sorter.setRowFilter( parts.isEmpty() ? null : RowFilter.andFilter( parts ) ) ;
+            filter = q -> {
+                for( Map.Entry<Integer,String> e : texts.entrySet() ) {
+                    if( !model.filterText( q, e.getKey() ).toLowerCase().contains( e.getValue() ) ) return false ;
+                }
+                for( Map.Entry<Integer,Set<String>> e : values.entrySet() ) {
+                    if( !e.getValue().contains( String.valueOf( model.valueAt( q, e.getKey() ) ) ) ) return false ;
+                }
+                return true ;
+            } ;
+        }
+        model.setFilter( filter ) ;
         table.getTableHeader().repaint() ;
+        onChange.run() ;
     }
 }

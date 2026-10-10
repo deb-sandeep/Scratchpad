@@ -209,7 +209,7 @@ public class QImgClassifier implements QClassifierFrame.Controller {
             String content = new String( is.readAllBytes(), StandardCharsets.UTF_8 ) ;
             return content.lines()
                     .map( String::trim )
-                    .filter( s -> !s.isEmpty() )
+                    .filter( s -> !s.isEmpty() && !s.startsWith( "#" ) )
                     .collect( Collectors.toList() ) ;
         }
         catch( Exception e ) {

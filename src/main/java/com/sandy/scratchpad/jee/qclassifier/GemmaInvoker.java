@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
-import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.net.URI;
@@ -13,6 +12,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,40 +82,50 @@ public class GemmaInvoker {
         }
     }
 
-    public InvocationResult invoke( File imgFile ) {
-        return invoke( imgFile, null ) ;
+    public InvocationResult invoke( QTask task ) {
+        return invoke( task, null ) ;
     }
 
-    public InvocationResult invoke( File imgFile, BooleanSupplier keepGoing ) {
+    public InvocationResult invoke( QTask task, BooleanSupplier keepGoing ) {
+        String prompt = createPrompt( task.getSubject() ) ;
+        String image ;
+        try {
+            // Multi-part questions are stacked into one image so the model sees the whole question.
+            image = Base64.getEncoder().encodeToString( ImageCollator.collatedBytes( task.getImgFiles() ) ) ;
+        }
+        catch( Exception e ) {
+            log.error( "Error preparing image for {}", task, e ) ;
+            return new InvocationResult( null, 0, "image error: " + e.getMessage() ) ;
+        }
+
         String lastFailure = "unknown error" ;
         for( int attempt = 1 ; attempt <= MAX_ATTEMPTS ; attempt++ ) {
-            InvocationResult outcome = attemptInvoke( imgFile, attempt ) ;
+            InvocationResult outcome = attemptInvoke( task, prompt, image, attempt ) ;
             if( outcome.topics != null ) return outcome ;
             lastFailure = outcome.failureReason ;
             if( attempt < MAX_ATTEMPTS ) {
                 if( keepGoing != null && !keepGoing.getAsBoolean() ) {
-                    log.debug( "Stop requested - not retrying {}", imgFile.getName() ) ;
+                    log.debug( "Stop requested - not retrying {}", task ) ;
                     break ;
                 }
                 log.warn( "Retrying Gemma invocation for {} (attempt {} of {})",
-                        imgFile.getName(), attempt + 1, MAX_ATTEMPTS ) ;
+                        task, attempt + 1, MAX_ATTEMPTS ) ;
             }
         }
         return new InvocationResult( null, MAX_ATTEMPTS, lastFailure ) ;
     }
 
-    private InvocationResult attemptInvoke( File imgFile, int attempt ) {
+    private InvocationResult attemptInvoke( QTask task, String prompt, String image, int attempt ) {
         long startTime = System.currentTimeMillis() ;
         String failureReason = "unknown error" ;
         try {
             ObjectNode payload = mapper.createObjectNode() ;
             payload.put( "model", GEMMA_MODEL ) ;
-            String prompt = createPrompt( imgFile ) ;
             log.debug( "\t  Prompt for {} is {} chars (num_ctx {})",
-                    imgFile.getName(), prompt.length(), NUM_CTX ) ;
+                    task, prompt.length(), NUM_CTX ) ;
             payload.put( "prompt", prompt ) ;
             payload.put( "stream", false ) ;
-            payload.set( "images", mapper.valueToTree( getBase64EncodedImage( imgFile ) ) ) ;
+            payload.set( "images", mapper.createArrayNode().add( image ) ) ;
             payload.put( "keep_alive", "5h" ) ;
             payload.set( "options", mapper.createObjectNode().put( "num_ctx", NUM_CTX ) ) ;
 
@@ -132,7 +142,7 @@ public class GemmaInvoker {
                 int promptTokens = body.path( "prompt_eval_count" ).asInt() ;
                 if( promptTokens >= NUM_CTX ) {
                     log.warn( "Prompt for {} used {} tokens - at or beyond num_ctx {}; input may be truncated",
-                            imgFile.getName(), promptTokens, NUM_CTX ) ;
+                            task, promptTokens, NUM_CTX ) ;
                 }
                 String modelResponse = body.path( "response" ).asText() ;
                 try {
@@ -166,37 +176,13 @@ public class GemmaInvoker {
         return new InvocationResult( null, attempt, failureReason ) ;
     }
     
-    private String[] getBase64EncodedImage( File... imgFiles ) {
-        return java.util.Arrays.stream( imgFiles )
-                .map( f -> {
-                    try {
-                        byte[] bytes = java.nio.file.Files.readAllBytes( f.toPath() ) ;
-                        return java.util.Base64.getEncoder().encodeToString( bytes ) ;
-                    }
-                    catch( Exception e ) {
-                        log.error( "Error encoding image {}", f.getAbsolutePath(), e ) ;
-                        return null ;
-                    }
-                } )
-                .toArray( String[]::new ) ;
-    }
-    
-    private String createPrompt( File imgFile ) {
-        String subject = getSubject( imgFile ) ;
+    /** Prompt for subject code "C" / "M" / "P" (anything else gets the default prompt with no topics). */
+    private String createPrompt( String subject ) {
         String template = "C".equals( subject ) ? chemistryPrompt : defaultPrompt ;
         String syllabus = syllabusBySubject.getOrDefault( subject, "" ) ;
         return template
                 .replace( "{{SUBJECT_SYLLABUS}}", syllabus )
                 .replace( "{{TOPIC_LIST_JSON}}", getTopicList( subject ) ) ;
-    }
-
-    /** Subject code ("C" / "M" / "P") from the question-id prefix, or null. */
-    private String getSubject( File imgFile ) {
-        String questionId = FileHelper.extractQuestionId( imgFile ) ;
-        if( questionId.startsWith( "C_" ) ) return "C" ;
-        if( questionId.startsWith( "M_" ) ) return "M" ;
-        if( questionId.startsWith( "P_" ) ) return "P" ;
-        return null ;
     }
 
     private String getTopicList( String subject ) {

@@ -11,6 +11,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorCompletionService;
@@ -50,26 +51,26 @@ public class QSourceClassifier {
     public String getSourceName() { return srcDir.getName() ; }
 
     /**
-     * Fire {@code taskDiscovered} for every question image of this source and
-     * return the tasks that still need classification.
+     * Fire {@code taskDiscovered} for every question of this source (part
+     * images are folded into their parent question) and return the tasks that
+     * still need classification.
      */
     public List<QTask> discover() {
-        File[] qImgFiles = getQuestionImgFiles( srcDir, qIdHint ) ;
-        if( qImgFiles == null ) {
+        Map<String,List<File>> groups = getQuestionImgGroups( srcDir, qIdHint ) ;
+        if( groups == null ) {
             log.error( "No question images found for source {} and qIdHint {}", srcDir.getName(), qIdHint ) ;
             return List.of() ;
         }
 
         Set<String> classified = WorkspaceTopicMap.classifiedQuestionIds( srcDir ) ;
         List<QTask> pending = new ArrayList<>() ;
-        for( File f : qImgFiles ) {
-            String questionId = extractQuestionId( f ) ;
-            QTask task = newTask( f, questionId ) ;
-            boolean done = classified.contains( questionId ) ;
+        for( Map.Entry<String,List<File>> e : groups.entrySet() ) {
+            QTask task = newTask( e.getKey(), e.getValue() ) ;
+            boolean done = classified.contains( task.getQuestionId() ) ;
             listener.taskDiscovered( task, done ) ;
             if( !done ) pending.add( task ) ;
         }
-        log.debug( "Source {} - {} of {} images pending", srcDir.getName(), pending.size(), qImgFiles.length ) ;
+        log.debug( "Source {} - {} of {} questions pending", srcDir.getName(), pending.size(), groups.size() ) ;
         return pending ;
     }
 
@@ -119,12 +120,10 @@ public class QSourceClassifier {
 
     /** Record the source as done only once every one of its images is classified. */
     private void maybeMarkProcessed() {
-        File[] qImgFiles = getQuestionImgFiles( srcDir, qIdHint ) ;
-        if( qImgFiles == null || qImgFiles.length == 0 ) return ;
+        Map<String,List<File>> groups = getQuestionImgGroups( srcDir, qIdHint ) ;
+        if( groups == null || groups.isEmpty() ) return ;
         Set<String> classified = WorkspaceTopicMap.classifiedQuestionIds( srcDir ) ;
-        for( File f : qImgFiles ) {
-            if( !classified.contains( extractQuestionId( f ) ) ) return ;
-        }
+        if( !classified.containsAll( groups.keySet() ) ) return ;
         markProcessed( srcDir.getName() ) ;
     }
 
@@ -138,7 +137,7 @@ public class QSourceClassifier {
         return () -> {
             listener.taskStarted( task ) ;
             try {
-                GemmaInvoker.InvocationResult r = gemmaInvoker.invoke( task.getImgFile(), keepGoing ) ;
+                GemmaInvoker.InvocationResult r = gemmaInvoker.invoke( task, keepGoing ) ;
                 if( r.topics != null ) {
                     WorkspaceTopicMap.write( task.getSrcDir(), task.getQuestionId(), r.topics ) ;
                     listener.taskFinished( task, TaskStatus.DONE, r.attempts, summarise( r.topics ) ) ;
@@ -156,9 +155,9 @@ public class QSourceClassifier {
         } ;
     }
 
-    private QTask newTask( File imgFile, String questionId ) {
+    private QTask newTask( String questionId, List<File> imgFiles ) {
         return new QTask( srcDir.getName(), srcDir, questionId,
-                QTask.subjectOf( questionId ), imgFile ) ;
+                QTask.subjectOf( questionId ), imgFiles ) ;
     }
 
     static String summarise( List<Topic> topics ) {

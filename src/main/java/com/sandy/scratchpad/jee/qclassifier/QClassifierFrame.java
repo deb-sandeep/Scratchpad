@@ -1,12 +1,16 @@
 package com.sandy.scratchpad.jee.qclassifier;
 
+import com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.Node;
+import com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.PartNode;
+import com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.QuestionNode;
+import com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.SourceNode;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
@@ -15,13 +19,20 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.*;
+
 /**
- * Live monitor for {@link QImgClassifier}. One row per question image; rows move
+ * Live monitor for {@link QImgClassifier}, shown as a tree table: one node per
+ * source, one row per question beneath it, and the part images beneath a
+ * multi-part question (collapsed by default). Question rows move
  * QUEUED -> RUNNING -> DONE/FAILED (or start SKIPPED if already classified).
- * Double-click opens the image; right-click offers open / re-queue.
+ * Click the triangle (or use Left / Right) to collapse / expand; double-click a
+ * question or part to open its image; right-click offers open / show in
+ * QImgExtractor (⌘E) / re-queue.
  */
 @Slf4j
 @SuppressWarnings( "serial" )
@@ -35,17 +46,31 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         void shutdown() ;
     }
 
-    private static final int PREVIEW_PANEL_HEIGHT = 300 ;
+    private static final int   PREVIEW_PANEL_HEIGHT = 300 ;
+    private static final int   INDENT      = 18 ;
+    private static final int   LEFT_PAD    = 4 ;
+    private static final int   EXPANDER_W  = 12 ;
+    private static final int   ICON_GAP    = 4 ;
+    private static final Color SOURCE_BG   = new Color( 0xE3E8EF ) ;
+    /** ⌘E on macOS, Ctrl+E elsewhere. */
+    private static final KeyStroke SHOW_IN_EXTRACTOR_KEY = KeyStroke.getKeyStroke(
+            java.awt.event.KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() ) ;
 
-    private final QTaskTableModel model = new QTaskTableModel() ;
-    private final JTable          table ;
-    private final JLabel          statusBar = new JLabel( " " ) ;
-    private final JPanel          previewPanel = new JPanel( new BorderLayout() ) ;
-    private final JLabel          previewLabel =
+    private final QTaskTreeTableModel model = new QTaskTreeTableModel() ;
+    private final QImgExtractorClient extractorClient = new QImgExtractorClient() ;
+    private final JTable              table ;
+    private final JLabel              statusBar = new JLabel( " " ) ;
+    private final JPanel              previewPanel = new JPanel( new BorderLayout() ) ;
+    private final JLabel              previewLabel =
             new JLabel( "Select a row to preview", SwingConstants.CENTER ) ;
 
     private final JMenuItem startItem = new JMenuItem( "Start processing" ) ;
     private final JMenuItem stopItem  = new JMenuItem( "Stop processing" ) ;
+
+    /** Coalesces bursts of structural changes (discovery, status moves under a filter) into one rebuild. */
+    private final Timer rebuildTimer = new Timer( 150, e -> rebuildTree() ) ;
+    /** Set while a rebuild restores the selection, so the preview isn't reloaded. */
+    private boolean restoringSelection ;
 
     private HeaderFilterController headerFilters ;
     private Controller    controller ;
@@ -56,9 +81,9 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
     private long    processingAccumMs = 0 ;
     private long    processingStartedMs = 0 ;
 
-    /** Full-resolution image currently being previewed, and its source file. */
+    /** Full-resolution image currently being previewed, and the file(s) it was built from. */
     private BufferedImage previewImage ;
-    private File          previewFile ;
+    private List<File>    previewFiles ;
     /** Monotonic token so a slow load for an old selection cannot overwrite a newer one. */
     private long          previewToken ;
 
@@ -69,36 +94,34 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             @Override
             public Component prepareRenderer( javax.swing.table.TableCellRenderer r, int row, int col ) {
                 Component c = super.prepareRenderer( r, row, col ) ;
-                if( !isRowSelected( row ) ) {
-                    QTaskTableModel.Row mr = model.rowAt( convertRowIndexToModel( row ) ) ;
-                    c.setBackground( colorFor( mr.status ) ) ;
-                }
+                Node n = model.nodeAt( row ) ;
+                if( n instanceof SourceNode ) c.setFont( c.getFont().deriveFont( Font.BOLD ) ) ;
+                if( !isRowSelected( row ) ) c.setBackground( backgroundFor( n ) ) ;
                 return c ;
             }
         } ;
-        table.setAutoCreateRowSorter( false ) ;
-        table.setRowSorter( new TableRowSorter<>( model ) ) ;
         table.setFillsViewportHeight( true ) ;
-        headerFilters = new HeaderFilterController( table ) ;
-        table.getRowSorter().addRowSorterListener( e -> refreshStatusBar() ) ;
+        table.setSelectionMode( ListSelectionModel.SINGLE_SELECTION ) ;
+        rebuildTimer.setRepeats( false ) ;
+        headerFilters = new HeaderFilterController( table, model, this::rebuildTree ) ;
 
         DefaultTableCellRenderer center = new DefaultTableCellRenderer() ;
         center.setHorizontalAlignment( SwingConstants.CENTER ) ;
-        for( int c : new int[]{ 0, 3, 4, 5, 6 } ) {
+        for( int c : new int[]{ COL_SUBJ, COL_STATUS, COL_ATTEMPTS, COL_TIME } ) {
             table.getColumnModel().getColumn( c ).setCellRenderer( center ) ;
         }
-        int[] widths = { 40, 150, 130, 45, 80, 70, 70, 380 } ;
+        table.getColumnModel().getColumn( COL_NAME ).setCellRenderer( new TreeCellRenderer() ) ;
+        int[] widths = { 300, 45, 80, 70, 70, 430 } ;
         for( int i = 0 ; i < widths.length ; i++ ) {
             table.getColumnModel().getColumn( i ).setPreferredWidth( widths[i] ) ;
         }
 
         installMouseHandlers() ;
+        installKeyBindings() ;
 
         table.getSelectionModel().addListSelectionListener( e -> {
-            if( e.getValueIsAdjusting() ) return ;
-            int viewRow = table.getSelectedRow() ;
-            showPreview( viewRow < 0 ? null
-                    : model.rowAt( table.convertRowIndexToModel( viewRow ) ).task ) ;
+            if( e.getValueIsAdjusting() || restoringSelection ) return ;
+            showPreview( selectedNode() ) ;
         } ) ;
 
         previewPanel.setBorder( BorderFactory.createTitledBorder( "Preview" ) ) ;
@@ -154,6 +177,13 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         file.add( exit ) ;
 
         JMenu view = new JMenu( "View" ) ;
+        JMenuItem expandAll = new JMenuItem( "Expand all sources" ) ;
+        expandAll.addActionListener( a -> { model.setAllSourcesExpanded( true ) ; rebuildTree() ; } ) ;
+        view.add( expandAll ) ;
+        JMenuItem collapseAll = new JMenuItem( "Collapse all sources" ) ;
+        collapseAll.addActionListener( a -> { model.setAllSourcesExpanded( false ) ; rebuildTree() ; } ) ;
+        view.add( collapseAll ) ;
+        view.addSeparator() ;
         JMenuItem clearFilters = new JMenuItem( "Clear all filters" ) ;
         clearFilters.addActionListener( a -> { if( headerFilters != null ) headerFilters.clearAll() ; } ) ;
         view.add( clearFilters ) ;
@@ -168,17 +198,17 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
 
     @Override
     public void taskDiscovered( QTask task, boolean alreadyClassified ) {
-        SwingUtilities.invokeLater( () -> { model.discovered( task, alreadyClassified ) ; refreshStatusBar() ; } ) ;
+        SwingUtilities.invokeLater( () -> { model.discovered( task, alreadyClassified ) ; scheduleRebuild() ; } ) ;
     }
 
     @Override
     public void taskStarted( QTask task ) {
-        SwingUtilities.invokeLater( () -> { model.started( task ) ; refreshStatusBar() ; } ) ;
+        SwingUtilities.invokeLater( () -> { model.started( task ) ; afterStatusChange() ; } ) ;
     }
 
     @Override
     public void taskFinished( QTask task, TaskStatus status, int attempts, String result ) {
-        SwingUtilities.invokeLater( () -> { model.finished( task, status, attempts, result ) ; refreshStatusBar() ; } ) ;
+        SwingUtilities.invokeLater( () -> { model.finished( task, status, attempts, result ) ; afterStatusChange() ; } ) ;
     }
 
     @Override
@@ -206,19 +236,113 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         } ) ;
     }
 
+    // ---- tree view maintenance ----------------------------------------
+
+    private void afterStatusChange() {
+        // A status change can move a row under an active filter / sort.
+        if( model.isFilteredOrSorted() ) scheduleRebuild() ;
+        refreshStatusBar() ;
+    }
+
+    private void scheduleRebuild() {
+        if( !rebuildTimer.isRunning() ) rebuildTimer.start() ;
+    }
+
+    /** Rebuild the flattened view, keeping the selected node selected if it is still visible. */
+    private void rebuildTree() {
+        rebuildTimer.stop() ;
+        Node selected = selectedNode() ;
+        restoringSelection = true ;
+        try {
+            model.rebuild() ;
+            if( selected != null && selected.viewIndex >= 0 ) {
+                table.setRowSelectionInterval( selected.viewIndex, selected.viewIndex ) ;
+            }
+        }
+        finally {
+            restoringSelection = false ;
+        }
+        if( selected != null && selected.viewIndex < 0 ) showPreview( null ) ;
+        refreshStatusBar() ;
+    }
+
+    private Node selectedNode() {
+        int viewRow = table.getSelectedRow() ;
+        return viewRow < 0 ? null : model.nodeAt( viewRow ) ;
+    }
+
+    private void toggle( Node n ) {
+        model.setExpanded( n, !n.expanded ) ;
+    }
+
     // ---- UI plumbing ---------------------------------------------------
 
     private void installMouseHandlers() {
         table.addMouseListener( new MouseAdapter() {
+            @Override public void mousePressed( MouseEvent e ) {
+                if( SwingUtilities.isLeftMouseButton( e ) && e.getClickCount() == 1 ) {
+                    Node n = nodeUnder( e ) ;
+                    if( n != null && onExpander( e, n ) ) toggle( n ) ;
+                }
+                maybePopup( e ) ;
+            }
+            @Override public void mouseReleased( MouseEvent e ) { maybePopup( e ) ; }
             @Override public void mouseClicked( MouseEvent e ) {
-                if( e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton( e ) ) {
-                    QTaskTableModel.Row row = rowUnder( e ) ;
-                    if( row != null ) openImage( row.task ) ;
+                if( e.getClickCount() != 2 || !SwingUtilities.isLeftMouseButton( e ) ) return ;
+                Node n = nodeUnder( e ) ;
+                if( n == null || onExpander( e, n ) ) return ;
+                if( n instanceof SourceNode ) toggle( n ) ;
+                else                          openImage( n ) ;
+            }
+        } ) ;
+    }
+
+    private void installKeyBindings() {
+        InputMap  im = table.getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT ) ;
+        ActionMap am = table.getActionMap() ;
+        table.getInputMap( JComponent.WHEN_IN_FOCUSED_WINDOW ).put( SHOW_IN_EXTRACTOR_KEY, "qc-show-in-extractor" ) ;
+        am.put( "qc-show-in-extractor", new AbstractAction() {
+            @Override public void actionPerformed( ActionEvent e ) {
+                Node n = selectedNode() ;
+                if( n != null ) showInExtractor( n ) ;
+            }
+        } ) ;
+        im.put( KeyStroke.getKeyStroke( "RIGHT" ), "qc-expand" ) ;
+        im.put( KeyStroke.getKeyStroke( "LEFT" ),  "qc-collapse" ) ;
+        am.put( "qc-expand", new AbstractAction() {
+            @Override public void actionPerformed( ActionEvent e ) {
+                Node n = selectedNode() ;
+                if( n != null ) model.setExpanded( n, true ) ;
+            }
+        } ) ;
+        am.put( "qc-collapse", new AbstractAction() {
+            @Override public void actionPerformed( ActionEvent e ) {
+                Node n = selectedNode() ;
+                if( n == null ) return ;
+                if( n.isExpandable() && n.expanded ) { model.setExpanded( n, false ) ; return ; }
+                Node parent = parentOf( n ) ;
+                if( parent != null && parent.viewIndex >= 0 ) {
+                    table.setRowSelectionInterval( parent.viewIndex, parent.viewIndex ) ;
+                    table.scrollRectToVisible( table.getCellRect( parent.viewIndex, 0, true ) ) ;
                 }
             }
-            @Override public void mousePressed( MouseEvent e )  { maybePopup( e ) ; }
-            @Override public void mouseReleased( MouseEvent e ) { maybePopup( e ) ; }
         } ) ;
+    }
+
+    private static Node parentOf( Node n ) {
+        if( n instanceof QuestionNode ) return ( (QuestionNode) n ).parent ;
+        if( n instanceof PartNode )     return ( (PartNode) n ).parent ;
+        return null ;
+    }
+
+    /** True if the event is on the expand / collapse triangle of an expandable node. */
+    private boolean onExpander( MouseEvent e, Node n ) {
+        if( !n.isExpandable() ) return false ;
+        int viewCol = table.columnAtPoint( e.getPoint() ) ;
+        if( viewCol < 0 || table.convertColumnIndexToModel( viewCol ) != COL_NAME ) return false ;
+        int x = e.getX() - table.getCellRect( n.viewIndex, viewCol, false ).x ;
+        int start = LEFT_PAD + n.depth() * INDENT ;
+        return x >= start - 2 && x <= start + EXPANDER_W + ICON_GAP ;
     }
 
     private void maybePopup( MouseEvent e ) {
@@ -226,52 +350,74 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         int viewRow = table.rowAtPoint( e.getPoint() ) ;
         if( viewRow < 0 ) return ;
         table.setRowSelectionInterval( viewRow, viewRow ) ;
-        QTaskTableModel.Row row = model.rowAt( table.convertRowIndexToModel( viewRow ) ) ;
+        Node n = model.nodeAt( viewRow ) ;
 
         JPopupMenu menu = new JPopupMenu() ;
-        JMenuItem open = new JMenuItem( "Open image" ) ;
-        open.addActionListener( a -> openImage( row.task ) ) ;
-        menu.add( open ) ;
+        if( !( n instanceof SourceNode ) ) {
+            JMenuItem open = new JMenuItem( "Open image" ) ;
+            open.addActionListener( a -> openImage( n ) ) ;
+            menu.add( open ) ;
 
-        JMenuItem requeue = new JMenuItem( "Re-queue" ) ;
-        boolean canRequeue = controller != null &&
-                ( row.status == TaskStatus.DONE || row.status == TaskStatus.FAILED
-                        || row.status == TaskStatus.SKIPPED ) ;
-        requeue.setEnabled( canRequeue ) ;
-        requeue.addActionListener( a -> controller.reprocess( row.task ) ) ;
-        menu.add( requeue ) ;
+            JMenuItem extractor = new JMenuItem( "Show in QImgExtractor" ) ;
+            extractor.setAccelerator( SHOW_IN_EXTRACTOR_KEY ) ;
+            extractor.addActionListener( a -> showInExtractor( n ) ) ;
+            menu.add( extractor ) ;
+        }
+        if( n instanceof QuestionNode ) {
+            QuestionNode q = (QuestionNode) n ;
+            JMenuItem requeue = new JMenuItem( "Re-queue" ) ;
+            boolean canRequeue = controller != null &&
+                    ( q.status == TaskStatus.DONE || q.status == TaskStatus.FAILED
+                            || q.status == TaskStatus.SKIPPED ) ;
+            requeue.setEnabled( canRequeue ) ;
+            requeue.addActionListener( a -> controller.reprocess( q.task ) ) ;
+            menu.add( requeue ) ;
+        }
+        if( n.isExpandable() ) {
+            if( menu.getComponentCount() > 0 ) menu.addSeparator() ;
+            JMenuItem toggle = new JMenuItem( n.expanded ? "Collapse" : "Expand" ) ;
+            toggle.addActionListener( a -> toggle( n ) ) ;
+            menu.add( toggle ) ;
+        }
 
         menu.show( table, e.getX(), e.getY() ) ;
     }
 
-    private QTaskTableModel.Row rowUnder( MouseEvent e ) {
+    private Node nodeUnder( MouseEvent e ) {
         int viewRow = table.rowAtPoint( e.getPoint() ) ;
-        return viewRow < 0 ? null : model.rowAt( table.convertRowIndexToModel( viewRow ) ) ;
+        return viewRow < 0 ? null : model.nodeAt( viewRow ) ;
+    }
+
+    /** Image file(s) a node represents: a question's image or parts, a single part, or none for a source. */
+    private static List<File> imageFilesOf( Node n ) {
+        if( n instanceof QuestionNode ) return ( (QuestionNode) n ).task.getImgFiles() ;
+        if( n instanceof PartNode )     return List.of( ( (PartNode) n ).file ) ;
+        return null ;
     }
 
     // ---- preview panel -----------------------------------------------
 
-    /** Load and show the given task's image; null clears the preview. */
-    private void showPreview( QTask task ) {
-        File file = task == null ? null : task.getImgFile() ;
-        if( Objects.equals( file, previewFile ) ) return ;
+    /** Load and show the node's image (collating multi-part questions); null / a source clears it. */
+    private void showPreview( Node node ) {
+        List<File> files = node == null ? null : imageFilesOf( node ) ;
+        if( Objects.equals( files, previewFiles ) ) return ;
 
-        previewFile  = file ;
+        previewFiles = files ;
         previewImage = null ;
         long token = ++previewToken ;
 
         previewLabel.setIcon( null ) ;
-        if( file == null ) { previewLabel.setText( "Select a row to preview" ) ; return ; }
-        if( !file.isFile() ) { previewLabel.setText( "Image not found" ) ; return ; }
+        if( files == null ) { previewLabel.setText( "Select a question to preview" ) ; return ; }
+        if( !files.stream().allMatch( File::isFile ) ) { previewLabel.setText( "Image not found" ) ; return ; }
         previewLabel.setText( "Loading…" ) ;
 
         new Thread( () -> {
             BufferedImage img = null ;
             try {
-                img = ImageIO.read( file ) ;
+                img = ImageCollator.collate( files ) ;
             }
             catch( Exception ex ) {
-                log.warn( "Could not read preview image {}", file, ex ) ;
+                log.warn( "Could not read preview image {}", files, ex ) ;
             }
             BufferedImage loaded = img ;
             SwingUtilities.invokeLater( () -> {
@@ -310,12 +456,38 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         previewLabel.setText( null ) ;
     }
 
-    private void openImage( QTask task ) {
+    /**
+     * Ask QImgExtractor to open the image's project and scroll to it, for repair.
+     * A multi-part question is shown by its first part; errors are reported in a dialog.
+     */
+    private void showInExtractor( Node n ) {
+        List<File> files = imageFilesOf( n ) ;
+        if( files == null ) return ;
+        File img = files.get( 0 ) ;
+        extractorClient.showQuestionImage( img ).thenAccept( error -> {
+            if( error == null ) return ;
+            SwingUtilities.invokeLater( () -> JOptionPane.showMessageDialog( this,
+                    "Could not show " + img.getName() + " in QImgExtractor:\n" + error,
+                    "QImgExtractor", JOptionPane.WARNING_MESSAGE ) ) ;
+        } ) ;
+    }
+
+    /** Open the node's image; a multi-part question is collated into a temp PNG first. */
+    private void openImage( Node n ) {
+        List<File> files = imageFilesOf( n ) ;
+        if( files == null ) return ;
         try {
-            Desktop.getDesktop().open( task.getImgFile() ) ;
+            File target = files.get( 0 ) ;
+            if( files.size() > 1 ) {
+                String id = ( (QuestionNode) n ).task.getQuestionId().replaceAll( "[^A-Za-z0-9_-]", "_" ) ;
+                target = File.createTempFile( "qclassifier-" + id + "-", ".png" ) ;
+                target.deleteOnExit() ;
+                ImageIO.write( ImageCollator.collate( files ), "png", target ) ;
+            }
+            Desktop.getDesktop().open( target ) ;
         }
         catch( Exception ex ) {
-            log.error( "Could not open image {}", task.getImgFile(), ex ) ;
+            log.error( "Could not open image {}", files, ex ) ;
             JOptionPane.showMessageDialog( this, "Could not open image:\n" + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE ) ;
         }
@@ -326,11 +498,11 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         long procMs = processingAccumMs +
                 ( processingStartedMs > 0 ? System.currentTimeMillis() - processingStartedMs : 0 ) ;
         long elapsed = procMs / 1000 ;
-        int visible = table.getRowSorter() != null ? table.getRowSorter().getViewRowCount() : model.getRowCount() ;
         String text = String.format(
-                "%s   |   Showing %d/%d   |   Queued %d  Running %d  Done %d  Failed %d  Skipped %d   |   Processing time %d:%02d",
+                "%s   |   %d sources   |   Showing %d/%d questions   |   Queued %d  Running %d  Done %d  Failed %d  Skipped %d   |   Processing time %d:%02d",
                 stateLabel(),
-                visible, model.getRowCount(),
+                model.getSourceCount(),
+                model.getMatchingQuestionCount(), model.getQuestionCount(),
                 c.get( TaskStatus.QUEUED ), c.get( TaskStatus.RUNNING ), c.get( TaskStatus.DONE ),
                 c.get( TaskStatus.FAILED ), c.get( TaskStatus.SKIPPED ),
                 elapsed / 60, elapsed % 60 ) ;
@@ -346,6 +518,12 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         }
     }
 
+    private static Color backgroundFor( Node n ) {
+        if( n instanceof SourceNode ) return SOURCE_BG ;
+        if( n instanceof PartNode )   return colorFor( ( (PartNode) n ).parent.status ) ;
+        return colorFor( ( (QuestionNode) n ).status ) ;
+    }
+
     private static Color colorFor( TaskStatus status ) {
         switch( status ) {
             case RUNNING: return new Color( 0xE3F2FD ) ;
@@ -353,6 +531,55 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             case FAILED:  return new Color( 0xFFEBEE ) ;
             case SKIPPED: return new Color( 0xF0F0F0 ) ;
             default:      return Color.WHITE ;
+        }
+    }
+
+    // ---- tree column rendering ---------------------------------------
+
+    /** Name column: indentation by depth plus an expand / collapse triangle for expandable nodes. */
+    private class TreeCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent( JTable t, Object value, boolean sel,
+                                                        boolean foc, int row, int col ) {
+            super.getTableCellRendererComponent( t, value, sel, foc, row, col ) ;
+            Node n = model.nodeAt( row ) ;
+            setText( n.label() ) ;
+            setIcon( new ExpanderIcon( n.isExpandable(), n.expanded ) ) ;
+            setIconTextGap( ICON_GAP ) ;
+            setBorder( BorderFactory.createEmptyBorder( 0, LEFT_PAD + n.depth() * INDENT, 0, 0 ) ) ;
+            return this ;
+        }
+    }
+
+    /** Fixed-width triangle (▸ collapsed, ▾ expanded); blank for leaves so labels stay aligned. */
+    private static final class ExpanderIcon implements Icon {
+        private final boolean expandable ;
+        private final boolean expanded ;
+
+        ExpanderIcon( boolean expandable, boolean expanded ) {
+            this.expandable = expandable ;
+            this.expanded   = expanded ;
+        }
+
+        @Override public int getIconWidth()  { return EXPANDER_W ; }
+        @Override public int getIconHeight() { return EXPANDER_W ; }
+
+        @Override
+        public void paintIcon( Component c, Graphics g, int x, int y ) {
+            if( !expandable ) return ;
+            Graphics2D g2 = (Graphics2D) g.create() ;
+            try {
+                g2.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON ) ;
+                g2.setColor( Color.DARK_GRAY ) ;
+                int s = EXPANDER_W ;
+                Polygon p = expanded
+                        ? new Polygon( new int[]{ x + 2, x + s - 2, x + s / 2 }, new int[]{ y + 3, y + 3, y + s - 3 }, 3 )
+                        : new Polygon( new int[]{ x + 3, x + s - 3, x + 3 }, new int[]{ y + 2, y + s / 2, y + s - 2 }, 3 ) ;
+                g2.fillPolygon( p ) ;
+            }
+            finally {
+                g2.dispose() ;
+            }
         }
     }
 }
