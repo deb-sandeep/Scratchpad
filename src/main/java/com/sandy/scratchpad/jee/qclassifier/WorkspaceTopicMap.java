@@ -72,6 +72,32 @@ public final class WorkspaceTopicMap {
         }
     }
 
+    /** One stored topic recommendation, as persisted in the map file. */
+    public static final class StoredMapping {
+        public final int topicId ;
+        public final int confidenceLevel ;
+
+        StoredMapping( int topicId, int confidenceLevel ) {
+            this.topicId = topicId ;
+            this.confidenceLevel = confidenceLevel ;
+        }
+    }
+
+    /**
+     * The stored recommendations for one question, confidence-descending.
+     * Empty if the question has no entry or was stored with no topics.
+     */
+    public static List<StoredMapping> topicMappings( File srcDir, String questionId ) {
+        synchronized( lockFor( srcDir ) ) {
+            List<StoredMapping> mappings = new java.util.ArrayList<>() ;
+            load( srcDir ).path( questionId ).path( "topicMappings" ).forEach( m ->
+                    mappings.add( new StoredMapping( m.path( "topicId" ).asInt(),
+                                                     m.path( "confidenceLevel" ).asInt() ) ) ) ;
+            mappings.sort( ( a, b ) -> b.confidenceLevel - a.confidenceLevel ) ;
+            return mappings ;
+        }
+    }
+
     /**
      * Merge one question's matched topics into the source's map file.
      * Unknown topic ids are skipped; a topic-name mismatch is logged but the

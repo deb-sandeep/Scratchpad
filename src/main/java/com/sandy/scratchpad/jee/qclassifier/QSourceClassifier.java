@@ -138,7 +138,18 @@ public class QSourceClassifier {
                 GemmaInvoker.InvocationResult r = gemmaInvoker.invoke( task, keepGoing ) ;
                 if( r.topics != null ) {
                     WorkspaceTopicMap.write( task.getSrcDir(), task.getQuestionId(), r.topics ) ;
-                    listener.taskFinished( task, TaskStatus.DONE, r.attempts, summarise( r.topics ) ) ;
+                    String summary = summarise( r.topics ) ;
+                    try {
+                        if( QuestionTopicAssociator.associate( task.getSrcDir(), task.getQuestionId() )
+                                == QuestionTopicAssociator.Outcome.ASSOCIATED ) {
+                            summary += " ✓" ;
+                        }
+                    }
+                    catch( Exception e ) {
+                        // The classification itself is saved - don't fail the task over this.
+                        log.error( "[{}] Topic auto-association failed", task, e ) ;
+                    }
+                    listener.taskFinished( task, TaskStatus.DONE, r.attempts, summary ) ;
                     markProcessedIfComplete( task.getSrcDir(), qIdHint, processedListFile ) ;
                     return true ;
                 }
