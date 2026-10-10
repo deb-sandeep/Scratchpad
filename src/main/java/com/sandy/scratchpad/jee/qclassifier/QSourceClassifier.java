@@ -87,7 +87,7 @@ public class QSourceClassifier {
         int inFlight = 0 ;
 
         while( inFlight < maxInFlight && !queue.isEmpty() && keepGoing.getAsBoolean() ) {
-            completion.submit( classifyCallable( queue.poll(), gemmaInvoker, listener, keepGoing ) ) ;
+            completion.submit( classifyCallable( queue.poll(), gemmaInvoker, listener, keepGoing, processedListFile, qIdHint ) ) ;
             inFlight++ ;
         }
 
@@ -104,30 +104,34 @@ public class QSourceClassifier {
             }
             inFlight-- ;
             if( keepGoing.getAsBoolean() && !queue.isEmpty() ) {
-                completion.submit( classifyCallable( queue.poll(), gemmaInvoker, listener, keepGoing ) ) ;
+                completion.submit( classifyCallable( queue.poll(), gemmaInvoker, listener, keepGoing, processedListFile, qIdHint ) ) ;
                 inFlight++ ;
             }
         }
 
-        maybeMarkProcessed() ;
+        // Covers a source with nothing pending that was never listed.
+        markProcessedIfComplete( srcDir, qIdHint, processedListFile ) ;
     }
 
     /** Record the source as done only once every one of its images is classified. */
-    private void maybeMarkProcessed() {
+    static void markProcessedIfComplete( File srcDir, String qIdHint, File processedListFile ) {
         Map<String,List<File>> groups = getQuestionImgGroups( srcDir, qIdHint ) ;
         if( groups == null || groups.isEmpty() ) return ;
         Set<String> classified = WorkspaceTopicMap.classifiedQuestionIds( srcDir ) ;
         if( !classified.containsAll( groups.keySet() ) ) return ;
-        markProcessed( srcDir.getName() ) ;
+        ProcessedList.append( processedListFile, srcDir.getName() ) ;
     }
 
     /**
      * Callable that classifies one image, persists the result into the task's
-     * source workspace map, and fires listener events. Used by both the batch
-     * pass and the UI re-queue action.
+     * source workspace map, and fires listener events. After a successful
+     * classification the source is added to the processed list if that was its
+     * last unclassified question. Used by both the batch pass and the UI
+     * re-queue action.
      */
     static Callable<Boolean> classifyCallable( QTask task, GemmaInvoker gemmaInvoker,
-                                               ClassificationListener listener, BooleanSupplier keepGoing ) {
+                                               ClassificationListener listener, BooleanSupplier keepGoing,
+                                               File processedListFile, String qIdHint ) {
         return () -> {
             listener.taskStarted( task ) ;
             try {
@@ -135,6 +139,7 @@ public class QSourceClassifier {
                 if( r.topics != null ) {
                     WorkspaceTopicMap.write( task.getSrcDir(), task.getQuestionId(), r.topics ) ;
                     listener.taskFinished( task, TaskStatus.DONE, r.attempts, summarise( r.topics ) ) ;
+                    markProcessedIfComplete( task.getSrcDir(), qIdHint, processedListFile ) ;
                     return true ;
                 }
                 listener.taskFinished( task, TaskStatus.FAILED, r.attempts, r.failureReason ) ;
@@ -159,9 +164,5 @@ public class QSourceClassifier {
         Topic top = topics.get( 0 ) ;
         return String.format( "%s (%d%%)", top.getTopicName(),
                 Math.round( top.getMatchProbability() * 100 ) ) ;
-    }
-
-    private void markProcessed( String srcName ) {
-        ProcessedList.append( processedListFile, srcName ) ;
     }
 }

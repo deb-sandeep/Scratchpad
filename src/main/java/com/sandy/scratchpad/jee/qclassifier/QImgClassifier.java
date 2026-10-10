@@ -169,11 +169,11 @@ public class QImgClassifier implements QClassifierFrame.Controller {
      * up and are picked up by the next Start.
      */
     @Override
-    public synchronized ProcessedListRepair.Report repairProcessedList() {
+    public synchronized ProcessedListRepair.Report repairProcessedList( ProcessedListRepair.ProgressListener progress ) {
         if( processing.get() ) throw new IllegalStateException( "Stop processing before repairing the processed list" ) ;
         ensureDiscovered() ;
         ProcessedListRepair.Report report = ProcessedListRepair.run(
-                Q_BANK_DIR, loadSourceList(), PROCESSED_LIST_FILE, Q_ID ) ;
+                Q_BANK_DIR, loadSourceList(), PROCESSED_LIST_FILE, Q_ID, progress ) ;
 
         Set<String> planned = plan.stream().map( sw -> sw.sc.getSourceName() ).collect( Collectors.toSet() ) ;
         List<SourceWork> p = new ArrayList<>( plan ) ;
@@ -192,7 +192,8 @@ public class QImgClassifier implements QClassifierFrame.Controller {
     @Override
     public void reprocess( QTask task ) {
         log.debug( "Re-queueing {}", task ) ;
-        executor.submit( QSourceClassifier.classifyCallable( task, gemmaInvoker, listener, () -> true ) ) ;
+        executor.submit( QSourceClassifier.classifyCallable( task, gemmaInvoker, listener, () -> true,
+                PROCESSED_LIST_FILE, Q_ID ) ) ;
     }
 
     @Override

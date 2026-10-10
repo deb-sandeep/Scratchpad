@@ -43,8 +43,8 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         void startProcessing() ;
         void stopProcessing() ;
         void reprocess( QTask task ) ;
-        /** Blocking; call off the EDT. Throws if processing is running. */
-        ProcessedListRepair.Report repairProcessedList() ;
+        /** Blocking; call off the EDT. Throws if processing is running. Progress is reported on the calling thread. */
+        ProcessedListRepair.Report repairProcessedList( ProcessedListRepair.ProgressListener progress ) ;
         void shutdown() ;
     }
 
@@ -235,18 +235,26 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         return bar ;
     }
 
-    /** Run the repair off the EDT (it walks every source), then show its report. */
+    /**
+     * Run the repair off the EDT (it walks every source) behind a modal
+     * progress dialog, then show its report.
+     */
     private void repairProcessedList() {
         if( controller == null || repairRunning ) return ;
         repairRunning = true ;
         updateRepairEnablement() ;
-        new SwingWorker<ProcessedListRepair.Report,Void>() {
+        RepairProgressDialog dialog = new RepairProgressDialog( this ) ;
+        new SwingWorker<ProcessedListRepair.Report,ProcessedListRepair.Progress>() {
             @Override protected ProcessedListRepair.Report doInBackground() {
-                return controller.repairProcessedList() ;
+                return controller.repairProcessedList( this::publish ) ;
+            }
+            @Override protected void process( List<ProcessedListRepair.Progress> chunks ) {
+                dialog.update( chunks.get( chunks.size() - 1 ) ) ;
             }
             @Override protected void done() {
                 repairRunning = false ;
                 updateRepairEnablement() ;
+                dialog.dispose() ;
                 try {
                     showRepairReport( get() ) ;
                 }
@@ -259,6 +267,70 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
                 }
             }
         }.execute() ;
+        // Modal: blocks here (pumping events) until done() disposes it.
+        if( repairRunning ) dialog.setVisible( true ) ;
+    }
+
+    /** Modal, non-closable progress view for a repair run: sources done / remaining and running tallies. */
+    private static final class RepairProgressDialog extends JDialog {
+        private final JProgressBar bar       = new JProgressBar() ;
+        private final JLabel       current   = new JLabel( "Waiting for discovery to finish..." ) ;
+        private final JLabel       done      = new JLabel( "-" ) ;
+        private final JLabel       remaining = new JLabel( "-" ) ;
+        private final JLabel       questions = new JLabel( "-" ) ;
+        private final JLabel       added     = new JLabel( "-" ) ;
+        private final JLabel       removed   = new JLabel( "-" ) ;
+        private final JLabel       notFound  = new JLabel( "-" ) ;
+
+        RepairProgressDialog( Frame owner ) {
+            super( owner, "Repairing processed list", true ) ;
+            setDefaultCloseOperation( DO_NOTHING_ON_CLOSE ) ;
+            bar.setIndeterminate( true ) ;
+            bar.setStringPainted( true ) ;
+            bar.setString( "" ) ;
+
+            JPanel grid = new JPanel( new GridLayout( 0, 2, 12, 4 ) ) ;
+            addRow( grid, "Sources done",      done ) ;
+            addRow( grid, "Sources remaining", remaining ) ;
+            addRow( grid, "Questions checked", questions ) ;
+            addRow( grid, "Added to list",     added ) ;
+            addRow( grid, "Removed from list", removed ) ;
+            addRow( grid, "Folder not found",  notFound ) ;
+
+            JPanel content = new JPanel( new BorderLayout( 0, 10 ) ) ;
+            content.setBorder( BorderFactory.createEmptyBorder( 14, 16, 14, 16 ) ) ;
+            JPanel top = new JPanel( new BorderLayout( 0, 6 ) ) ;
+            top.add( current, BorderLayout.NORTH ) ;
+            top.add( bar, BorderLayout.CENTER ) ;
+            content.add( top, BorderLayout.NORTH ) ;
+            content.add( grid, BorderLayout.CENTER ) ;
+            setContentPane( content ) ;
+
+            pack() ;
+            setSize( Math.max( getWidth(), 460 ), getHeight() ) ;
+            setLocationRelativeTo( owner ) ;
+        }
+
+        private static void addRow( JPanel grid, String label, JLabel value ) {
+            grid.add( new JLabel( label + ":" ) ) ;
+            grid.add( value ) ;
+        }
+
+        void update( ProcessedListRepair.Progress p ) {
+            bar.setIndeterminate( false ) ;
+            bar.setMaximum( Math.max( p.total, 1 ) ) ;
+            bar.setValue( p.done ) ;
+            bar.setString( p.done + " / " + p.total ) ;
+            current.setText( p.current == null ? "Starting..."
+                           : p.remaining() == 0 ? "Writing processed list..."
+                           : "Checked: " + p.current ) ;
+            done.setText( String.valueOf( p.done ) ) ;
+            remaining.setText( String.valueOf( p.remaining() ) ) ;
+            questions.setText( p.questionsChecked + "  (" + p.questionsUnassociated + " not associated)" ) ;
+            added.setText( String.valueOf( p.added ) ) ;
+            removed.setText( String.valueOf( p.removed ) ) ;
+            notFound.setText( String.valueOf( p.notFound ) ) ;
+        }
     }
 
     private void updateRepairEnablement() {

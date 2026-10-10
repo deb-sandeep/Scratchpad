@@ -62,9 +62,44 @@ public final class ProcessedListRepair {
         }
     }
 
+    /** Immutable snapshot of a run in flight, safe to hand to another thread. */
+    public static final class Progress {
+        public final int    done ;
+        public final int    total ;
+        public final String current ;     // source just checked, null before the first
+        public final int    added ;
+        public final int    removed ;
+        public final int    notFound ;
+        public final int    questionsChecked ;
+        public final int    questionsUnassociated ;
+
+        Progress( int done, int total, String current, Report r ) {
+            this.done                  = done ;
+            this.total                 = total ;
+            this.current               = current ;
+            this.added                 = r.added.size() ;
+            this.removed               = r.removed.size() ;
+            this.notFound              = r.notFound.size() ;
+            this.questionsChecked      = r.questionsChecked ;
+            this.questionsUnassociated = r.questionsUnassociated ;
+        }
+
+        public int remaining() { return total - done ; }
+    }
+
+    /** Called on the repair thread after each source is checked. */
+    public interface ProgressListener {
+        void progress( Progress p ) ;
+    }
+
     private ProcessedListRepair() {}
 
     public static Report run( File qBankDir, List<String> sources, File processedListFile, String qIdHint ) {
+        return run( qBankDir, sources, processedListFile, qIdHint, p -> {} ) ;
+    }
+
+    public static Report run( File qBankDir, List<String> sources, File processedListFile, String qIdHint,
+                              ProgressListener progress ) {
         Report r = new Report() ;
         Set<String> processed = ProcessedList.load( processedListFile ) ;
 
@@ -72,37 +107,12 @@ public final class ProcessedListRepair {
         toCheck.addAll( processed ) ;
 
         Set<String> updated = new LinkedHashSet<>( processed ) ;
+        int total = toCheck.size() ;
+        int done  = 0 ;
+        progress.progress( new Progress( 0, total, null, r ) ) ;
         for( String srcName : toCheck ) {
-            boolean listed = processed.contains( srcName ) ;
-            File srcDir = FileHelper.findDir( qBankDir, srcName ) ;
-            if( srcDir == null ) {
-                r.notFound.add( srcName ) ;
-                continue ;
-            }
-            r.sourcesChecked++ ;
-
-            Map<String,List<File>> groups = FileHelper.getQuestionImgGroups( srcDir, qIdHint ) ;
-            boolean complete ;
-            if( groups == null || groups.isEmpty() ) {
-                r.noImages.add( srcName ) ;
-                complete = false ;
-            }
-            else {
-                Set<String> classified = WorkspaceTopicMap.classifiedQuestionIds( srcDir ) ;
-                int unassociated = 0 ;
-                for( Map.Entry<String,List<File>> e : groups.entrySet() ) {
-                    r.questionsChecked++ ;
-                    r.imagesChecked += e.getValue().size() ;
-                    if( !classified.contains( e.getKey() ) ) unassociated++ ;
-                }
-                r.questionsUnassociated += unassociated ;
-                complete = unassociated == 0 ;
-            }
-
-            if( complete && !listed )      { updated.add( srcName ) ;    r.added.add( srcName ) ; }
-            else if( !complete && listed ) { updated.remove( srcName ) ; r.removed.add( srcName ) ; }
-            else if( complete )            r.keptListed.add( srcName ) ;
-            else                           r.keptUnlisted.add( srcName ) ;
+            checkSource( qBankDir, qIdHint, srcName, processed, updated, r ) ;
+            progress.progress( new Progress( ++done, total, srcName, r ) ) ;
         }
 
         if( r.hasChanges() ) {
@@ -116,5 +126,40 @@ public final class ProcessedListRepair {
         }
         log.info( "Processed list repair:\n{}", r.toText() ) ;
         return r ;
+    }
+
+    /** Classify one source and record the outcome in {@code r} / {@code updated}. */
+    private static void checkSource( File qBankDir, String qIdHint, String srcName,
+                                     Set<String> processed, Set<String> updated, Report r ) {
+        boolean listed = processed.contains( srcName ) ;
+        File srcDir = FileHelper.findDir( qBankDir, srcName ) ;
+        if( srcDir == null ) {
+            r.notFound.add( srcName ) ;
+            return ;
+        }
+        r.sourcesChecked++ ;
+
+        Map<String,List<File>> groups = FileHelper.getQuestionImgGroups( srcDir, qIdHint ) ;
+        boolean complete ;
+        if( groups == null || groups.isEmpty() ) {
+            r.noImages.add( srcName ) ;
+            complete = false ;
+        }
+        else {
+            Set<String> classified = WorkspaceTopicMap.classifiedQuestionIds( srcDir ) ;
+            int unassociated = 0 ;
+            for( Map.Entry<String,List<File>> e : groups.entrySet() ) {
+                r.questionsChecked++ ;
+                r.imagesChecked += e.getValue().size() ;
+                if( !classified.contains( e.getKey() ) ) unassociated++ ;
+            }
+            r.questionsUnassociated += unassociated ;
+            complete = unassociated == 0 ;
+        }
+
+        if( complete && !listed )      { updated.add( srcName ) ;    r.added.add( srcName ) ; }
+        else if( !complete && listed ) { updated.remove( srcName ) ; r.removed.add( srcName ) ; }
+        else if( complete )            r.keptListed.add( srcName ) ;
+        else                           r.keptUnlisted.add( srcName ) ;
     }
 }
