@@ -6,10 +6,8 @@ import javax.swing.SwingUtilities;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -164,6 +162,33 @@ public class QImgClassifier implements QClassifierFrame.Controller {
         }
     }
 
+    /**
+     * Re-sync the processed list with the topic maps (see {@link ProcessedListRepair}).
+     * Refused while a batch is running. Sources dropped from the list are
+     * discovered and appended to the plan so their unassociated questions show
+     * up and are picked up by the next Start.
+     */
+    @Override
+    public synchronized ProcessedListRepair.Report repairProcessedList() {
+        if( processing.get() ) throw new IllegalStateException( "Stop processing before repairing the processed list" ) ;
+        ensureDiscovered() ;
+        ProcessedListRepair.Report report = ProcessedListRepair.run(
+                Q_BANK_DIR, loadSourceList(), PROCESSED_LIST_FILE, Q_ID ) ;
+
+        Set<String> planned = plan.stream().map( sw -> sw.sc.getSourceName() ).collect( Collectors.toSet() ) ;
+        List<SourceWork> p = new ArrayList<>( plan ) ;
+        for( String srcName : report.getRemoved() ) {
+            if( planned.contains( srcName ) ) continue ;
+            File srcDir = FileHelper.findDir( Q_BANK_DIR, srcName ) ;
+            if( srcDir == null ) continue ;
+            QSourceClassifier sc = new QSourceClassifier( srcDir, Q_ID, gemmaInvoker, executor,
+                    PROCESSED_LIST_FILE, listener, this::isProcessing, MAX_PARALLEL_THREADS ) ;
+            p.add( new SourceWork( sc, sc.discover() ) ) ;
+        }
+        plan = p ;
+        return report ;
+    }
+
     @Override
     public void reprocess( QTask task ) {
         log.debug( "Re-queueing {}", task ) ;
@@ -186,18 +211,7 @@ public class QImgClassifier implements QClassifierFrame.Controller {
     // ---- config loading --------------------------------------------
 
     private Set<String> loadProcessedList() {
-        Set<String> processed = new HashSet<>() ;
-        if( !PROCESSED_LIST_FILE.exists() ) return processed ;
-        try {
-            for( String line : Files.readAllLines( PROCESSED_LIST_FILE.toPath(), StandardCharsets.UTF_8 ) ) {
-                String trimmed = line.trim() ;
-                if( !trimmed.isEmpty() ) processed.add( trimmed ) ;
-            }
-        }
-        catch( Exception e ) {
-            log.error( "Error reading processed list file {}", PROCESSED_LIST_FILE, e ) ;
-        }
-        return processed ;
+        return ProcessedList.load( PROCESSED_LIST_FILE ) ;
     }
 
     private List<String> loadSourceList() {

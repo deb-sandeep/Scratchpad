@@ -29,7 +29,7 @@ import static com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.*;
  * Live monitor for {@link QImgClassifier}, shown as a tree table: one node per
  * source, one row per question beneath it, and the part images beneath a
  * multi-part question (collapsed by default). Question rows move
- * QUEUED -> RUNNING -> DONE/FAILED (or start SKIPPED if already classified).
+ * QUEUED -> RUNNING -> DONE/FAILED (or start ASSOCIATED if already in the topic map).
  * Click the triangle (or use Left / Right) to collapse / expand; double-click a
  * question or part to open its image; right-click offers open / show in
  * QImgExtractor (⌘E) / re-queue.
@@ -43,10 +43,15 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         void startProcessing() ;
         void stopProcessing() ;
         void reprocess( QTask task ) ;
+        /** Blocking; call off the EDT. Throws if processing is running. */
+        ProcessedListRepair.Report repairProcessedList() ;
         void shutdown() ;
     }
 
     private static final int   PREVIEW_PANEL_HEIGHT = 300 ;
+    private static final int   INITIAL_WIDTH = 1000 ;
+    /** Horizontal padding added to a fixed column's widest text. */
+    private static final int   COL_PAD     = 16 ;
     private static final int   INDENT      = 18 ;
     private static final int   LEFT_PAD    = 4 ;
     private static final int   EXPANDER_W  = 12 ;
@@ -66,6 +71,8 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
 
     private final JMenuItem startItem = new JMenuItem( "Start processing" ) ;
     private final JMenuItem stopItem  = new JMenuItem( "Stop processing" ) ;
+    private final JMenuItem repairItem = new JMenuItem( "Repair processed list" ) ;
+    private boolean repairRunning ;
 
     /** Coalesces bursts of structural changes (discovery, status moves under a filter) into one rebuild. */
     private final Timer rebuildTimer = new Timer( 150, e -> rebuildTree() ) ;
@@ -111,10 +118,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             table.getColumnModel().getColumn( c ).setCellRenderer( center ) ;
         }
         table.getColumnModel().getColumn( COL_NAME ).setCellRenderer( new TreeCellRenderer() ) ;
-        int[] widths = { 300, 45, 80, 70, 70, 430 } ;
-        for( int i = 0 ; i < widths.length ; i++ ) {
-            table.getColumnModel().getColumn( i ).setPreferredWidth( widths[i] ) ;
-        }
+        sizeColumns() ;
 
         installMouseHandlers() ;
         installKeyBindings() ;
@@ -142,7 +146,9 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         south.add( statusBar, BorderLayout.SOUTH ) ;
         add( south, BorderLayout.SOUTH ) ;
 
-        setBounds( 100, 100, 1100, 700 ) ;
+        // Full usable screen height (excluding menu bar / dock), fixed width.
+        Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds() ;
+        setBounds( screen.x, screen.y, Math.min( INITIAL_WIDTH, screen.width ), screen.height ) ;
         setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE ) ;
         addWindowListener( new WindowAdapter() {
             @Override public void windowClosing( WindowEvent e ) {
@@ -158,6 +164,36 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
 
     public void setController( Controller controller ) {
         this.controller = controller ;
+    }
+
+    /**
+     * Pin the short columns to the width of their widest possible value (or
+     * header, incl. sort / filter markers) and let the name and result columns
+     * share whatever width is left.
+     */
+    private void sizeColumns() {
+        FontMetrics cell = table.getFontMetrics( table.getFont() ) ;
+        FontMetrics head = table.getFontMetrics( table.getTableHeader().getFont().deriveFont( Font.BOLD ) ) ;
+        String statusWidest = "" ;
+        for( TaskStatus st : TaskStatus.values() ) {
+            if( st.name().length() > statusWidest.length() ) statusWidest = st.name() ;
+        }
+        String[][] samples = {
+                { "Subj",     "M" },
+                { "Status",   statusWidest },
+                { "Attempts", "10" },
+                { "Time (s)", "999.9" } } ;
+        int[] fixedCols = { COL_SUBJ, COL_STATUS, COL_ATTEMPTS, COL_TIME } ;
+        for( int i = 0 ; i < fixedCols.length ; i++ ) {
+            int w = Math.max( head.stringWidth( samples[i][0] + "  ▲  *" ),
+                              cell.stringWidth( samples[i][1] ) ) + COL_PAD ;
+            javax.swing.table.TableColumn col = table.getColumnModel().getColumn( fixedCols[i] ) ;
+            col.setMinWidth( w ) ;
+            col.setMaxWidth( w ) ;
+            col.setPreferredWidth( w ) ;
+        }
+        table.getColumnModel().getColumn( COL_NAME ).setPreferredWidth( 170 ) ;
+        table.getColumnModel().getColumn( COL_RESULT ).setPreferredWidth( 300 ) ;
     }
 
     private JMenuBar buildMenuBar() {
@@ -188,17 +224,63 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         clearFilters.addActionListener( a -> { if( headerFilters != null ) headerFilters.clearAll() ; } ) ;
         view.add( clearFilters ) ;
 
+        JMenu maintenance = new JMenu( "Maintenance" ) ;
+        repairItem.addActionListener( a -> repairProcessedList() ) ;
+        maintenance.add( repairItem ) ;
+
         JMenuBar bar = new JMenuBar() ;
         bar.add( file ) ;
         bar.add( view ) ;
+        bar.add( maintenance ) ;
         return bar ;
+    }
+
+    /** Run the repair off the EDT (it walks every source), then show its report. */
+    private void repairProcessedList() {
+        if( controller == null || repairRunning ) return ;
+        repairRunning = true ;
+        updateRepairEnablement() ;
+        new SwingWorker<ProcessedListRepair.Report,Void>() {
+            @Override protected ProcessedListRepair.Report doInBackground() {
+                return controller.repairProcessedList() ;
+            }
+            @Override protected void done() {
+                repairRunning = false ;
+                updateRepairEnablement() ;
+                try {
+                    showRepairReport( get() ) ;
+                }
+                catch( Exception e ) {
+                    Throwable cause = e.getCause() != null ? e.getCause() : e ;
+                    log.error( "Processed list repair failed", cause ) ;
+                    JOptionPane.showMessageDialog( QClassifierFrame.this,
+                            "Repair failed:\n" + cause.getMessage(),
+                            "Repair processed list", JOptionPane.ERROR_MESSAGE ) ;
+                }
+            }
+        }.execute() ;
+    }
+
+    private void updateRepairEnablement() {
+        repairItem.setEnabled( !repairRunning && procState == ProcessingState.STOPPED ) ;
+    }
+
+    private void showRepairReport( ProcessedListRepair.Report report ) {
+        JTextArea text = new JTextArea( report.toText() ) ;
+        text.setEditable( false ) ;
+        text.setFont( new Font( Font.MONOSPACED, Font.PLAIN, 12 ) ) ;
+        text.setCaretPosition( 0 ) ;
+        JScrollPane scroll = new JScrollPane( text ) ;
+        scroll.setPreferredSize( new Dimension( 560, 360 ) ) ;
+        JOptionPane.showMessageDialog( this, scroll, "Repair processed list",
+                JOptionPane.INFORMATION_MESSAGE ) ;
     }
 
     // ---- ClassificationListener (marshalled onto the EDT) ---------------
 
     @Override
-    public void taskDiscovered( QTask task, boolean alreadyClassified ) {
-        SwingUtilities.invokeLater( () -> { model.discovered( task, alreadyClassified ) ; scheduleRebuild() ; } ) ;
+    public void taskDiscovered( QTask task, String associatedResult ) {
+        SwingUtilities.invokeLater( () -> { model.discovered( task, associatedResult ) ; scheduleRebuild() ; } ) ;
     }
 
     @Override
@@ -232,6 +314,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             procState = state ;
             startItem.setEnabled( state == ProcessingState.STOPPED ) ;
             stopItem.setEnabled( state == ProcessingState.RUNNING ) ;
+            updateRepairEnablement() ;
             refreshStatusBar() ;
         } ) ;
     }
@@ -368,7 +451,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             JMenuItem requeue = new JMenuItem( "Re-queue" ) ;
             boolean canRequeue = controller != null &&
                     ( q.status == TaskStatus.DONE || q.status == TaskStatus.FAILED
-                            || q.status == TaskStatus.SKIPPED ) ;
+                            || q.status == TaskStatus.ASSOCIATED ) ;
             requeue.setEnabled( canRequeue ) ;
             requeue.addActionListener( a -> controller.reprocess( q.task ) ) ;
             menu.add( requeue ) ;
@@ -499,12 +582,12 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
                 ( processingStartedMs > 0 ? System.currentTimeMillis() - processingStartedMs : 0 ) ;
         long elapsed = procMs / 1000 ;
         String text = String.format(
-                "%s   |   %d sources   |   Showing %d/%d questions   |   Queued %d  Running %d  Done %d  Failed %d  Skipped %d   |   Processing time %d:%02d",
+                "%s   |   %d sources   |   Showing %d/%d questions   |   Queued %d  Running %d  Done %d  Failed %d  Associated %d   |   Processing time %d:%02d",
                 stateLabel(),
                 model.getSourceCount(),
                 model.getMatchingQuestionCount(), model.getQuestionCount(),
                 c.get( TaskStatus.QUEUED ), c.get( TaskStatus.RUNNING ), c.get( TaskStatus.DONE ),
-                c.get( TaskStatus.FAILED ), c.get( TaskStatus.SKIPPED ),
+                c.get( TaskStatus.FAILED ), c.get( TaskStatus.ASSOCIATED ),
                 elapsed / 60, elapsed % 60 ) ;
         if( !batchProgress.isEmpty() ) text += "   |   " + batchProgress ;
         statusBar.setText( text ) ;
@@ -529,7 +612,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             case RUNNING: return new Color( 0xE3F2FD ) ;
             case DONE:    return new Color( 0xE8F5E9 ) ;
             case FAILED:  return new Color( 0xFFEBEE ) ;
-            case SKIPPED: return new Color( 0xF0F0F0 ) ;
+            case ASSOCIATED: return new Color( 0xF0F0F0 ) ;
             default:      return Color.WHITE ;
         }
     }

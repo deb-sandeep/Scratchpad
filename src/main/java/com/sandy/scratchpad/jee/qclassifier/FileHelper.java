@@ -17,13 +17,24 @@ public class FileHelper {
     /** Trailing question sequence number of a base id, e.g. {@code M_IVT_21} -> 21. */
     private static final Pattern SEQ_NO = Pattern.compile( "(\\d+)$" ) ;
 
+    /** Order of the subject (first) segment of a question id. */
+    private static final List<String> SUBJECT_ORDER = List.of( "P", "C", "M" ) ;
+
+    /** Order of the question-type (second) segment of a question id. */
+    private static final List<String> QTYPE_ORDER = List.of( "SCA", "MCA", "NVT", "IVT", "LCT", "ART" ) ;
+
     /**
-     * Orders base question ids by their trailing sequence number, numerically
-     * ({@code M_SCA_2 < M_IVT_21 < P_SCA_31 < C_SCA_74}). Ids without one sort
-     * last; ties fall back to natural, then lexical, order.
+     * Orders base question ids by subject (P, C, M), then question type (SCA,
+     * MCA, NVT, IVT, LCT, ART), then trailing sequence number, numerically
+     * ({@code P_SCA_31 < C_SCA_2 < C_SCA_74 < C_MCA_1 < M_IVT_21}). Unknown
+     * subjects / types sort after the known ones, and ids without a sequence
+     * number sort last within their group; ties fall back to natural, then
+     * lexical, order.
      */
     public static final Comparator<String> QUESTION_ORDER =
-            Comparator.comparingLong( FileHelper::sequenceNumber )
+            Comparator.comparingInt( ( String id ) -> segmentRank( id, 0, SUBJECT_ORDER ) )
+                      .thenComparingInt( id -> segmentRank( id, 1, QTYPE_ORDER ) )
+                      .thenComparingLong( FileHelper::sequenceNumber )
                       .thenComparing( FileHelper::naturalCompare )
                       .thenComparing( Comparator.naturalOrder() ) ;
 
@@ -92,6 +103,14 @@ public class FileHelper {
     public static int partNumber( String questionId ) {
         Matcher m = PART_ID.matcher( questionId ) ;
         return m.matches() ? Integer.parseInt( m.group( 2 ) ) : 0 ;
+    }
+
+    /** Position of the id's {@code index}-th {@code _}-separated segment in {@code order}; unknown -> after all. */
+    private static int segmentRank( String questionId, int index, List<String> order ) {
+        String[] segments = questionId.split( "_" ) ;
+        if( index >= segments.length - 1 ) return order.size() ;   // last segment is the sequence number
+        int rank = order.indexOf( segments[ index ] ) ;
+        return rank < 0 ? order.size() : rank ;
     }
 
     /** Trailing sequence number of a base question id; {@code Long.MAX_VALUE} if it has none. */

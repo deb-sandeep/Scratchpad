@@ -1,5 +1,6 @@
 package com.sandy.scratchpad.jee.qclassifier;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -50,6 +51,24 @@ public final class WorkspaceTopicMap {
             java.util.Set<String> ids = new java.util.HashSet<>() ;
             load( srcDir ).fieldNames().forEachRemaining( ids::add ) ;
             return ids ;
+        }
+    }
+
+    /**
+     * Question id -> summary of its stored top topic ({@code "Topic (NN%)"}, the
+     * same form a fresh classification shows) for every question already in the
+     * source's map file. A question stored with no topics maps to "".
+     */
+    public static Map<String,String> associatedSummaries( File srcDir ) {
+        synchronized( lockFor( srcDir ) ) {
+            Map<String,String> summaries = new java.util.HashMap<>() ;
+            load( srcDir ).fields().forEachRemaining( e -> {
+                JsonNode top = e.getValue().path( "topicMappings" ).path( 0 ) ;
+                summaries.put( e.getKey(), top.isMissingNode() ? "" :
+                        String.format( "%s (%d%%)", top.path( "topicName" ).asText(),
+                                                    top.path( "confidenceLevel" ).asInt() ) ) ;
+            } ) ;
+            return summaries ;
         }
     }
 

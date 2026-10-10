@@ -7,8 +7,12 @@ package com.sandy.scratchpad.jee.qclassifier;
  */
 public interface ClassificationListener {
 
-    /** A question image was found. {@code alreadyClassified} rows start as SKIPPED. */
-    void taskDiscovered( QTask task, boolean alreadyClassified ) ;
+    /**
+     * A question image was found. If it already has an entry in the source's
+     * topic map, {@code associatedResult} is that entry's summary and the row
+     * starts as ASSOCIATED; otherwise it is null and the row starts as QUEUED.
+     */
+    void taskDiscovered( QTask task, String associatedResult ) ;
 
     /** A worker picked the task up. */
     void taskStarted( QTask task ) ;
@@ -23,7 +27,7 @@ public interface ClassificationListener {
     default void processingStateChanged( ProcessingState state ) {}
 
     ClassificationListener NOOP = new ClassificationListener() {
-        public void taskDiscovered( QTask task, boolean alreadyClassified ) {}
+        public void taskDiscovered( QTask task, String associatedResult ) {}
         public void taskStarted( QTask task ) {}
         public void taskFinished( QTask task, TaskStatus status, int attempts, String result ) {}
     } ;

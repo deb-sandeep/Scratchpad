@@ -61,7 +61,7 @@ public class QTaskTreeTableModel extends AbstractTableModel {
         @Override String  label()        { return name ; }
         @Override boolean isExpandable() { return true ; }
 
-        /** True once no question is waiting or running (DONE / FAILED / SKIPPED only). */
+        /** True once no question is waiting or running (DONE / FAILED / ASSOCIATED only). */
         boolean isFullyProcessed() {
             for( QuestionNode q : children ) {
                 if( q.status == TaskStatus.QUEUED || q.status == TaskStatus.RUNNING ) return false ;
@@ -76,14 +76,14 @@ public class QTaskTreeTableModel extends AbstractTableModel {
             return counts ;
         }
 
-        /** Most "active" status among the children: RUNNING > QUEUED > FAILED > DONE > SKIPPED. */
+        /** Most "active" status among the children: RUNNING > QUEUED > FAILED > DONE > ASSOCIATED. */
         TaskStatus aggregateStatus() {
             Map<TaskStatus,Integer> c = counts() ;
             for( TaskStatus s : new TaskStatus[]{ TaskStatus.RUNNING, TaskStatus.QUEUED,
                                                   TaskStatus.FAILED, TaskStatus.DONE } ) {
                 if( c.get( s ) > 0 ) return s ;
             }
-            return TaskStatus.SKIPPED ;
+            return TaskStatus.ASSOCIATED ;
         }
 
         String summary() {
@@ -154,7 +154,8 @@ public class QTaskTreeTableModel extends AbstractTableModel {
 
     // ---- task lifecycle --------------------------------------------
 
-    public void discovered( QTask task, boolean alreadyClassified ) {
+    /** {@code associatedResult} is null for a question not yet in the topic map. */
+    public void discovered( QTask task, String associatedResult ) {
         if( byTask.containsKey( task ) ) return ;
         SourceNode src = sourceByDir.computeIfAbsent( task.getSrcDir().getAbsolutePath(), k -> {
             SourceNode s = new SourceNode( task.getSourceName() ) ;
@@ -162,7 +163,8 @@ public class QTaskTreeTableModel extends AbstractTableModel {
             return s ;
         } ) ;
         QuestionNode q = new QuestionNode( src, task,
-                alreadyClassified ? TaskStatus.SKIPPED : TaskStatus.QUEUED ) ;
+                associatedResult != null ? TaskStatus.ASSOCIATED : TaskStatus.QUEUED ) ;
+        if( associatedResult != null ) q.result = associatedResult ;
         src.children.add( q ) ;
         byTask.put( task, q ) ;
     }

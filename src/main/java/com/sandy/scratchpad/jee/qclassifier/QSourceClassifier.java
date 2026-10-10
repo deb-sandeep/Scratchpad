@@ -3,10 +3,6 @@ package com.sandy.scratchpad.jee.qclassifier;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -22,8 +18,6 @@ import static com.sandy.scratchpad.jee.qclassifier.FileHelper.*;
 
 @Slf4j
 public class QSourceClassifier {
-
-    private static final Object PROCESSED_LIST_LOCK = new Object() ;
 
     private final File srcDir ;
     private final String qIdHint ;
@@ -62,13 +56,13 @@ public class QSourceClassifier {
             return List.of() ;
         }
 
-        Set<String> classified = WorkspaceTopicMap.classifiedQuestionIds( srcDir ) ;
+        Map<String,String> associated = WorkspaceTopicMap.associatedSummaries( srcDir ) ;
         List<QTask> pending = new ArrayList<>() ;
         for( Map.Entry<String,List<File>> e : groups.entrySet() ) {
             QTask task = newTask( e.getKey(), e.getValue() ) ;
-            boolean done = classified.contains( task.getQuestionId() ) ;
-            listener.taskDiscovered( task, done ) ;
-            if( !done ) pending.add( task ) ;
+            String associatedResult = associated.get( task.getQuestionId() ) ;
+            listener.taskDiscovered( task, associatedResult ) ;
+            if( associatedResult == null ) pending.add( task ) ;
         }
         log.debug( "Source {} - {} of {} questions pending", srcDir.getName(), pending.size(), groups.size() ) ;
         return pending ;
@@ -168,20 +162,6 @@ public class QSourceClassifier {
     }
 
     private void markProcessed( String srcName ) {
-        synchronized( PROCESSED_LIST_LOCK ) {
-            try {
-                Path p = processedListFile.toPath() ;
-                if( Files.exists( p ) ) {
-                    boolean already = Files.readAllLines( p, StandardCharsets.UTF_8 ).stream()
-                            .map( String::trim ).anyMatch( srcName::equals ) ;
-                    if( already ) return ;
-                }
-                Files.writeString( p, srcName + System.lineSeparator(), StandardCharsets.UTF_8,
-                        StandardOpenOption.CREATE, StandardOpenOption.APPEND ) ;
-            }
-            catch( Exception e ) {
-                log.error( "Error appending to processed list file {}", processedListFile, e ) ;
-            }
-        }
+        ProcessedList.append( processedListFile, srcName ) ;
     }
 }
