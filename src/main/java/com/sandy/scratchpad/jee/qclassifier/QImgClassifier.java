@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -41,6 +42,8 @@ public class QImgClassifier implements QClassifierFrame.Controller {
     private volatile boolean stopRequested = false ;
     private volatile Thread batchThread ;
     private volatile List<SourceWork> plan ;
+    /** Sources whose {@code process} has already finished in the current run. */
+    private final Set<QSourceClassifier> finishedThisRun = ConcurrentHashMap.newKeySet() ;
 
     private static final class SourceWork {
         final QSourceClassifier sc ;
@@ -138,12 +141,14 @@ public class QImgClassifier implements QClassifierFrame.Controller {
     private void runPlan() {
         try {
             ensureDiscovered() ;
+            finishedThisRun.clear() ;
             List<SourceWork> p = plan ;
             for( int i = 0 ; i < p.size() ; i++ ) {
                 if( !isProcessing() ) break ;
                 SourceWork sw = p.get( i ) ;
                 listener.batchProgress( i + 1, p.size(), sw.sc.getSourceName() ) ;
                 sw.sc.process( sw.pending ) ;
+                finishedThisRun.add( sw.sc ) ;
             }
         }
         finally {
@@ -194,6 +199,33 @@ public class QImgClassifier implements QClassifierFrame.Controller {
         log.debug( "Re-queueing {}", task ) ;
         executor.submit( QSourceClassifier.classifyCallable( task, gemmaInvoker, listener, () -> true,
                 PROCESSED_LIST_FILE, Q_ID ) ) ;
+    }
+
+    @Override
+    public boolean holdForManualAssociation( QTask task ) {
+        QSourceClassifier sc = sourceOf( task ) ;
+        return sc == null || sc.hold( task ) ;
+    }
+
+    @Override
+    public void releaseFromManualAssociation( QTask task, boolean associated ) {
+        QSourceClassifier sc = sourceOf( task ) ;
+        if( sc == null || sc.release( task, associated ) || associated ) return ;
+        // Its source already ran in this batch, so nothing would pick it up until the next Start.
+        if( isProcessing() && finishedThisRun.contains( sc ) ) {
+            log.debug( "Scheduling {} after cancelled manual association", task ) ;
+            executor.submit( QSourceClassifier.classifyCallable( task, gemmaInvoker, listener, this::isProcessing,
+                    PROCESSED_LIST_FILE, Q_ID ) ) ;
+        }
+    }
+
+    private QSourceClassifier sourceOf( QTask task ) {
+        List<SourceWork> p = plan ;
+        if( p == null ) return null ;
+        for( SourceWork sw : p ) {
+            if( sw.sc.getSrcDir().equals( task.getSrcDir() ) ) return sw.sc ;
+        }
+        return null ;
     }
 
     @Override

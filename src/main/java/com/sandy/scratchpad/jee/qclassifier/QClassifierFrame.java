@@ -30,9 +30,10 @@ import static com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.*;
  * source, one row per question beneath it, and the part images beneath a
  * multi-part question (collapsed by default). Question rows move
  * QUEUED -> RUNNING -> DONE/FAILED (or start ASSOCIATED if already in the topic map).
- * Click the triangle (or use Left / Right) to collapse / expand; double-click a
- * question or part to open its image; right-click offers open / show in
- * QImgExtractor (⌘E) / re-queue / manual topic association.
+ * Click the triangle (or use Left / Right) to collapse / expand; double-click
+ * (or Enter on) a question for manual topic association, or a part to open its image; right-click offers open / show in
+ * QImgExtractor (⌘E) / re-queue / manual topic association. The Topic column's
+ * button opens manual topic association directly.
  */
 @Slf4j
 @SuppressWarnings( "serial" )
@@ -48,6 +49,13 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
          * Blocking; call off the EDT.
          */
         QuestionTopicAssociator.Outcome manualAssociate( QTask task, Topic topic ) ;
+        /**
+         * Take a QUEUED task out of the scheduler queue while it is being
+         * manually associated. Returns false if it has already been dispatched.
+         */
+        boolean holdForManualAssociation( QTask task ) ;
+        /** End a hold; an unassociated task goes back into the queue. */
+        void releaseFromManualAssociation( QTask task, boolean associated ) ;
         /** Blocking; call off the EDT. Throws if processing is running. Progress is reported on the calling thread. */
         ProcessedListRepair.Report repairProcessedList( ProcessedListRepair.ProgressListener progress ) ;
         void shutdown() ;
@@ -66,6 +74,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
     private static final Color RUNNING_BG  = new Color( 0xFFE0B2 ) ;
     private static final Color DONE_BG     = new Color( 0xC8E6C9 ) ;
     private static final Color FAILED_BG   = new Color( 0xEF9A9A ) ;
+    private static final int   ASSOC_ICON  = 11 ;
     /** ⌘E on macOS, Ctrl+E elsewhere. */
     private static final KeyStroke SHOW_IN_EXTRACTOR_KEY = KeyStroke.getKeyStroke(
             java.awt.event.KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() ) ;
@@ -82,6 +91,8 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
     private final JMenuItem stopItem  = new JMenuItem( "Stop processing" ) ;
     private final JMenuItem repairItem = new JMenuItem( "Repair processed list" ) ;
     private boolean repairRunning ;
+    /** QUEUED tasks currently held out of the scheduler for manual association. */
+    private final java.util.Set<QTask> heldTasks = new java.util.HashSet<>() ;
 
     /** Coalesces bursts of structural changes (discovery, status moves under a filter) into one rebuild. */
     private final Timer rebuildTimer = new Timer( 150, e -> rebuildTree() ) ;
@@ -127,6 +138,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             table.getColumnModel().getColumn( c ).setCellRenderer( center ) ;
         }
         table.getColumnModel().getColumn( COL_NAME ).setCellRenderer( new TreeCellRenderer() ) ;
+        table.getColumnModel().getColumn( COL_ASSOC ).setCellRenderer( new AssocButtonRenderer() ) ;
         sizeColumns() ;
 
         installMouseHandlers() ;
@@ -201,6 +213,11 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             col.setMaxWidth( w ) ;
             col.setPreferredWidth( w ) ;
         }
+        int assocW = ASSOC_ICON + 10 ;
+        javax.swing.table.TableColumn assoc = table.getColumnModel().getColumn( COL_ASSOC ) ;
+        assoc.setMinWidth( assocW ) ;
+        assoc.setMaxWidth( assocW ) ;
+        assoc.setPreferredWidth( assocW ) ;
         table.getColumnModel().getColumn( COL_NAME ).setPreferredWidth( 170 ) ;
         table.getColumnModel().getColumn( COL_RESULT ).setPreferredWidth( 300 ) ;
     }
@@ -452,11 +469,18 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             }
             @Override public void mouseReleased( MouseEvent e ) { maybePopup( e ) ; }
             @Override public void mouseClicked( MouseEvent e ) {
-                if( e.getClickCount() != 2 || !SwingUtilities.isLeftMouseButton( e ) ) return ;
+                if( !SwingUtilities.isLeftMouseButton( e ) ) return ;
                 Node n = nodeUnder( e ) ;
+                if( onAssocButton( e ) ) {
+                    if( e.getClickCount() == 1 && n instanceof QuestionNode && canAssociate( (QuestionNode) n ) ) {
+                        associateManually( (QuestionNode) n ) ;
+                    }
+                    return ;
+                }
+                if( e.getClickCount() != 2 ) return ;
                 if( n == null || onExpander( e, n ) ) return ;
                 if( n instanceof SourceNode ) toggle( n ) ;
-                else                          openImage( n ) ;
+                else                          activate( n ) ;
             }
         } ) ;
     }
@@ -469,6 +493,14 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             @Override public void actionPerformed( ActionEvent e ) {
                 Node n = selectedNode() ;
                 if( n != null ) showInExtractor( n ) ;
+            }
+        } ) ;
+        im.put( KeyStroke.getKeyStroke( "ENTER" ), "qc-activate" ) ;
+        am.put( "qc-activate", new AbstractAction() {
+            @Override public void actionPerformed( ActionEvent e ) {
+                Node n = selectedNode() ;
+                if( n instanceof SourceNode ) toggle( n ) ;
+                else if( n != null )          activate( n ) ;
             }
         } ) ;
         im.put( KeyStroke.getKeyStroke( "RIGHT" ), "qc-expand" ) ;
@@ -542,12 +574,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             menu.add( requeue ) ;
 
             JMenuItem manual = new JMenuItem( "Manual Topic Association…" ) ;
-            boolean canAssociate = controller != null &&
-                    TopicRepo.syllabusForSubject( q.task.getSubject() ) != null &&
-                    ( q.status == TaskStatus.DONE || q.status == TaskStatus.FAILED
-                            || q.status == TaskStatus.ASSOCIATED
-                            || ( q.status == TaskStatus.QUEUED && procState == ProcessingState.STOPPED ) ) ;
-            manual.setEnabled( canAssociate ) ;
+            manual.setEnabled( canAssociate( q ) ) ;
             manual.addActionListener( a -> associateManually( q ) ) ;
             menu.add( manual ) ;
         }
@@ -561,40 +588,102 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         menu.show( table, e.getX(), e.getY() ) ;
     }
 
-    private void associateManually( QuestionNode q ) {
-        QTask task = q.task ;
-        Topic topic = ManualTopicDialog.choose( this, task ) ;
-        if( topic == null ) return ;
+    /** Double-click / Enter: manual association for an associable question, else open the image. */
+    private void activate( Node n ) {
+        if( n instanceof QuestionNode && canAssociate( (QuestionNode) n ) ) associateManually( (QuestionNode) n ) ;
+        else                                                               openImage( n ) ;
+    }
 
-        new SwingWorker<QuestionTopicAssociator.Outcome,Void>() {
-            @Override protected QuestionTopicAssociator.Outcome doInBackground() {
+    private boolean onAssocButton( MouseEvent e ) {
+        int viewCol = table.columnAtPoint( e.getPoint() ) ;
+        return viewCol >= 0 && table.convertColumnIndexToModel( viewCol ) == COL_ASSOC ;
+    }
+
+    private boolean canAssociate( QuestionNode q ) {
+        return controller != null &&
+               TopicRepo.syllabusForSubject( q.task.getSubject() ) != null &&
+               ( q.status == TaskStatus.QUEUED || q.status == TaskStatus.DONE
+                       || q.status == TaskStatus.FAILED || q.status == TaskStatus.ASSOCIATED ) ;
+    }
+
+    /**
+     * Open the manual association dialog on {@code q}. A QUEUED question is
+     * held out of the scheduler queue while it is shown and only returns to the
+     * queue if no topic gets saved for it. With "continue" ticked the dialog
+     * moves on through the following QUEUED / FAILED questions, holding each
+     * QUEUED one in turn.
+     */
+    private void associateManually( QuestionNode q ) {
+        if( q.status == TaskStatus.QUEUED && !hold( q.task ) ) {
+            JOptionPane.showMessageDialog( this, q.task + " has already started classifying.",
+                    "Manual Topic Association", JOptionPane.INFORMATION_MESSAGE ) ;
+            return ;
+        }
+        ManualTopicDialog.open( this, q.task, new ManualTopicDialog.Flow() {
+            @Override
+            public QuestionTopicAssociator.Outcome save( QTask task, Topic topic ) {
                 return controller.manualAssociate( task, topic ) ;
             }
 
-            @Override protected void done() {
-                QuestionTopicAssociator.Outcome outcome ;
-                try {
-                    outcome = get() ;
-                }
-                catch( Exception ex ) {
-                    log.error( "Manual topic association failed for {}", task, ex ) ;
-                    JOptionPane.showMessageDialog( QClassifierFrame.this,
-                            "Could not save the topic:\n" + ex.getMessage(),
-                            "Manual Topic Association", JOptionPane.ERROR_MESSAGE ) ;
-                    return ;
-                }
+            @Override
+            public void saved( QTask task, Topic topic, QuestionTopicAssociator.Outcome outcome ) {
+                if( heldTasks.remove( task ) ) controller.releaseFromManualAssociation( task, true ) ;
                 String summary = WorkspaceTopicMap.summary( topic.getTopicName(), 100, true ) ;
                 if( outcome == QuestionTopicAssociator.Outcome.ASSOCIATED ) summary += QuestionTopicAssociator.MATCHES_AI_MARK ;
                 model.manuallyAssociated( task, summary ) ;
                 afterStatusChange() ;
 
                 if( outcome != QuestionTopicAssociator.Outcome.ASSOCIATED ) {
-                    JOptionPane.showMessageDialog( QClassifierFrame.this,
+                    JOptionPane.showMessageDialog(
+                            KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow(),
                             "Saved to ai-topic-map.json, but question-info.json was not updated (" + outcome + ").",
                             "Manual Topic Association", JOptionPane.WARNING_MESSAGE ) ;
                 }
             }
-        }.execute() ;
+
+            @Override
+            public QTask nextPending( QTask task ) {
+                QuestionNode next = nextPendingAfter( task ) ;
+                if( next == null ) return null ;
+                selectRow( next ) ;
+                return next.task ;
+            }
+
+            @Override
+            public void abandoned( QTask task ) {
+                if( heldTasks.remove( task ) ) controller.releaseFromManualAssociation( task, false ) ;
+            }
+        } ) ;
+    }
+
+    private boolean hold( QTask task ) {
+        if( !controller.holdForManualAssociation( task ) ) return false ;
+        heldTasks.add( task ) ;
+        return true ;
+    }
+
+    /**
+     * The first associable QUEUED or FAILED question after {@code task}
+     * (wrapping round), or null if none. A QUEUED one is held first and
+     * skipped if it has already been dispatched.
+     */
+    private QuestionNode nextPendingAfter( QTask task ) {
+        List<QuestionNode> qs = model.questionsInDiscoveryOrder() ;
+        int from = qs.indexOf( model.questionFor( task ) ) ;
+        for( int i = 1 ; i < qs.size() ; i++ ) {
+            QuestionNode q = qs.get( ( from + i + qs.size() ) % qs.size() ) ;
+            if( !canAssociate( q ) ) continue ;
+            if( q.status == TaskStatus.FAILED ) return q ;
+            if( q.status == TaskStatus.QUEUED && hold( q.task ) ) return q ;
+        }
+        return null ;
+    }
+
+    /** Select (and scroll to) the question's row if it is currently visible. */
+    private void selectRow( QuestionNode q ) {
+        if( q.viewIndex < 0 ) return ;
+        table.setRowSelectionInterval( q.viewIndex, q.viewIndex ) ;
+        table.scrollRectToVisible( table.getCellRect( q.viewIndex, 0, true ) ) ;
     }
 
     private Node nodeUnder( MouseEvent e ) {
@@ -760,6 +849,31 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         }
     }
 
+    /**
+     * A flat, borderless topic-association button on question rows (greyed when
+     * association isn't allowed); blank elsewhere. Rendered as an opaque label
+     * so the row's status background shows through.
+     */
+    private class AssocButtonRenderer implements javax.swing.table.TableCellRenderer {
+        private final JLabel button = new JLabel( new TopicIcon(), SwingConstants.CENTER ) ;
+        private final JLabel blank  = new JLabel() ;
+
+        AssocButtonRenderer() {
+            button.setOpaque( true ) ;
+            button.setToolTipText( "Manual topic association" ) ;
+            blank.setOpaque( true ) ;
+        }
+
+        @Override
+        public Component getTableCellRendererComponent( JTable t, Object value, boolean sel,
+                                                        boolean foc, int row, int col ) {
+            Node n = model.nodeAt( row ) ;
+            if( !( n instanceof QuestionNode ) ) return blank ;
+            button.setEnabled( canAssociate( (QuestionNode) n ) ) ;
+            return button ;
+        }
+    }
+
     // ---- tree column rendering ---------------------------------------
 
     /** Name column: indentation by depth plus an expand / collapse triangle for expandable nodes. */
@@ -778,6 +892,33 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
     }
 
     /** Fixed-width triangle (▸ collapsed, ▾ expanded); blank for leaves so labels stay aligned. */
+    /** A small circled "T" for topic association; grey when its component is disabled. */
+    private static final class TopicIcon implements Icon {
+        private static final Color ENABLED  = new Color( 0x1565C0 ) ;
+        private static final Color DISABLED = new Color( 0xB0B0B0 ) ;
+
+        @Override public int getIconWidth()  { return ASSOC_ICON ; }
+        @Override public int getIconHeight() { return ASSOC_ICON ; }
+
+        @Override
+        public void paintIcon( Component c, Graphics g, int x, int y ) {
+            Graphics2D g2 = (Graphics2D) g.create() ;
+            g2.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON ) ;
+            g2.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON ) ;
+            g2.setColor( c.isEnabled() ? ENABLED : DISABLED ) ;
+            g2.setStroke( new BasicStroke( 1.2f ) ) ;
+            g2.drawOval( x, y, ASSOC_ICON - 1, ASSOC_ICON - 1 ) ;
+            g2.setFont( c.getFont().deriveFont( Font.BOLD, ASSOC_ICON * 0.6f ) ) ;
+            // Centre on the glyph's actual bounds so the T sits in the middle of the circle.
+            java.awt.geom.Rectangle2D b = new java.awt.font.TextLayout( "T", g2.getFont(),
+                    g2.getFontRenderContext() ).getBounds() ;
+            float tx = x + ( ASSOC_ICON - (float) b.getWidth() ) / 2f - (float) b.getX() ;
+            float ty = y + ( ASSOC_ICON - (float) b.getHeight() ) / 2f - (float) b.getY() ;
+            g2.drawString( "T", tx, ty ) ;
+            g2.dispose() ;
+        }
+    }
+
     private static final class ExpanderIcon implements Icon {
         private final boolean expandable ;
         private final boolean expanded ;

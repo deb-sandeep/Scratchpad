@@ -6,6 +6,7 @@ import java.io.File;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +29,15 @@ public class QSourceClassifier {
     private final BooleanSupplier keepGoing ;
     private final int maxInFlight ;
 
+    /** Guards {@link #queue}, {@link #inFlight} and {@link #held}. */
+    private final Object      lock     = new Object() ;
+    /** Tasks waiting to be dispatched by the running {@link #process}; null when it isn't running. */
+    private Deque<QTask>      queue ;
+    /** Tasks dispatched to the executor and not yet finished. */
+    private final Set<QTask>  inFlight = new HashSet<>() ;
+    /** Tasks taken out of scheduling while they are being manually associated. */
+    private final Set<QTask>  held     = new HashSet<>() ;
+
     public QSourceClassifier( File srcDir, String qIdHint, GemmaInvoker gemmaInvoker,
                               ExecutorService executor, File processedListFile,
                               ClassificationListener listener, BooleanSupplier keepGoing,
@@ -43,6 +53,7 @@ public class QSourceClassifier {
     }
 
     public String getSourceName() { return srcDir.getName() ; }
+    public File   getSrcDir()     { return srcDir ; }
 
     /**
      * Fire {@code taskDiscovered} for every question of this source (part
@@ -83,40 +94,97 @@ public class QSourceClassifier {
      */
     public void process( List<QTask> pending ) {
         Set<String> classified = WorkspaceTopicMap.classifiedQuestionIds( srcDir ) ;
-        Deque<QTask> queue = new ArrayDeque<>() ;
-        for( QTask t : pending ) {
-            if( !classified.contains( t.getQuestionId() ) ) queue.add( t ) ;
+        synchronized( lock ) {
+            queue = new ArrayDeque<>() ;
+            for( QTask t : pending ) {
+                if( !classified.contains( t.getQuestionId() ) && !held.contains( t ) ) queue.add( t ) ;
+            }
         }
 
         ExecutorCompletionService<Boolean> completion =
                 new ExecutorCompletionService<>( executor ) ;
-        int inFlight = 0 ;
-
-        while( inFlight < maxInFlight && !queue.isEmpty() && keepGoing.getAsBoolean() ) {
-            completion.submit( classifyCallable( queue.poll(), gemmaInvoker, listener, keepGoing, processedListFile, qIdHint ) ) ;
-            inFlight++ ;
-        }
-
-        while( inFlight > 0 ) {
-            try {
-                completion.take().get() ;
-            }
-            catch( Exception e ) {
-                log.error( "Error awaiting image result for source {}", srcDir.getName(), e ) ;
-                if( e instanceof InterruptedException ) {
-                    Thread.currentThread().interrupt() ;
-                    break ;
+        int running = 0 ;
+        try {
+            while( true ) {
+                QTask next ;
+                while( running < maxInFlight && keepGoing.getAsBoolean() && ( next = nextTask() ) != null ) {
+                    completion.submit( dispatchCallable( next ) ) ;
+                    running++ ;
                 }
+                if( running == 0 ) {
+                    // Done unless a task was put back (manual association cancelled) meanwhile.
+                    synchronized( lock ) {
+                        if( !keepGoing.getAsBoolean() || queue.isEmpty() ) break ;
+                    }
+                    continue ;
+                }
+                try {
+                    completion.take().get() ;
+                }
+                catch( Exception e ) {
+                    log.error( "Error awaiting image result for source {}", srcDir.getName(), e ) ;
+                    if( e instanceof InterruptedException ) {
+                        Thread.currentThread().interrupt() ;
+                        break ;
+                    }
+                }
+                running-- ;
             }
-            inFlight-- ;
-            if( keepGoing.getAsBoolean() && !queue.isEmpty() ) {
-                completion.submit( classifyCallable( queue.poll(), gemmaInvoker, listener, keepGoing, processedListFile, qIdHint ) ) ;
-                inFlight++ ;
-            }
+        }
+        finally {
+            synchronized( lock ) { queue = null ; }
         }
 
         // Covers a source with nothing pending that was never listed.
         markProcessedIfComplete( srcDir, qIdHint, processedListFile ) ;
+    }
+
+    private QTask nextTask() {
+        synchronized( lock ) {
+            QTask t = queue.poll() ;
+            if( t != null ) inFlight.add( t ) ;
+            return t ;
+        }
+    }
+
+    private Callable<Boolean> dispatchCallable( QTask task ) {
+        Callable<Boolean> c = classifyCallable( task, gemmaInvoker, listener, keepGoing, processedListFile, qIdHint ) ;
+        return () -> {
+            try {
+                return c.call() ;
+            }
+            finally {
+                synchronized( lock ) { inFlight.remove( task ) ; }
+            }
+        } ;
+    }
+
+    /**
+     * Take a queued task out of scheduling while it is manually associated.
+     * @return false if the task has already been dispatched for classification.
+     */
+    public boolean hold( QTask task ) {
+        synchronized( lock ) {
+            if( inFlight.contains( task ) ) return false ;
+            if( queue != null ) queue.remove( task ) ;
+            held.add( task ) ;
+            return true ;
+        }
+    }
+
+    /**
+     * End a {@link #hold}. A task that was not associated goes back to the
+     * front of the queue.
+     * @return true if a running {@link #process} will pick the task up; false
+     *         if it will only be scheduled by a later run.
+     */
+    public boolean release( QTask task, boolean associated ) {
+        synchronized( lock ) {
+            if( !held.remove( task ) || associated ) return false ;
+            if( queue == null ) return false ;
+            queue.addFirst( task ) ;
+            return true ;
+        }
     }
 
     /** Record the source as done only once every one of its images is classified. */

@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.COL_ASSOC;
 import static com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.COL_STATUS;
 import static com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.COL_SUBJ;
 
@@ -101,6 +102,7 @@ class HeaderFilterController {
         int viewCol = header.columnAtPoint( e.getPoint() ) ;
         if( viewCol < 0 ) return ;
         int modelCol = table.convertColumnIndexToModel( viewCol ) ;
+        if( modelCol == COL_ASSOC ) return ;   // button column
 
         if( model.getSortColumn() != modelCol ) model.setSort( modelCol, true ) ;
         else if( model.isSortAscending() )      model.setSort( modelCol, false ) ;
@@ -118,6 +120,7 @@ class HeaderFilterController {
         int viewCol = header.columnAtPoint( e.getPoint() ) ;
         if( viewCol < 0 ) return ;
         int modelCol = table.convertColumnIndexToModel( viewCol ) ;
+        if( modelCol == COL_ASSOC ) return ;   // button column
 
         JPopupMenu menu = enumerable.containsKey( modelCol )
                 ? buildValueMenu( modelCol )

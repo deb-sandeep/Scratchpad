@@ -32,9 +32,11 @@ public class QTaskTreeTableModel extends AbstractTableModel {
     static final int COL_ATTEMPTS = 3 ;
     static final int COL_TIME     = 4 ;
     static final int COL_RESULT   = 5 ;
+    /** Holds the manual topic association button; no value of its own. */
+    static final int COL_ASSOC    = 6 ;
 
     private static final String[] COLS =
-            { "Source / Question", "Subj", "Status", "Attempts", "Time", "Result" } ;
+            { "Source / Question", "Subj", "Status", "Attempts", "Time", "Result", "" } ;
 
     // ---- nodes -------------------------------------------------------
 
@@ -365,6 +367,15 @@ public class QTaskTreeTableModel extends AbstractTableModel {
     int getQuestionCount()         { return byTask.size() ; }
     int getMatchingQuestionCount() { return matchingQuestions ; }
     int getSourceCount()           { return sources.size() ; }
+
+    QuestionNode questionFor( QTask task ) { return byTask.get( task ) ; }
+
+    /** Every question, sources and questions in discovery order, ignoring filter / sort / expansion. */
+    List<QuestionNode> questionsInDiscoveryOrder() {
+        List<QuestionNode> qs = new ArrayList<>() ;
+        for( SourceNode s : sources ) qs.addAll( s.children ) ;
+        return qs ;
+    }
 
     public Map<TaskStatus,Integer> statusCounts() {
         Map<TaskStatus,Integer> counts = new EnumMap<>( TaskStatus.class ) ;
