@@ -65,6 +65,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
     /** Shared by question rows and their source row. */
     private static final Color RUNNING_BG  = new Color( 0xFFE0B2 ) ;
     private static final Color DONE_BG     = new Color( 0xC8E6C9 ) ;
+    private static final Color FAILED_BG   = new Color( 0xEF9A9A ) ;
     /** ⌘E on macOS, Ctrl+E elsewhere. */
     private static final KeyStroke SHOW_IN_EXTRACTOR_KEY = KeyStroke.getKeyStroke(
             java.awt.event.KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() ) ;
@@ -737,10 +738,11 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         return colorFor( ( (QuestionNode) n ).status ) ;
     }
 
-    /** Orange while any question runs, green once all are done / associated, else the neutral source shade. */
+    /** Orange while any question runs, red if any failed (once nothing is pending), green once all are done / associated, else the neutral source shade. */
     private static Color sourceBackground( SourceNode s ) {
         switch( s.aggregateStatus() ) {
             case RUNNING:    return RUNNING_BG ;
+            case FAILED:     return FAILED_BG ;
             case DONE:
             case ASSOCIATED: return DONE_BG ;
             default:         return SOURCE_BG ;
@@ -752,7 +754,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
             case RUNNING: return RUNNING_BG ;
             case REQUEUED: return new Color( 0xFFF8E1 ) ;
             case DONE:    return DONE_BG ;
-            case FAILED:  return new Color( 0xFFEBEE ) ;
+            case FAILED:  return FAILED_BG ;
             case ASSOCIATED: return new Color( 0xF0F0F0 ) ;
             default:      return Color.WHITE ;
         }
