@@ -34,7 +34,7 @@ public class QTaskTreeTableModel extends AbstractTableModel {
     static final int COL_RESULT   = 5 ;
 
     private static final String[] COLS =
-            { "Source / Question", "Subj", "Status", "Attempts", "Time (s)", "Result" } ;
+            { "Source / Question", "Subj", "Status", "Attempts", "Time", "Result" } ;
 
     // ---- nodes -------------------------------------------------------
 
@@ -64,7 +64,8 @@ public class QTaskTreeTableModel extends AbstractTableModel {
         /** True once no question is waiting or running (DONE / FAILED / ASSOCIATED only). */
         boolean isFullyProcessed() {
             for( QuestionNode q : children ) {
-                if( q.status == TaskStatus.QUEUED || q.status == TaskStatus.RUNNING ) return false ;
+                if( q.status == TaskStatus.QUEUED || q.status == TaskStatus.REQUEUED
+                    || q.status == TaskStatus.RUNNING ) return false ;
             }
             return true ;
         }
@@ -76,10 +77,10 @@ public class QTaskTreeTableModel extends AbstractTableModel {
             return counts ;
         }
 
-        /** Most "active" status among the children: RUNNING > QUEUED > FAILED > DONE > ASSOCIATED. */
+        /** Most "active" status among the children: RUNNING > REQUEUED > QUEUED > FAILED > DONE > ASSOCIATED. */
         TaskStatus aggregateStatus() {
             Map<TaskStatus,Integer> c = counts() ;
-            for( TaskStatus s : new TaskStatus[]{ TaskStatus.RUNNING, TaskStatus.QUEUED,
+            for( TaskStatus s : new TaskStatus[]{ TaskStatus.RUNNING, TaskStatus.REQUEUED, TaskStatus.QUEUED,
                                                   TaskStatus.FAILED, TaskStatus.DONE } ) {
                 if( c.get( s ) > 0 ) return s ;
             }
@@ -169,6 +170,18 @@ public class QTaskTreeTableModel extends AbstractTableModel {
         byTask.put( task, q ) ;
     }
 
+    /** The task was submitted for reprocessing; it waits as REQUEUED until a worker picks it up. */
+    public void requeued( QTask task ) {
+        QuestionNode q = byTask.get( task ) ;
+        if( q == null ) return ;
+        q.status       = TaskStatus.REQUEUED ;
+        q.attempts     = 0 ;
+        q.startedAtMs  = 0 ;
+        q.finishedAtMs = 0 ;
+        q.result       = "" ;
+        fireQuestionUpdated( q ) ;
+    }
+
     public void started( QTask task ) {
         QuestionNode q = byTask.get( task ) ;
         if( q == null ) return ;
@@ -187,6 +200,19 @@ public class QTaskTreeTableModel extends AbstractTableModel {
         q.attempts     = attempts ;
         q.finishedAtMs = System.currentTimeMillis() ;
         q.result       = result != null ? result : "" ;
+        if( q.parent.isFullyProcessed() ) setExpanded( q.parent, false ) ;
+        fireQuestionUpdated( q ) ;
+    }
+
+    /** A topic was hand-picked for the task; it is shown as ASSOCIATED with {@code result}. */
+    public void manuallyAssociated( QTask task, String result ) {
+        QuestionNode q = byTask.get( task ) ;
+        if( q == null ) return ;
+        q.status       = TaskStatus.ASSOCIATED ;
+        q.attempts     = 0 ;
+        q.startedAtMs  = 0 ;
+        q.finishedAtMs = 0 ;
+        q.result       = result ;
         if( q.parent.isFullyProcessed() ) setExpanded( q.parent, false ) ;
         fireQuestionUpdated( q ) ;
     }
@@ -374,7 +400,9 @@ public class QTaskTreeTableModel extends AbstractTableModel {
             case COL_ATTEMPTS: return q.attempts > 0 ? String.valueOf( q.attempts ) : "" ;
             case COL_TIME: {
                 double s = q.elapsedSeconds() ;
-                return s < 0 ? "" : String.format( "%.1f", s ) ;
+                if( s < 0 ) return "" ;
+                long secs = (long) s ;
+                return String.format( "%02d:%02d", secs / 60, secs % 60 ) ;
             }
             case COL_RESULT:   return q.result ;
             default:           return "" ;

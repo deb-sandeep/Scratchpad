@@ -197,6 +197,16 @@ public class QImgClassifier implements QClassifierFrame.Controller {
     }
 
     @Override
+    public QuestionTopicAssociator.Outcome manualAssociate( QTask task, Topic topic ) {
+        log.debug( "Manually associating {} with topic {}", task, topic.getId() ) ;
+        WorkspaceTopicMap.writeManual( task.getSrcDir(), task.getQuestionId(), topic ) ;
+        QuestionTopicAssociator.Outcome outcome =
+                QuestionTopicAssociator.associateManual( task.getSrcDir(), task.getQuestionId(), topic ) ;
+        QSourceClassifier.markProcessedIfComplete( task.getSrcDir(), Q_ID, PROCESSED_LIST_FILE ) ;
+        return outcome ;
+    }
+
+    @Override
     public void shutdown() {
         log.debug( "Shutting down classifier executor" ) ;
         stopRequested = true ;

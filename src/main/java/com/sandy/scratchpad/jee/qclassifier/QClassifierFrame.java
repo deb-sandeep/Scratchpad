@@ -32,7 +32,7 @@ import static com.sandy.scratchpad.jee.qclassifier.QTaskTreeTableModel.*;
  * QUEUED -> RUNNING -> DONE/FAILED (or start ASSOCIATED if already in the topic map).
  * Click the triangle (or use Left / Right) to collapse / expand; double-click a
  * question or part to open its image; right-click offers open / show in
- * QImgExtractor (⌘E) / re-queue.
+ * QImgExtractor (⌘E) / re-queue / manual topic association.
  */
 @Slf4j
 @SuppressWarnings( "serial" )
@@ -43,6 +43,11 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         void startProcessing() ;
         void stopProcessing() ;
         void reprocess( QTask task ) ;
+        /**
+         * Persist a hand-picked topic for the task (AI map + question-info.json).
+         * Blocking; call off the EDT.
+         */
+        QuestionTopicAssociator.Outcome manualAssociate( QTask task, Topic topic ) ;
         /** Blocking; call off the EDT. Throws if processing is running. Progress is reported on the calling thread. */
         ProcessedListRepair.Report repairProcessedList( ProcessedListRepair.ProgressListener progress ) ;
         void shutdown() ;
@@ -57,6 +62,9 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
     private static final int   EXPANDER_W  = 12 ;
     private static final int   ICON_GAP    = 4 ;
     private static final Color SOURCE_BG   = new Color( 0xE3E8EF ) ;
+    /** Shared by question rows and their source row. */
+    private static final Color RUNNING_BG  = new Color( 0xFFE0B2 ) ;
+    private static final Color DONE_BG     = new Color( 0xC8E6C9 ) ;
     /** ⌘E on macOS, Ctrl+E elsewhere. */
     private static final KeyStroke SHOW_IN_EXTRACTOR_KEY = KeyStroke.getKeyStroke(
             java.awt.event.KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() ) ;
@@ -182,7 +190,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
                 { "Subj",     "M" },
                 { "Status",   statusWidest },
                 { "Attempts", "10" },
-                { "Time (s)", "999.9" } } ;
+                { "Time",     "99:59" } } ;
         int[] fixedCols = { COL_SUBJ, COL_STATUS, COL_ATTEMPTS, COL_TIME } ;
         for( int i = 0 ; i < fixedCols.length ; i++ ) {
             int w = Math.max( head.stringWidth( samples[i][0] + "  ▲  *" ),
@@ -525,8 +533,22 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
                     ( q.status == TaskStatus.DONE || q.status == TaskStatus.FAILED
                             || q.status == TaskStatus.ASSOCIATED ) ;
             requeue.setEnabled( canRequeue ) ;
-            requeue.addActionListener( a -> controller.reprocess( q.task ) ) ;
+            requeue.addActionListener( a -> {
+                model.requeued( q.task ) ;
+                afterStatusChange() ;
+                controller.reprocess( q.task ) ;
+            } ) ;
             menu.add( requeue ) ;
+
+            JMenuItem manual = new JMenuItem( "Manual Topic Association…" ) ;
+            boolean canAssociate = controller != null &&
+                    TopicRepo.syllabusForSubject( q.task.getSubject() ) != null &&
+                    ( q.status == TaskStatus.DONE || q.status == TaskStatus.FAILED
+                            || q.status == TaskStatus.ASSOCIATED
+                            || ( q.status == TaskStatus.QUEUED && procState == ProcessingState.STOPPED ) ) ;
+            manual.setEnabled( canAssociate ) ;
+            manual.addActionListener( a -> associateManually( q ) ) ;
+            menu.add( manual ) ;
         }
         if( n.isExpandable() ) {
             if( menu.getComponentCount() > 0 ) menu.addSeparator() ;
@@ -536,6 +558,42 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
         }
 
         menu.show( table, e.getX(), e.getY() ) ;
+    }
+
+    private void associateManually( QuestionNode q ) {
+        QTask task = q.task ;
+        Topic topic = ManualTopicDialog.choose( this, task ) ;
+        if( topic == null ) return ;
+
+        new SwingWorker<QuestionTopicAssociator.Outcome,Void>() {
+            @Override protected QuestionTopicAssociator.Outcome doInBackground() {
+                return controller.manualAssociate( task, topic ) ;
+            }
+
+            @Override protected void done() {
+                QuestionTopicAssociator.Outcome outcome ;
+                try {
+                    outcome = get() ;
+                }
+                catch( Exception ex ) {
+                    log.error( "Manual topic association failed for {}", task, ex ) ;
+                    JOptionPane.showMessageDialog( QClassifierFrame.this,
+                            "Could not save the topic:\n" + ex.getMessage(),
+                            "Manual Topic Association", JOptionPane.ERROR_MESSAGE ) ;
+                    return ;
+                }
+                String summary = WorkspaceTopicMap.summary( topic.getTopicName(), 100, true ) ;
+                if( outcome == QuestionTopicAssociator.Outcome.ASSOCIATED ) summary += " ✓" ;
+                model.manuallyAssociated( task, summary ) ;
+                afterStatusChange() ;
+
+                if( outcome != QuestionTopicAssociator.Outcome.ASSOCIATED ) {
+                    JOptionPane.showMessageDialog( QClassifierFrame.this,
+                            "Saved to ai-topic-map.json, but question-info.json was not updated (" + outcome + ").",
+                            "Manual Topic Association", JOptionPane.WARNING_MESSAGE ) ;
+                }
+            }
+        }.execute() ;
     }
 
     private Node nodeUnder( MouseEvent e ) {
@@ -654,13 +712,13 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
                 ( processingStartedMs > 0 ? System.currentTimeMillis() - processingStartedMs : 0 ) ;
         long elapsed = procMs / 1000 ;
         String text = String.format(
-                "%s   |   %d sources   |   Showing %d/%d questions   |   Queued %d  Running %d  Done %d  Failed %d  Associated %d   |   Processing time %d:%02d",
+                "%s   |   %d sources   |   Showing %d/%d questions   |   Queued %d  Requeued %d  Running %d  Done %d  Failed %d  Associated %d   |   Processing time %02d:%02d:%02d",
                 stateLabel(),
                 model.getSourceCount(),
                 model.getMatchingQuestionCount(), model.getQuestionCount(),
-                c.get( TaskStatus.QUEUED ), c.get( TaskStatus.RUNNING ), c.get( TaskStatus.DONE ),
+                c.get( TaskStatus.QUEUED ), c.get( TaskStatus.REQUEUED ), c.get( TaskStatus.RUNNING ), c.get( TaskStatus.DONE ),
                 c.get( TaskStatus.FAILED ), c.get( TaskStatus.ASSOCIATED ),
-                elapsed / 60, elapsed % 60 ) ;
+                elapsed / 3600, ( elapsed / 60 ) % 60, elapsed % 60 ) ;
         if( !batchProgress.isEmpty() ) text += "   |   " + batchProgress ;
         statusBar.setText( text ) ;
     }
@@ -674,15 +732,26 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
     }
 
     private static Color backgroundFor( Node n ) {
-        if( n instanceof SourceNode ) return SOURCE_BG ;
+        if( n instanceof SourceNode ) return sourceBackground( (SourceNode) n ) ;
         if( n instanceof PartNode )   return colorFor( ( (PartNode) n ).parent.status ) ;
         return colorFor( ( (QuestionNode) n ).status ) ;
     }
 
+    /** Orange while any question runs, green once all are done / associated, else the neutral source shade. */
+    private static Color sourceBackground( SourceNode s ) {
+        switch( s.aggregateStatus() ) {
+            case RUNNING:    return RUNNING_BG ;
+            case DONE:
+            case ASSOCIATED: return DONE_BG ;
+            default:         return SOURCE_BG ;
+        }
+    }
+
     private static Color colorFor( TaskStatus status ) {
         switch( status ) {
-            case RUNNING: return new Color( 0xE3F2FD ) ;
-            case DONE:    return new Color( 0xE8F5E9 ) ;
+            case RUNNING: return RUNNING_BG ;
+            case REQUEUED: return new Color( 0xFFF8E1 ) ;
+            case DONE:    return DONE_BG ;
             case FAILED:  return new Color( 0xFFEBEE ) ;
             case ASSOCIATED: return new Color( 0xF0F0F0 ) ;
             default:      return Color.WHITE ;

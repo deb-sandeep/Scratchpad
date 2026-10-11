@@ -27,7 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Chemistry : otherwise top confidence &ge; 95 and it leads the second by more than 5.</li>
  * </ul>
  * A question that already has a topic (manual or earlier auto association) is
- * never changed. Sources without a question-info.json (never opened in
+ * never changed by auto association; {@link #associateManual} always overwrites.
+ * Sources without a question-info.json (never opened in
  * QImgExtractor) are skipped.
  * <p>
  * <b>Caveat:</b> if the source is open in QImgExtractor while it is being
@@ -61,8 +62,7 @@ public final class QuestionTopicAssociator {
     /** Associate the question's top stored AI topic if it clears the quality gate. */
     public static Outcome associate( File srcDir, String questionId ) {
 
-        File file = infoFile( srcDir ) ;
-        if( !file.exists() ) return result( questionId, Outcome.NO_QUESTION_INFO ) ;
+        if( !infoFile( srcDir ).exists() ) return result( questionId, Outcome.NO_QUESTION_INFO ) ;
 
         List<WorkspaceTopicMap.StoredMapping> mappings =
                 WorkspaceTopicMap.topicMappings( srcDir, questionId ) ;
@@ -71,6 +71,21 @@ public final class QuestionTopicAssociator {
         Topic topic = evaluate( QTask.subjectOf( questionId ), mappings ) ;
         if( topic == null ) return result( questionId, Outcome.FAILED_GATE ) ;
 
+        return writeTopic( srcDir, questionId, topic, false ) ;
+    }
+
+    /**
+     * Associate a hand-picked topic, bypassing the quality gate and replacing
+     * any topic the question already has.
+     */
+    public static Outcome associateManual( File srcDir, String questionId, Topic topic ) {
+        if( !infoFile( srcDir ).exists() ) return result( questionId, Outcome.NO_QUESTION_INFO ) ;
+        return writeTopic( srcDir, questionId, topic, true ) ;
+    }
+
+    private static Outcome writeTopic( File srcDir, String questionId, Topic topic, boolean overwrite ) {
+
+        File file = infoFile( srcDir ) ;
         String qid = questionId.replace( '_', '/' ) ;
         synchronized( lockFor( file ) ) {
             try {
@@ -85,7 +100,9 @@ public final class QuestionTopicAssociator {
                 if( question == null ) return result( questionId, Outcome.NOT_IN_QUESTION_INFO ) ;
 
                 JsonNode existing = question.get( "topic" ) ;
-                if( existing != null && !existing.isNull() ) return result( questionId, Outcome.ALREADY_SET ) ;
+                if( !overwrite && existing != null && !existing.isNull() ) {
+                    return result( questionId, Outcome.ALREADY_SET ) ;
+                }
 
                 question.putObject( "topic" )
                         .put( "id",           topic.getId() )
@@ -103,8 +120,8 @@ public final class QuestionTopicAssociator {
                 return Outcome.ERROR ;
             }
         }
-        log.info( "[{}] {} auto-associated with topic {} ({})",
-                srcDir.getName(), questionId, topic.getId(), topic.getTopicName() ) ;
+        log.info( "[{}] {} {}-associated with topic {} ({})", srcDir.getName(), questionId,
+                  overwrite ? "manually" : "auto", topic.getId(), topic.getTopicName() ) ;
         return Outcome.ASSOCIATED ;
     }
 

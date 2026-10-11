@@ -186,10 +186,7 @@ public class GemmaInvoker {
     }
 
     private String getTopicList( String subject ) {
-        String syllabusName = null ;
-        if( "C".equals( subject ) ) syllabusName = "IIT Chemistry" ;
-        else if( "M".equals( subject ) ) syllabusName = "IIT Maths" ;
-        else if( "P".equals( subject ) ) syllabusName = "IIT Physics" ;
+        String syllabusName = TopicRepo.syllabusForSubject( subject ) ;
         if( syllabusName == null ) return "" ;
 
         boolean isChemistry = "C".equals( subject ) ;

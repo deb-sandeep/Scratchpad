@@ -26,6 +26,9 @@ public final class WorkspaceTopicMap {
     private static final ObjectMapper MAPPER =
             new ObjectMapper().enable( SerializationFeature.INDENT_OUTPUT ) ;
 
+    /** Topic-level flag marking a mapping chosen by hand rather than by the model. */
+    static final String HUMAN_INTERVENTION = "humanIntervention" ;
+
     private static final Map<String,Object> FILE_LOCKS = new ConcurrentHashMap<>() ;
 
     private WorkspaceTopicMap() {}
@@ -65,11 +68,17 @@ public final class WorkspaceTopicMap {
             load( srcDir ).fields().forEachRemaining( e -> {
                 JsonNode top = e.getValue().path( "topicMappings" ).path( 0 ) ;
                 summaries.put( e.getKey(), top.isMissingNode() ? "" :
-                        String.format( "%s (%d%%)", top.path( "topicName" ).asText(),
-                                                    top.path( "confidenceLevel" ).asInt() ) ) ;
+                        summary( top.path( "topicName" ).asText(), top.path( "confidenceLevel" ).asInt(),
+                                 top.path( HUMAN_INTERVENTION ).asBoolean() ) ) ;
             } ) ;
             return summaries ;
         }
+    }
+
+    /** Row summary of a stored mapping: {@code "Topic (NN%)"}, suffixed {@code " [manual]"} if human-chosen. */
+    static String summary( String topicName, int confidenceLevel, boolean humanIntervention ) {
+        return String.format( "%s (%d%%)%s", topicName, confidenceLevel,
+                              humanIntervention ? " [manual]" : "" ) ;
     }
 
     /** One stored topic recommendation, as persisted in the map file. */
@@ -128,11 +137,7 @@ public final class WorkspaceTopicMap {
                                     questionId, t.getId(), cachedTopic.getTopicName(), t.getTopicName() ) ;
                         }
 
-                        topicMappings.addObject()
-                                .put( "topicId",         t.getId() )
-                                .put( "topicName",       cachedTopic.getTopicName() )
-                                .put( "syllabusName",    cachedTopic.getSyllabusName() )
-                                .put( "confidenceLevel", Math.round( t.getMatchProbability() * 100 ) ) ;
+                        addMapping( topicMappings, cachedTopic, Math.round( t.getMatchProbability() * 100 ) ) ;
                     }
                 }
 
@@ -143,6 +148,37 @@ public final class WorkspaceTopicMap {
                 log.error( "Error updating workspace map file for {}", srcDir.getName(), e ) ;
             }
         }
+    }
+
+    /**
+     * Replace the question's stored recommendations with a single hand-picked
+     * topic at 100% confidence, flagged {@value #HUMAN_INTERVENTION}.
+     */
+    public static void writeManual( File srcDir, String questionId, Topic topic ) {
+        synchronized( lockFor( srcDir ) ) {
+            try {
+                File file = mapFile( srcDir ) ;
+                file.getParentFile().mkdirs() ;
+
+                ObjectNode root = load( srcDir ) ;
+                ArrayNode topicMappings = MAPPER.createArrayNode() ;
+                addMapping( topicMappings, topic, 100 ).put( HUMAN_INTERVENTION, true ) ;
+
+                root.putObject( questionId ).set( "topicMappings", topicMappings ) ;
+                MAPPER.writeValue( file, root ) ;
+            }
+            catch( Exception e ) {
+                throw new RuntimeException( "Error updating workspace map file for " + srcDir.getName(), e ) ;
+            }
+        }
+    }
+
+    private static ObjectNode addMapping( ArrayNode topicMappings, Topic topic, int confidenceLevel ) {
+        return topicMappings.addObject()
+                .put( "topicId",         topic.getId() )
+                .put( "topicName",       topic.getTopicName() )
+                .put( "syllabusName",    topic.getSyllabusName() )
+                .put( "confidenceLevel", confidenceLevel ) ;
     }
 
     private static ObjectNode load( File srcDir ) {

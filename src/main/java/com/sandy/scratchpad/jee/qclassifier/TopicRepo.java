@@ -50,6 +50,14 @@ public class TopicRepo {
         return topicById.get( id );
     }
     
+    /** Syllabus name for subject code "C" / "M" / "P", or null for anything else. */
+    public static String syllabusForSubject( String subjectCode ) {
+        if( "C".equals( subjectCode ) ) return "IIT Chemistry" ;
+        if( "M".equals( subjectCode ) ) return "IIT Maths" ;
+        if( "P".equals( subjectCode ) ) return "IIT Physics" ;
+        return null ;
+    }
+
     public List<Topic> getTopicsBySyllabus( String syllabusName ) {
         return topicsBySyllabus.getOrDefault( syllabusName, Collections.emptyList() );
     }
