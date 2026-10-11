@@ -75,6 +75,18 @@ public final class WorkspaceTopicMap {
         }
     }
 
+    /** Question id -> topic id of its stored top topic, for every question stored with topics. */
+    public static Map<String,Integer> topTopicIds( File srcDir ) {
+        synchronized( lockFor( srcDir ) ) {
+            Map<String,Integer> ids = new java.util.HashMap<>() ;
+            load( srcDir ).fields().forEachRemaining( e -> {
+                JsonNode top = e.getValue().path( "topicMappings" ).path( 0 ) ;
+                if( !top.isMissingNode() ) ids.put( e.getKey(), top.path( "topicId" ).asInt() ) ;
+            } ) ;
+            return ids ;
+        }
+    }
+
     /** Row summary of a stored mapping: {@code "Topic (NN%)"}, suffixed {@code " [manual]"} if human-chosen. */
     static String summary( String topicName, int confidenceLevel, boolean humanIntervention ) {
         return String.format( "%s (%d%%)%s", topicName, confidenceLevel,

@@ -584,7 +584,7 @@ public class QClassifierFrame extends JFrame implements ClassificationListener {
                     return ;
                 }
                 String summary = WorkspaceTopicMap.summary( topic.getTopicName(), 100, true ) ;
-                if( outcome == QuestionTopicAssociator.Outcome.ASSOCIATED ) summary += " ✓" ;
+                if( outcome == QuestionTopicAssociator.Outcome.ASSOCIATED ) summary += QuestionTopicAssociator.MATCHES_AI_MARK ;
                 model.manuallyAssociated( task, summary ) ;
                 afterStatusChange() ;
 

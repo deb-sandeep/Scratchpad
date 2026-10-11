@@ -56,11 +56,17 @@ public class QSourceClassifier {
             return List.of() ;
         }
 
-        Map<String,String> associated = WorkspaceTopicMap.associatedSummaries( srcDir ) ;
+        Map<String,String>  associated  = WorkspaceTopicMap.associatedSummaries( srcDir ) ;
+        Map<String,Integer> aiTopIds    = WorkspaceTopicMap.topTopicIds( srcDir ) ;
+        Map<String,Integer> assignedIds = QuestionTopicAssociator.assignedTopicIds( srcDir ) ;
         List<QTask> pending = new ArrayList<>() ;
         for( Map.Entry<String,List<File>> e : groups.entrySet() ) {
             QTask task = newTask( e.getKey(), e.getValue() ) ;
-            String associatedResult = associated.get( task.getQuestionId() ) ;
+            String qId = task.getQuestionId() ;
+            String associatedResult = associated.get( qId ) ;
+            if( associatedResult != null ) {
+                associatedResult += QuestionTopicAssociator.indicator( assignedIds.get( qId ), aiTopIds.get( qId ) ) ;
+            }
             listener.taskDiscovered( task, associatedResult ) ;
             if( associatedResult == null ) pending.add( task ) ;
         }
@@ -142,7 +148,7 @@ public class QSourceClassifier {
                     try {
                         if( QuestionTopicAssociator.associate( task.getSrcDir(), task.getQuestionId() )
                                 == QuestionTopicAssociator.Outcome.ASSOCIATED ) {
-                            summary += " ✓" ;
+                            summary += QuestionTopicAssociator.MATCHES_AI_MARK ;
                         }
                     }
                     catch( Exception e ) {

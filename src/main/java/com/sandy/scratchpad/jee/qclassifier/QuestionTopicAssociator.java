@@ -59,6 +59,46 @@ public final class QuestionTopicAssociator {
         return FILE_LOCKS.computeIfAbsent( file.getAbsolutePath(), k -> new Object() ) ;
     }
 
+    /** Remarks suffix: the question's topic in question-info.json matches the AI's top topic. */
+    static final String MATCHES_AI_MARK = " ✓" ;
+
+    /** Remarks suffix: the question's topic in question-info.json differs from the AI's top topic. */
+    static final String DIFFERS_FROM_AI_MARK = " ≠" ;
+
+    /**
+     * Question id -> topic id assigned in the source's question-info.json, for
+     * every question that has a topic. Empty if the file does not exist.
+     */
+    public static Map<String,Integer> assignedTopicIds( File srcDir ) {
+        File file = infoFile( srcDir ) ;
+        Map<String,Integer> ids = new java.util.HashMap<>() ;
+        if( !file.exists() ) return ids ;
+        synchronized( lockFor( file ) ) {
+            try {
+                for( JsonNode q : MAPPER.readTree( file ).path( "questions" ) ) {
+                    JsonNode topic = q.get( "topic" ) ;
+                    if( topic != null && !topic.isNull() && topic.has( "id" ) ) {
+                        ids.put( q.path( "qid" ).asText().replace( '/', '_' ), topic.path( "id" ).asInt() ) ;
+                    }
+                }
+            }
+            catch( Exception e ) {
+                log.error( "Error reading {}", file, e ) ;
+            }
+        }
+        return ids ;
+    }
+
+    /**
+     * Remarks suffix comparing the assigned topic with the AI's top topic:
+     * {@link #MATCHES_AI_MARK}, {@link #DIFFERS_FROM_AI_MARK}, or "" when no
+     * topic is assigned.
+     */
+    static String indicator( Integer assignedTopicId, Integer aiTopTopicId ) {
+        if( assignedTopicId == null ) return "" ;
+        return assignedTopicId.equals( aiTopTopicId ) ? MATCHES_AI_MARK : DIFFERS_FROM_AI_MARK ;
+    }
+
     /** Associate the question's top stored AI topic if it clears the quality gate. */
     public static Outcome associate( File srcDir, String questionId ) {
 
