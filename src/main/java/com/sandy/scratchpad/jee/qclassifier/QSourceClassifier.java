@@ -22,7 +22,7 @@ public class QSourceClassifier {
 
     private final File srcDir ;
     private final String qIdHint ;
-    private final GemmaInvoker gemmaInvoker ;
+    private final AIInvoker aiInvoker ;
     private final ExecutorService executor ;
     private final File processedListFile ;
     private final ClassificationListener listener ;
@@ -38,13 +38,13 @@ public class QSourceClassifier {
     /** Tasks taken out of scheduling while they are being manually associated. */
     private final Set<QTask>  held     = new HashSet<>() ;
 
-    public QSourceClassifier( File srcDir, String qIdHint, GemmaInvoker gemmaInvoker,
+    public QSourceClassifier( File srcDir, String qIdHint, AIInvoker aiInvoker,
                               ExecutorService executor, File processedListFile,
                               ClassificationListener listener, BooleanSupplier keepGoing,
                               int maxInFlight ) {
         this.srcDir = srcDir ;
         this.qIdHint = qIdHint ;
-        this.gemmaInvoker = gemmaInvoker ;
+        this.aiInvoker = aiInvoker ;
         this.executor = executor ;
         this.processedListFile = processedListFile ;
         this.listener = listener != null ? listener : ClassificationListener.NOOP ;
@@ -148,7 +148,7 @@ public class QSourceClassifier {
     }
 
     private Callable<Boolean> dispatchCallable( QTask task ) {
-        Callable<Boolean> c = classifyCallable( task, gemmaInvoker, listener, keepGoing, processedListFile, qIdHint ) ;
+        Callable<Boolean> c = classifyCallable( task, aiInvoker, listener, keepGoing, processedListFile, qIdHint ) ;
         return () -> {
             try {
                 return c.call() ;
@@ -203,13 +203,13 @@ public class QSourceClassifier {
      * last unclassified question. Used by both the batch pass and the UI
      * re-queue action.
      */
-    static Callable<Boolean> classifyCallable( QTask task, GemmaInvoker gemmaInvoker,
+    static Callable<Boolean> classifyCallable( QTask task, AIInvoker aiInvoker,
                                                ClassificationListener listener, BooleanSupplier keepGoing,
                                                File processedListFile, String qIdHint ) {
         return () -> {
             listener.taskStarted( task ) ;
             try {
-                GemmaInvoker.InvocationResult r = gemmaInvoker.invoke( task, keepGoing ) ;
+                AIInvoker.InvocationResult r = aiInvoker.invoke( task, keepGoing ) ;
                 if( r.topics != null ) {
                     WorkspaceTopicMap.write( task.getSrcDir(), task.getQuestionId(), r.topics ) ;
                     String summary = summarise( r.topics ) ;

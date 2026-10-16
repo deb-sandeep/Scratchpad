@@ -56,4 +56,14 @@ public final class ImageCollator {
         ImageIO.write( collate( imgFiles ), "png", bos ) ;
         return bos.toByteArray() ;
     }
+
+    /** Media type of {@link #collatedBytes}: PNG when collated, otherwise from the file extension. */
+    public static String collatedMimeType( List<File> imgFiles ) {
+        if( imgFiles.size() != 1 ) return "image/png" ;
+        String name = imgFiles.get( 0 ).getName().toLowerCase() ;
+        if( name.endsWith( ".jpg" ) || name.endsWith( ".jpeg" ) ) return "image/jpeg" ;
+        if( name.endsWith( ".webp" ) ) return "image/webp" ;
+        if( name.endsWith( ".gif" ) )  return "image/gif" ;
+        return "image/png" ;
+    }
 }

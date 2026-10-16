@@ -21,19 +21,19 @@ import java.util.stream.Collectors;
 public class QImgClassifier implements QClassifierFrame.Controller {
 
     public static final File Q_BANK_DIR = new File( "/Users/sandeep/Documents/StudyNotes/question-bank" ) ;
-    public static final String GEMMA_SERVER_URL = "http://192.168.0.149:11434/api/generate" ;
-    public static final String GEMMA_MODEL = "gemma4:latest" ;
 
     public static final File PROCESSED_LIST_FILE =
             new File( System.getProperty( "user.home" ), ".qclassifier.processed.list" ) ;
     public static final String SOURCES_RESOURCE = "/qclassifier.sources.txt" ;
 
-    private static final int MAX_PARALLEL_THREADS = 5 ;
     private static final String Q_ID = "" ;
 
+    /** Spreads classification across the configured AI processors (see {@link QClassifierConfig}). */
+    private final AIInvoker aiInvoker = AIInvoker.fromConfig( QClassifierConfig.load() ) ;
+    /** One thread per processor slot, so every processor can be kept busy. */
+    private final int maxParallelThreads = aiInvoker.getMaxParallel() ;
     private final ExecutorService executor =
-            Executors.newFixedThreadPool( MAX_PARALLEL_THREADS ) ;
-    private final GemmaInvoker gemmaInvoker = new GemmaInvoker() ;
+            Executors.newFixedThreadPool( maxParallelThreads ) ;
     private final ClassificationListener listener ;
 
     /** True while a batch thread is alive. */
@@ -105,8 +105,8 @@ public class QImgClassifier implements QClassifierFrame.Controller {
                 log.error( "Source directory {} not found", srcName ) ;
                 continue ;
             }
-            QSourceClassifier sc = new QSourceClassifier( srcDir, Q_ID, gemmaInvoker, executor,
-                    PROCESSED_LIST_FILE, listener, this::isProcessing, MAX_PARALLEL_THREADS ) ;
+            QSourceClassifier sc = new QSourceClassifier( srcDir, Q_ID, aiInvoker, executor,
+                    PROCESSED_LIST_FILE, listener, this::isProcessing, maxParallelThreads ) ;
             p.add( new SourceWork( sc, sc.discover() ) ) ;
         }
         plan = p ;
@@ -186,8 +186,8 @@ public class QImgClassifier implements QClassifierFrame.Controller {
             if( planned.contains( srcName ) ) continue ;
             File srcDir = FileHelper.findDir( Q_BANK_DIR, srcName ) ;
             if( srcDir == null ) continue ;
-            QSourceClassifier sc = new QSourceClassifier( srcDir, Q_ID, gemmaInvoker, executor,
-                    PROCESSED_LIST_FILE, listener, this::isProcessing, MAX_PARALLEL_THREADS ) ;
+            QSourceClassifier sc = new QSourceClassifier( srcDir, Q_ID, aiInvoker, executor,
+                    PROCESSED_LIST_FILE, listener, this::isProcessing, maxParallelThreads ) ;
             p.add( new SourceWork( sc, sc.discover() ) ) ;
         }
         plan = p ;
@@ -197,7 +197,7 @@ public class QImgClassifier implements QClassifierFrame.Controller {
     @Override
     public void reprocess( QTask task ) {
         log.debug( "Re-queueing {}", task ) ;
-        executor.submit( QSourceClassifier.classifyCallable( task, gemmaInvoker, listener, () -> true,
+        executor.submit( QSourceClassifier.classifyCallable( task, aiInvoker, listener, () -> true,
                 PROCESSED_LIST_FILE, Q_ID ) ) ;
     }
 
@@ -214,7 +214,7 @@ public class QImgClassifier implements QClassifierFrame.Controller {
         // Its source already ran in this batch, so nothing would pick it up until the next Start.
         if( isProcessing() && finishedThisRun.contains( sc ) ) {
             log.debug( "Scheduling {} after cancelled manual association", task ) ;
-            executor.submit( QSourceClassifier.classifyCallable( task, gemmaInvoker, listener, this::isProcessing,
+            executor.submit( QSourceClassifier.classifyCallable( task, aiInvoker, listener, this::isProcessing,
                     PROCESSED_LIST_FILE, Q_ID ) ) ;
         }
     }
