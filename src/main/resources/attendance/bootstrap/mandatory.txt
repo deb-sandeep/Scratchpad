@@ -1,0 +1,17 @@
+# Days on which attendance is mandatory (exams, practicals etc.)
+# A mandatory day falling on a weekly off day is treated as a working day.
+# Format (same as holidays.txt):
+#   yyyy-MM-dd               Description
+#   yyyy-MM-dd..yyyy-MM-dd   Description   (inclusive range)
+
+# First Preliminary Theory Examination 2026-27 — Class 12 Science
+# Reporting 7:30 a.m., writing 8:15 – 11:15 a.m.
+2026-10-29               Prelim: Art 1
+2026-10-30               Prelim: Art 2
+2026-11-12               Prelim: English Literature
+2026-11-13               Prelim: Computer Science / Biology
+2026-11-16               Prelim: Physical Education
+2026-11-17               Prelim: Physics
+2026-11-20               Prelim: English Language
+2026-11-23               Prelim: Mathematics / Environmental Science
+2026-11-26               Prelim: Chemistry

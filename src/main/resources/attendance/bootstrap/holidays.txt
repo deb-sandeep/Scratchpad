@@ -1,0 +1,17 @@
+# School off days (in addition to weekly off days)
+# Format:
+#   yyyy-MM-dd               Description
+#   yyyy-MM-dd..yyyy-MM-dd   Description   (inclusive range)
+#
+# Examples:
+#   2026-11-08               Diwali
+#   2026-12-24..2027-01-01   Winter break
+
+2026-10-20..2026-10-23   Dussehra Holidays
+2026-10-24               Founder's Day (No instruction)
+2026-11-04..2026-11-11   Diwali Break
+2026-11-24               Guru Nanak Jayanti
+2026-12-17..2027-01-10   Winter Break
+2027-01-26               Republic Day
+2027-02-19               Chhatrapati Shivaji Maharaj Jayanti
+2027-02-28               Academic Session Ends / Session Break Starts
